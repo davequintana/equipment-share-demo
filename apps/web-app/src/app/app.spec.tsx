@@ -1,26 +1,26 @@
 import { render } from '@testing-library/react';
-import { BrowserRouter } from 'react-router-dom';
+import { MemoryRouter } from 'react-router-dom';
 
 import App from './app';
 
 describe('App', () => {
   it('should render successfully', () => {
     const { baseElement } = render(
-      <BrowserRouter>
+      <MemoryRouter>
         <App />
-      </BrowserRouter>
+      </MemoryRouter>
     );
     expect(baseElement).toBeTruthy();
   });
 
   it('should have a greeting as the title', () => {
     const { getAllByText } = render(
-      <BrowserRouter>
+      <MemoryRouter>
         <App />
-      </BrowserRouter>
+      </MemoryRouter>
     );
     expect(
-      getAllByText(new RegExp('Welcome @./web-app', 'gi')).length > 0
+      getAllByText(new RegExp('Welcome to Enterprise NX Monorepo', 'gi')).length > 0
     ).toBeTruthy();
   });
 });

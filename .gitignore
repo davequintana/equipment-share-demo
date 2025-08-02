@@ -8,6 +8,12 @@ out-tsc
 # dependencies
 node_modules
 
+# pnpm
+.pnpm-store
+.pnpm-debug.log
+pnpm-debug.log*
+pnpm-lock.yaml
+
 # IDEs and editors
 /.idea
 .project

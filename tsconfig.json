@@ -8,6 +8,12 @@
     },
     {
       "path": "./apps/web-app"
+    },
+    {
+      "path": "./apps/express-api"
+    },
+    {
+      "path": "./apps/fastify-api"
     }
   ]
 }

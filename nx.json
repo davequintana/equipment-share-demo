@@ -12,6 +12,9 @@
     ],
     "sharedGlobals": []
   },
+  "externalDependencies": {
+    "vitest": "vitest"
+  },
   "plugins": [
     {
       "plugin": "@nx/js/typescript",
@@ -67,7 +70,11 @@
   ],
   "targetDefaults": {
     "test": {
-      "dependsOn": ["^build"]
+      "dependsOn": ["^build"],
+      "inputs": ["default", "^production"],
+      "options": {
+        "passWithNoTests": true
+      }
     }
   },
   "generators": {

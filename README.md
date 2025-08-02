@@ -1,101 +1,286 @@
-# 
+# Enterprise NX Monorepo
 
-<a alt="Nx logo" href="https://nx.dev" target="_blank" rel="noreferrer"><img src="https://raw.githubusercontent.com/nrwl/nx/master/images/nx-logo.png" width="45"></a>
+A comprehensive, enterprise-ready NX monorepo featuring the latest technologies for full-stack development.
 
-✨ Your new, shiny [Nx workspace](https://nx.dev) is ready ✨.
+## 🚀 Tech Stack
 
-[Learn more about this workspace setup and its capabilities](https://nx.dev/getting-started/tutorials/react-monorepo-tutorial?utm_source=nx_project&amp;utm_medium=readme&amp;utm_campaign=nx_projects) or run `npx nx graph` to visually explore what was created. Now, let's get you up to speed!
+### Frontend
+- **React 19** - Latest React with modern features
+- **TypeScript** - Type-safe development
+- **Vanilla Extract** - CSS-in-TypeScript styling
+- **React Router** - Client-side routing
+- **Vite** - Fast build tool and dev server
+- **Storybook** - Component development and documentation
 
-## Run tasks
+### Backend APIs
+- **Express 4** - Traditional Node.js web framework
+- **Fastify** - High-performance web framework
+- **JWT Authentication** - Secure token-based auth
+- **OpenAPI/Swagger** - API documentation
+- **TypeScript** - Type-safe backend development
 
-To run the dev server for your app, use:
+### Infrastructure & DevOps
+- **Docker** - Containerization for all services
+- **Kubernetes** - Container orchestration
+- **AWS CloudFormation** - Infrastructure as Code
+- **PostgreSQL** - Primary database
+- **Redis** - Caching and session storage
+- **Kafka** - Event streaming platform
 
-```sh
+### Testing & Quality
+- **Playwright** - End-to-end testing
+- **Vitest** - Unit testing
+- **ESLint** - Code linting
+- **TypeScript** - Static type checking
+
+## 📁 Project Structure
+
+```
+apps/
+├── web-app/          # React frontend application
+├── express-api/      # Express.js API server
+└── fastify-api/      # Fastify API server
+
+infrastructure/
+├── docker/           # Docker configurations
+├── kubernetes/       # K8s manifests
+├── aws/             # CloudFormation templates
+└── database/        # Database schemas and scripts
+
+e2e/
+└── playwright/      # End-to-end tests
+
+docs/
+└── storybook/       # Component documentation
+```
+
+## 🛠 Development Commands
+
+### Start Development Servers
+```bash
+# Start React frontend (http://localhost:4200)
 npx nx serve web-app
+
+# Start Express API (http://localhost:3333)
+npx nx serve express-api
+
+# Start Fastify API (http://localhost:3334)
+npx nx serve fastify-api
 ```
 
-To create a production bundle:
+### Build Commands
+```bash
+# Build all projects
+npx nx run-many -t build
 
-```sh
+# Build specific project
 npx nx build web-app
+npx nx build express-api
+npx nx build fastify-api
 ```
 
-To see all available targets to run for a project, run:
+### Testing
+```bash
+# Run unit tests
+npx nx test web-app
+npx nx test express-api
+npx nx test fastify-api
 
-```sh
-npx nx show project web-app
+# Run E2E tests
+npx nx e2e playwright
+
+# Run all tests
+npx nx run-many -t test
 ```
 
-These targets are either [inferred automatically](https://nx.dev/concepts/inferred-tasks?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects) or defined in the `project.json` or `package.json` files.
+### Linting and Type Checking
+```bash
+# Lint all projects
+npx nx run-many -t lint
 
-[More about running tasks in the docs &raquo;](https://nx.dev/features/run-tasks?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
-
-## Add new projects
-
-While you could add new projects to your workspace manually, you might want to leverage [Nx plugins](https://nx.dev/concepts/nx-plugins?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects) and their [code generation](https://nx.dev/features/generate-code?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects) feature.
-
-Use the plugin's generator to create new projects.
-
-To generate a new application, use:
-
-```sh
-npx nx g @nx/react:app demo
+# Type check all projects
+npx nx run-many -t type-check
 ```
 
-To generate a new library, use:
+## 🐳 Docker Development
 
-```sh
-npx nx g @nx/react:lib mylib
+### Build Docker Images
+```bash
+# Build all images
+docker-compose build
+
+# Build specific service
+docker build -f infrastructure/docker/web-app.Dockerfile -t web-app .
+docker build -f infrastructure/docker/express-api.Dockerfile -t express-api .
+docker build -f infrastructure/docker/fastify-api.Dockerfile -t fastify-api .
 ```
 
-You can use `npx nx list` to get a list of installed plugins. Then, run `npx nx list <plugin-name>` to learn about more specific capabilities of a particular plugin. Alternatively, [install Nx Console](https://nx.dev/getting-started/editor-setup?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects) to browse plugins and generators in your IDE.
+### Run with Docker Compose
+```bash
+# Start all services
+docker-compose up
 
-[Learn more about Nx plugins &raquo;](https://nx.dev/concepts/nx-plugins?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects) | [Browse the plugin registry &raquo;](https://nx.dev/plugin-registry?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
+# Start specific services
+docker-compose up web-app postgres redis
 
-## Set up CI!
-
-### Step 1
-
-To connect to Nx Cloud, run the following command:
-
-```sh
-npx nx connect
+# Run in background
+docker-compose up -d
 ```
 
-Connecting to Nx Cloud ensures a [fast and scalable CI](https://nx.dev/ci/intro/why-nx-cloud?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects) pipeline. It includes features such as:
+## ☸️ Kubernetes Deployment
 
-- [Remote caching](https://nx.dev/ci/features/remote-cache?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
-- [Task distribution across multiple machines](https://nx.dev/ci/features/distribute-task-execution?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
-- [Automated e2e test splitting](https://nx.dev/ci/features/split-e2e-tasks?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
-- [Task flakiness detection and rerunning](https://nx.dev/ci/features/flaky-tasks?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
+### Deploy to Local Kubernetes
+```bash
+# Apply all manifests
+kubectl apply -f infrastructure/kubernetes/
 
-### Step 2
-
-Use the following command to configure a CI workflow for your workspace:
-
-```sh
-npx nx g ci-workflow
+# Deploy specific services
+kubectl apply -f infrastructure/kubernetes/web-app/
+kubectl apply -f infrastructure/kubernetes/express-api/
+kubectl apply -f infrastructure/kubernetes/fastify-api/
 ```
 
-[Learn more about Nx on CI](https://nx.dev/ci/intro/ci-with-nx#ready-get-started-with-your-provider?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
+### Check Deployment Status
+```bash
+# View all pods
+kubectl get pods
 
-## Install Nx Console
+# View services
+kubectl get services
 
-Nx Console is an editor extension that enriches your developer experience. It lets you run tasks, generate code, and improves code autocompletion in your IDE. It is available for VSCode and IntelliJ.
+# Check logs
+kubectl logs -f deployment/web-app
+kubectl logs -f deployment/express-api
+kubectl logs -f deployment/fastify-api
+```
 
-[Install Nx Console &raquo;](https://nx.dev/getting-started/editor-setup?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
+## ☁️ AWS Deployment
 
-## Useful links
+### Deploy Infrastructure
+```bash
+# Deploy main infrastructure
+aws cloudformation deploy \
+  --template-file infrastructure/aws/main-infrastructure.yml \
+  --stack-name app-infrastructure \
+  --capabilities CAPABILITY_IAM
 
-Learn more:
+# Deploy EKS cluster
+aws cloudformation deploy \
+  --template-file infrastructure/aws/eks-cluster.yml \
+  --stack-name app-eks-cluster \
+  --capabilities CAPABILITY_IAM
+```
 
-- [Learn more about this workspace setup](https://nx.dev/getting-started/tutorials/react-monorepo-tutorial?utm_source=nx_project&amp;utm_medium=readme&amp;utm_campaign=nx_projects)
-- [Learn about Nx on CI](https://nx.dev/ci/intro/ci-with-nx?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
-- [Releasing Packages with Nx release](https://nx.dev/features/manage-releases?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
-- [What are Nx plugins?](https://nx.dev/concepts/nx-plugins?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
+## 🔐 Authentication
 
-And join the Nx community:
-- [Discord](https://go.nx.dev/community)
-- [Follow us on X](https://twitter.com/nxdevtools) or [LinkedIn](https://www.linkedin.com/company/nrwl)
-- [Our Youtube channel](https://www.youtube.com/@nxdevtools)
-- [Our blog](https://nx.dev/blog?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
+The application includes JWT-based authentication with the following endpoints:
+
+### Express API (Port 3333)
+- `POST /api/auth/login` - User login
+- `POST /api/auth/register` - User registration
+- `GET /api/users/profile` - Get user profile (authenticated)
+- `PUT /api/users/profile` - Update user profile (authenticated)
+
+### Fastify API (Port 3334)
+- `POST /api/auth/login` - User login
+- `GET /api/auth/profile` - Get user profile (authenticated)
+- `POST /api/events` - Publish events (authenticated)
+- `GET /health` - Health check
+
+### Default Credentials
+- Email: `admin@example.com`
+- Password: `password`
+
+## 📊 Monitoring and Observability
+
+- **Health Checks**: Available at `/health` endpoints
+- **API Documentation**: Swagger UI available for Fastify API
+- **Logging**: Structured logging with request/response tracing
+- **Metrics**: Application metrics for monitoring
+
+## 🔧 Environment Variables
+
+Create `.env` files for each environment:
+
+```bash
+# Database
+DATABASE_URL=postgresql://user:password@localhost:5432/app_db
+REDIS_URL=redis://localhost:6379
+
+# JWT
+JWT_SECRET=your-super-secret-jwt-key
+
+# API URLs
+REACT_APP_EXPRESS_API_URL=http://localhost:3333
+REACT_APP_FASTIFY_API_URL=http://localhost:3334
+
+# AWS (for production)
+AWS_REGION=us-east-1
+AWS_ACCESS_KEY_ID=your-access-key
+AWS_SECRET_ACCESS_KEY=your-secret-key
+```
+
+## 🚀 Getting Started
+
+1. **Install Dependencies**
+   ```bash
+   pnpm install
+   ```
+
+2. **Start Development Environment**
+   ```bash
+   # Start all services in parallel (recommended)
+   pnpm run dev
+   
+   # Or start databases first, then all development servers
+   docker-compose up postgres redis -d
+   pnpm run dev
+   
+   # Alternative: start services individually in separate terminals
+   pnpm run serve:web-app
+   pnpm run serve:express-api  
+   pnpm run serve:fastify-api
+   ```
+
+3. **Access Applications**
+   - Frontend: http://localhost:4200
+   - Express API: http://localhost:3333
+   - Fastify API: http://localhost:3334
+   - Swagger UI: http://localhost:3334/documentation
+
+## 📈 Performance
+
+- **Frontend**: Optimized Vite build with code splitting
+- **Backend**: High-performance Fastify alongside traditional Express
+- **Database**: PostgreSQL with connection pooling
+- **Caching**: Redis for session and application caching
+- **CDN Ready**: Static assets optimized for CDN deployment
+
+## 🔄 CI/CD
+
+The project includes GitHub Actions workflows for:
+- Automated testing on pull requests
+- Building and pushing Docker images
+- Deploying to AWS EKS clusters
+- Running security scans and code quality checks
+
+## 📚 Additional Resources
+
+- [NX Documentation](https://nx.dev)
+- [React Documentation](https://react.dev)
+- [Express.js Documentation](https://expressjs.com)
+- [Fastify Documentation](https://fastify.dev)
+- [AWS EKS Documentation](https://docs.aws.amazon.com/eks)
+- [Kubernetes Documentation](https://kubernetes.io/docs)
+
+## 🤝 Contributing
+
+1. Create a feature branch
+2. Make your changes
+3. Run tests: `npx nx run-many -t test`
+4. Run linting: `npx nx run-many -t lint`
+5. Submit a pull request
+
+## 📄 License
+
+This project is licensed under the MIT License.

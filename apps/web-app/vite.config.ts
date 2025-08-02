@@ -1,6 +1,7 @@
 /// <reference types='vitest' />
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
+import { vanillaExtractPlugin } from '@vanilla-extract/vite-plugin';
 
 export default defineConfig(() => ({
   root: __dirname,
@@ -8,12 +9,25 @@ export default defineConfig(() => ({
   server: {
     port: 4200,
     host: 'localhost',
+    proxy: {
+      '/api': {
+        target: 'http://localhost:3333',
+        changeOrigin: true,
+        secure: false,
+      },
+      '/fastify-api': {
+        target: 'http://localhost:3334',
+        changeOrigin: true,
+        secure: false,
+        rewrite: (path) => path.replace(/^\/fastify-api/, ''),
+      },
+    },
   },
   preview: {
     port: 4300,
     host: 'localhost',
   },
-  plugins: [react()],
+  plugins: [react(), vanillaExtractPlugin()],
   // Uncomment this if you are using workers.
   // worker: {
   //  plugins: [ nxViteTsPaths() ],
@@ -30,6 +44,7 @@ export default defineConfig(() => ({
     watch: false,
     globals: true,
     environment: 'jsdom',
+    setupFiles: ['./src/test-setup.ts'],
     include: ['{src,tests}/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}'],
     reporters: ['default'],
     coverage: {
