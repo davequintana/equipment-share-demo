@@ -10,10 +10,10 @@
       "path": "./apps/web-app"
     },
     {
-      "path": "./apps/express-api"
+      "path": "./apps/fastify-api"
     },
     {
-      "path": "./apps/fastify-api"
+      "path": "./apps/web-app-ssr"
     }
   ]
 }

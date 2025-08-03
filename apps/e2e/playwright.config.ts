@@ -43,13 +43,8 @@ export default defineConfig({
       reuseExistingServer: !process.env.CI,
     },
     {
-      command: 'npm run serve:express-api',
-      port: 3333,
-      reuseExistingServer: !process.env.CI,
-    },
-    {
       command: 'npm run serve:fastify-api',
-      port: 3334,
+      port: 3333,
       reuseExistingServer: !process.env.CI,
     },
   ],

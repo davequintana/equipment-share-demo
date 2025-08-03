@@ -37,7 +37,7 @@ test.describe('Enterprise App E2E Tests', () => {
     await expect(page.locator('text=React 19')).toBeVisible();
     await expect(page.locator('text=NX Monorepo')).toBeVisible();
     await expect(page.locator('text=Vanilla Extract')).toBeVisible();
-    await expect(page.locator('text=Express & Fastify')).toBeVisible();
+    await expect(page.locator('text=Fastify')).toBeVisible();
     await expect(page.locator('text=PostgreSQL')).toBeVisible();
     await expect(page.locator('text=Apache Kafka')).toBeVisible();
   });
@@ -69,21 +69,15 @@ test.describe('Enterprise App E2E Tests', () => {
   });
 
   test('API health checks', async ({ request }) => {
-    // Test Express API health
-    const expressHealth = await request.get('http://localhost:3333/health');
-    expect(expressHealth.ok()).toBeTruthy();
-    const expressData = await expressHealth.json();
-    expect(expressData.status).toBe('OK');
-
     // Test Fastify API health
-    const fastifyHealth = await request.get('http://localhost:3334/health');
+    const fastifyHealth = await request.get('http://localhost:3333/health');
     expect(fastifyHealth.ok()).toBeTruthy();
     const fastifyData = await fastifyHealth.json();
     expect(fastifyData.status).toBe('OK');
   });
 
   test('API authentication flow', async ({ request }) => {
-    // Test Express API login
+    // Test Fastify API login
     const loginResponse = await request.post('http://localhost:3333/api/auth/login', {
       data: {
         email: 'admin@example.com',

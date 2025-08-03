@@ -57,7 +57,7 @@ describe('ProfilePage', () => {
     render(<ProfilePageWithMockContext />);
 
     await waitFor(() => {
-      expect(mockFetch).toHaveBeenCalledWith('http://localhost:3333/api/users/profile', {
+      expect(mockFetch).toHaveBeenCalledWith('/api/users/profile', {
         headers: {
           'Authorization': 'Bearer fake-jwt-token',
           'Content-Type': 'application/json',
@@ -173,7 +173,7 @@ describe('ProfilePage', () => {
     await user.click(saveButton);
 
     await waitFor(() => {
-      expect(mockFetch).toHaveBeenCalledWith('http://localhost:3333/api/users/profile', {
+      expect(mockFetch).toHaveBeenCalledWith('/api/users/profile', {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',

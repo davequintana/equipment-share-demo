@@ -80,13 +80,15 @@ This is an enterprise-level NX monorepo featuring:
 ## Development Workflow
 
 1. Run `pnpm install` to install dependencies
-2. Use `pnpm run dev` to start all services in parallel (recommended)
-3. Use `pnpm run serve:web-app` for frontend development only
-4. Use `pnpm run serve:express-api` for Express API only
-5. Use `pnpm run serve:fastify-api` for Fastify API only
-6. Use `docker-compose up` for full stack development with databases
-7. Run `pnpm run test:all` for testing all projects
-8. Use `npx nx e2e e2e` for end-to-end testing
+2. Use `pnpm run dev` to start all services with CSR React app (recommended)
+3. Use `pnpm run dev:ssr` to start all services with SSR React app
+4. Use `pnpm run serve:web-app` for CSR frontend development only (localhost:4200)
+5. Use `pnpm run serve:web-app-ssr` for SSR frontend development only (localhost:4201)
+6. Use `pnpm run serve:express-api` for Express API only (localhost:3333)
+7. Use `pnpm run serve:fastify-api` for Fastify API only (localhost:3334)
+8. Use `docker-compose up` for full stack development with databases
+9. Run `pnpm run test:all` for testing all projects
+10. Use `npx nx e2e e2e` for end-to-end testing
 
 ## Code Generation Guidelines
 

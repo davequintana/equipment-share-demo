@@ -15,12 +15,6 @@ export default defineConfig(() => ({
         changeOrigin: true,
         secure: false,
       },
-      '/fastify-api': {
-        target: 'http://localhost:3334',
-        changeOrigin: true,
-        secure: false,
-        rewrite: (path) => path.replace(/^\/fastify-api/, ''),
-      },
     },
   },
   preview: {
