@@ -6,6 +6,7 @@ import { vanillaExtractPlugin } from '@vanilla-extract/vite-plugin';
 export default defineConfig(({ mode }) => ({
   root: '.',
   cacheDir: '../../node_modules/.vite/apps/web-app',
+  publicDir: 'public',
 
   server: {
     port: 4201,
@@ -38,6 +39,7 @@ export default defineConfig(({ mode }) => ({
   build: {
     outDir: '../../dist/apps/web-app',
     reportCompressedSize: true,
+    copyPublicDir: true,
     commonjsOptions: {
       transformMixedEsModules: true,
     },

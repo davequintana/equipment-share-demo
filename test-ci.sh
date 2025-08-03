@@ -25,6 +25,7 @@ echo "Step 3: Running e2e tests..."
 # Set environment similar to CI
 export NODE_ENV=test
 export CI=true
+export NODE_OPTIONS="--no-deprecation"
 
 # Run all tests from the e2e directory to avoid vitest workspace conflicts
 cd apps/e2e

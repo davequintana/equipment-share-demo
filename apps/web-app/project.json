@@ -57,6 +57,11 @@
             "output": "assets"
           },
           {
+            "glob": "**/*",
+            "input": "apps/web-app/public",
+            "output": "."
+          },
+          {
             "glob": "index.html",
             "input": "apps/web-app",
             "output": "."
