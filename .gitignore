@@ -34,6 +34,12 @@ pnpm-debug.log*
 /connect.lock
 /coverage
 /libpeerconnection.log
+/playwright-report/*
+/coverage-final.json
+/coverage-final.json.gz
+/coverage/lcov.info
+/coverage/lcov-report
+
 npm-debug.log
 yarn-error.log
 testem.log

@@ -96,6 +96,48 @@ fastify.register(fastifySwaggerUi, {
 // Register routes as a plugin to ensure they're registered after Swagger
 fastify.register(async function (fastify) {
 
+// Global error handler
+fastify.setErrorHandler(async (error, request, reply) => {
+  fastify.log.error(error);
+
+  // Handle JWT errors specifically
+  if (error.code === 'FST_JWT_BAD_REQUEST' || error.code === 'FST_JWT_NO_AUTHORIZATION_IN_HEADER') {
+    return reply.code(401).send({
+      error: 'Authorization token required',
+      code: 'TOKEN_REQUIRED'
+    });
+  }
+
+  if (error.code === 'FST_JWT_AUTHORIZATION_TOKEN_EXPIRED') {
+    return reply.code(401).send({
+      error: 'Token expired',
+      code: 'TOKEN_EXPIRED'
+    });
+  }
+
+  if (error.code === 'FST_JWT_AUTHORIZATION_TOKEN_INVALID') {
+    return reply.code(401).send({
+      error: 'Invalid token',
+      code: 'TOKEN_INVALID'
+    });
+  }
+
+  // Handle validation errors
+  if (error.validation) {
+    return reply.code(400).send({
+      error: 'Validation error',
+      code: 'VALIDATION_ERROR',
+      details: error.validation
+    });
+  }
+
+  // Default error response
+  return reply.code(error.statusCode || 500).send({
+    error: error.message || 'Internal server error',
+    code: error.code || 'INTERNAL_ERROR'
+  });
+});
+
 // Health check route
 fastify.get('/health', {
   schema: {
@@ -166,60 +208,68 @@ fastify.post('/api/auth/login', {
     },
   },
 }, async (request, reply) => {
-  const { email, password } = request.body as LoginRequest;
-  const clientIp = request.ip;
+  try {
+    const { email, password } = request.body as LoginRequest;
+    const clientIp = request.ip;
 
-  // Rate limiting
-  if (!checkRateLimit(clientIp)) {
-    return reply.code(429).send({
-      error: 'Too many login attempts. Please try again later.',
-      code: 'RATE_LIMITED'
-    });
-  }
+    // Rate limiting
+    if (!checkRateLimit(clientIp)) {
+      return reply.code(429).send({
+        error: 'Too many login attempts. Please try again later.',
+        code: 'RATE_LIMITED'
+      });
+    }
 
-  // Input validation
-  if (!validateEmail(email)) {
-    return reply.code(400).send({
-      error: 'Invalid email format',
-      code: 'INVALID_EMAIL'
-    });
-  }
+    // Input validation
+    if (!validateEmail(email)) {
+      return reply.code(400).send({
+        error: 'Invalid email format',
+        code: 'INVALID_EMAIL'
+      });
+    }
 
-  // Find user
-  const user = users.find(u => u.email === email);
-  if (!user) {
-    return reply.code(401).send({
-      error: 'Invalid credentials',
-      code: 'INVALID_CREDENTIALS'
-    });
-  }
+    // Find user
+    const user = users.find(u => u.email === email);
+    if (!user) {
+      return reply.code(401).send({
+        error: 'Invalid credentials',
+        code: 'INVALID_CREDENTIALS'
+      });
+    }
 
-  // Check password
-  const isValidPassword = await bcrypt.compare(password, user.password);
-  if (!isValidPassword) {
-    return reply.code(401).send({
-      error: 'Invalid credentials',
-      code: 'INVALID_CREDENTIALS'
-    });
-  }
+    // Check password
+    const isValidPassword = await bcrypt.compare(password, user.password);
+    if (!isValidPassword) {
+      return reply.code(401).send({
+        error: 'Invalid credentials',
+        code: 'INVALID_CREDENTIALS'
+      });
+    }
 
-  // Reset rate limit on successful login
-  resetRateLimit(clientIp);
+    // Reset rate limit on successful login
+    resetRateLimit(clientIp);
 
-  // Generate JWT
-  const token = fastify.jwt.sign({
-    id: user.id,
-    email: user.email
-  }, { expiresIn: '24h' });
-
-  return {
-    token,
-    user: {
+    // Generate JWT
+    const token = fastify.jwt.sign({
       id: user.id,
-      email: user.email,
-      name: user.name,
-    },
-  };
+      email: user.email
+    }, { expiresIn: '24h' });
+
+    return {
+      token,
+      user: {
+        id: user.id,
+        email: user.email,
+        name: user.name,
+      },
+    };
+  } catch (error) {
+    fastify.log.error('Login error:', error);
+    return reply.code(500).send({
+      error: 'Internal server error',
+      code: 'INTERNAL_ERROR'
+    });
+  }
 });
 
 // Registration route
@@ -273,69 +323,77 @@ fastify.post('/api/auth/register', {
     },
   },
 }, async (request, reply) => {
-  const { email, password, name } = request.body as RegisterRequest;
+  try {
+    const { email, password, name } = request.body as RegisterRequest;
 
-  // Input validation
-  if (!validateEmail(email)) {
-    return reply.code(400).send({
-      error: 'Invalid email format',
-      code: 'INVALID_EMAIL'
-    });
-  }
+    // Input validation
+    if (!validateEmail(email)) {
+      return reply.code(400).send({
+        error: 'Invalid email format',
+        code: 'INVALID_EMAIL'
+      });
+    }
 
-  if (!validateName(name)) {
-    return reply.code(400).send({
-      error: 'Name must be between 2 and 50 characters',
-      code: 'INVALID_NAME'
-    });
-  }
+    if (!validateName(name)) {
+      return reply.code(400).send({
+        error: 'Name must be between 2 and 50 characters',
+        code: 'INVALID_NAME'
+      });
+    }
 
-  const passwordValidation = validatePassword(password);
-  if (!passwordValidation.valid) {
-    return reply.code(400).send({
-      error: 'Password does not meet requirements',
-      code: 'INVALID_PASSWORD',
-      details: passwordValidation.errors
-    });
-  }
+    const passwordValidation = validatePassword(password);
+    if (!passwordValidation.valid) {
+      return reply.code(400).send({
+        error: 'Password does not meet requirements',
+        code: 'INVALID_PASSWORD',
+        details: passwordValidation.errors
+      });
+    }
 
-  // Check if user already exists
-  const existingUser = users.find(u => u.email === email);
-  if (existingUser) {
-    return reply.code(409).send({
-      error: 'User already exists',
-      code: 'USER_EXISTS'
-    });
-  }
+    // Check if user already exists
+    const existingUser = users.find(u => u.email === email);
+    if (existingUser) {
+      return reply.code(409).send({
+        error: 'User already exists',
+        code: 'USER_EXISTS'
+      });
+    }
 
-  // Hash password
-  const hashedPassword = await bcrypt.hash(password, 10);
+    // Hash password
+    const hashedPassword = await bcrypt.hash(password, 10);
 
-  // Create user
-  const newUser = {
-    id: Date.now().toString(),
-    email,
-    password: hashedPassword,
-    name: name.trim(),
-    createdAt: new Date().toISOString(),
-  };
+    // Create user
+    const newUser = {
+      id: Date.now().toString(),
+      email,
+      password: hashedPassword,
+      name: name.trim(),
+      createdAt: new Date().toISOString(),
+    };
 
-  users.push(newUser);
+    users.push(newUser);
 
-  // Generate JWT
-  const token = fastify.jwt.sign({
-    id: newUser.id,
-    email: newUser.email
-  }, { expiresIn: '24h' });
-
-  return reply.code(201).send({
-    token,
-    user: {
+    // Generate JWT
+    const token = fastify.jwt.sign({
       id: newUser.id,
-      email: newUser.email,
-      name: newUser.name,
-    },
-  });
+      email: newUser.email
+    }, { expiresIn: '24h' });
+
+    return reply.code(201).send({
+      token,
+      user: {
+        id: newUser.id,
+        email: newUser.email,
+        name: newUser.name,
+      },
+    });
+  } catch (error) {
+    fastify.log.error('Registration error:', error);
+    return reply.code(500).send({
+      error: 'Internal server error',
+      code: 'INTERNAL_ERROR'
+    });
+  }
 });
 
 // Protected user profile route
@@ -378,25 +436,39 @@ fastify.get('/api/users/profile', {
       }
     },
   },
-}, async (request) => {
-  const user = request.user as JwtPayload;
-  if (!user) {
-    throw new Error('User not authenticated');
-  }
-  const userData = users.find(u => u.id === user.id);
+}, async (request, reply) => {
+  try {
+    const user = request.user as JwtPayload;
+    if (!user) {
+      return reply.code(401).send({
+        error: 'User not authenticated',
+        code: 'UNAUTHORIZED'
+      });
+    }
 
-  if (!userData) {
-    throw new Error('User not found');
-  }
+    const userData = users.find(u => u.id === user.id);
+    if (!userData) {
+      return reply.code(404).send({
+        error: 'User not found',
+        code: 'USER_NOT_FOUND'
+      });
+    }
 
-  return {
-    user: {
-      id: userData.id,
-      email: userData.email,
-      name: userData.name,
-      createdAt: userData.createdAt,
-    },
-  };
+    return {
+      user: {
+        id: userData.id,
+        email: userData.email,
+        name: userData.name,
+        createdAt: userData.createdAt,
+      },
+    };
+  } catch (error) {
+    fastify.log.error('Profile fetch error:', error);
+    return reply.code(500).send({
+      error: 'Internal server error',
+      code: 'INTERNAL_ERROR'
+    });
+  }
 });
 
 // Update user profile route
@@ -445,35 +517,53 @@ fastify.put('/api/users/profile', {
       }
     },
   },
-}, async (request) => {
-  const { name } = request.body as ProfileUpdateRequest;
-  const user = request.user as JwtPayload;
-  if (!user) {
-    throw new Error('User not authenticated');
-  }
+}, async (request, reply) => {
+  try {
+    const { name } = request.body as ProfileUpdateRequest;
+    const user = request.user as JwtPayload;
 
-  // Validate name if provided
-  if (name && !validateName(name)) {
-    throw new Error('Name must be between 2 and 50 characters');
-  }
+    if (!user) {
+      return reply.code(401).send({
+        error: 'User not authenticated',
+        code: 'UNAUTHORIZED'
+      });
+    }
 
-  const userIndex = users.findIndex(u => u.id === user.id);
-  if (userIndex === -1) {
-    throw new Error('User not found');
-  }
+    // Validate name if provided
+    if (name && !validateName(name)) {
+      return reply.code(400).send({
+        error: 'Name must be between 2 and 50 characters',
+        code: 'INVALID_NAME'
+      });
+    }
 
-  if (name) {
-    users[userIndex].name = name.trim();
-  }
+    const userIndex = users.findIndex(u => u.id === user.id);
+    if (userIndex === -1) {
+      return reply.code(404).send({
+        error: 'User not found',
+        code: 'USER_NOT_FOUND'
+      });
+    }
 
-  return {
-    user: {
-      id: users[userIndex].id,
-      email: users[userIndex].email,
-      name: users[userIndex].name,
-      createdAt: users[userIndex].createdAt,
-    },
-  };
+    if (name) {
+      users[userIndex].name = name.trim();
+    }
+
+    return {
+      user: {
+        id: users[userIndex].id,
+        email: users[userIndex].email,
+        name: users[userIndex].name,
+        createdAt: users[userIndex].createdAt,
+      },
+    };
+  } catch (error) {
+    fastify.log.error('Profile update error:', error);
+    return reply.code(500).send({
+      error: 'Internal server error',
+      code: 'INTERNAL_ERROR'
+    });
+  }
 });
 
 // Kafka producer endpoint (mock)
@@ -510,13 +600,21 @@ fastify.post('/api/events', {
       }
     },
   },
-}, async (request) => {
-  const { event, data } = request.body as EventRequest;
+}, async (request, reply) => {
+  try {
+    const { event, data } = request.body as EventRequest;
 
-  // Mock Kafka producer logic
-  fastify.log.info(`Publishing event: ${event}`, data);
+    // Mock Kafka producer logic
+    fastify.log.info(`Publishing event: ${event}`, data);
 
-  return { success: true, eventId: Date.now().toString() };
+    return { success: true, eventId: Date.now().toString() };
+  } catch (error) {
+    fastify.log.error('Event publishing error:', error);
+    return reply.code(500).send({
+      error: 'Internal server error',
+      code: 'INTERNAL_ERROR'
+    });
+  }
 });
 
 // Close the routes plugin
