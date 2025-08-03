@@ -80,6 +80,9 @@ test.describe('Enterprise App E2E Tests', () => {
     // Logout
     await page.getByRole('button', { name: 'Logout' }).click({ force: true });
 
+    // Give time for React state to update after logout (localStorage clear + state update)
+    await page.waitForTimeout(1000);
+
     // Should return to welcome page
     await expect(page.getByRole('button', { name: 'Login' })).toBeVisible();
   });
