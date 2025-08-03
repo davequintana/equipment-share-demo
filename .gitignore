@@ -12,7 +12,6 @@ node_modules
 .pnpm-store
 .pnpm-debug.log
 pnpm-debug.log*
-pnpm-lock.yaml
 
 # IDEs and editors
 /.idea
