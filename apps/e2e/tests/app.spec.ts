@@ -22,6 +22,14 @@ test.describe('Enterprise App E2E Tests', () => {
     // Submit form
     await page.click('button[type="submit"]');
 
+    // Wait for the API call to complete and the page to update
+    await page.waitForResponse(response =>
+      response.url().includes('/api/auth/login') && response.status() === 200
+    );
+
+    // Give the React state a moment to update after successful login
+    await page.waitForTimeout(1000);
+
     // Wait for navigation to dashboard
     await expect(page.locator('h1')).toContainText('Enterprise NX Monorepo');
     await expect(page.locator('nav')).toContainText('Welcome, Admin User');
@@ -33,6 +41,14 @@ test.describe('Enterprise App E2E Tests', () => {
     await page.fill('input[type="email"]', 'admin@example.com');
     await page.fill('input[type="password"]', 'password');
     await page.click('button[type="submit"]');
+
+    // Wait for the API call to complete and the page to update
+    await page.waitForResponse(response =>
+      response.url().includes('/api/auth/login') && response.status() === 200
+    );
+
+    // Give the React state a moment to update after successful login
+    await page.waitForTimeout(1000);
 
     // Check features are displayed
     await expect(page.getByRole('heading', { name: 'React 19' })).toBeVisible();
@@ -49,6 +65,17 @@ test.describe('Enterprise App E2E Tests', () => {
     await page.fill('input[type="email"]', 'admin@example.com');
     await page.fill('input[type="password"]', 'password');
     await page.click('button[type="submit"]');
+
+    // Wait for the API call to complete and the page to update
+    await page.waitForResponse(response =>
+      response.url().includes('/api/auth/login') && response.status() === 200
+    );
+
+    // Give the React state a moment to update after successful login
+    await page.waitForTimeout(1000);
+
+    // Wait for dashboard to load and ensure we're logged in
+    await expect(page.locator('h1')).toContainText('Enterprise NX Monorepo');
 
     // Logout
     await page.getByRole('button', { name: 'Logout' }).click({ force: true });
