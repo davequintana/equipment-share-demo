@@ -54,7 +54,7 @@ const users: User[] = [
   {
     id: '1',
     email: 'admin@example.com',
-    password: process.env['CI'] === 'true' || process.env['NODE_ENV'] === 'test' 
+    password: process.env['CI'] === 'true' || process.env['NODE_ENV'] === 'test'
       ? 'password' // Plain text for CI/test environments
       : '$2a$10$9v8ezzQoCjPvTpLB8FvGq.KxsetvZ/rT4dFLBJ1z4Q7d..tEEgK32', // bcrypt hash for dev/prod
     name: 'Admin User',
@@ -270,7 +270,7 @@ fastify.post('/api/auth/login', {
 
     // Check password with environment-appropriate method
     let isValidPassword = false;
-    
+
     if (process.env['CI'] === 'true' || process.env['NODE_ENV'] === 'test') {
       // For CI/test: simple string comparison
       fastify.log.info('Using CI/test authentication mode');
