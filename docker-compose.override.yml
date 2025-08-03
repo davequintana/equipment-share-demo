@@ -1,0 +1,65 @@
+# Development override for docker-compose.yml
+# This file automatically extends docker-compose.yml when using docker-compose commands
+# Use this for local development without building the full application
+
+services:
+  # Override web-app to not start automatically in development
+  web-app:
+    profiles:
+      - production
+
+  # PostgreSQL Database - Development settings
+  postgres:
+    image: postgres:16-alpine
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_DB=enterprise_db
+      - POSTGRES_USER=enterprise
+      - POSTGRES_PASSWORD=password
+      - POSTGRES_HOST_AUTH_METHOD=trust
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U enterprise -d enterprise_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  # Redis Cache - Development settings
+  redis:
+    image: redis:7.4-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    command: redis-server --appendonly yes
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  # Override fastify-api to not start automatically in development
+  fastify-api:
+    profiles:
+      - production
+
+  # Override Kafka services to not start automatically in development
+  zookeeper:
+    profiles:
+      - kafka
+
+  kafka:
+    profiles:
+      - kafka
+
+  kafka-ui:
+    profiles:
+      - kafka
+
+  pgadmin:
+    profiles:
+      - tools

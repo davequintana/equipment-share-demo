@@ -3,47 +3,66 @@ import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import { vanillaExtractPlugin } from '@vanilla-extract/vite-plugin';
 
-export default defineConfig(() => ({
+export default defineConfig(({ mode }) => ({
   root: __dirname,
   cacheDir: '../../node_modules/.vite/apps/web-app',
+
   server: {
-    port: 4200,
+    port: 4201,
     host: 'localhost',
+    hmr: {
+      port: 4202,
+    },
     proxy: {
       '/api': {
-        target: 'http://localhost:3333',
+        target: 'http://localhost:3334',
         changeOrigin: true,
         secure: false,
       },
     },
   },
+
   preview: {
-    port: 4300,
+    port: 4301,
     host: 'localhost',
   },
+
   plugins: [react(), vanillaExtractPlugin()],
-  // Uncomment this if you are using workers.
-  // worker: {
-  //  plugins: [ nxViteTsPaths() ],
-  // },
+
+  // SSR Configuration
+  ssr: {
+    noExternal: ['@vanilla-extract/css'],
+    target: 'node',
+  },
+
   build: {
-    outDir: './dist',
-    emptyOutDir: true,
+    outDir: '../../dist/apps/web-app',
     reportCompressedSize: true,
     commonjsOptions: {
       transformMixedEsModules: true,
     },
+    rollupOptions: {
+      input: {
+        client: 'apps/web-app/src/client/main.tsx',
+        server: 'apps/web-app/src/server/entry.tsx',
+      },
+      output: {
+        entryFileNames: '[name].js',
+      },
+    },
   },
+
   test: {
-    watch: false,
+    passWithNoTests: true,
     globals: true,
     environment: 'jsdom',
-    setupFiles: ['./src/test-setup.ts'],
-    include: ['{src,tests}/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}'],
+    setupFiles: ['src/test-setup.ts'],
+    css: true,
+    include: ['src/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}'],
     reporters: ['default'],
     coverage: {
-      reportsDirectory: './test-output/vitest/coverage',
-      provider: 'v8' as const,
+      reportsDirectory: '../../coverage/apps/web-app',
+      provider: 'v8',
     },
   },
 }));

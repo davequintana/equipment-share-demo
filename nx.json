@@ -13,7 +13,8 @@
     "sharedGlobals": []
   },
   "externalDependencies": {
-    "vitest": "vitest"
+    "vitest": "vitest",
+    "vite": "vite"
   },
   "plugins": [
     {

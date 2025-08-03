@@ -16,7 +16,7 @@ The application implements enterprise-grade JWT-based authentication with compre
 
 ## API Endpoints
 
-### Express API (Port 3333)
+### Fastify API (Port 3333)
 
 #### Authentication Endpoints
 
@@ -345,7 +345,7 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 ```bash
 # Test rate limiting with curl
 for i in {1..6}; do
-  curl -X POST http://localhost:3333/api/auth/login \
+  curl -X POST http://localhost:3334/api/auth/login \
     -H "Content-Type: application/json" \
     -d '{"email":"wrong@example.com","password":"wrong"}' \
     -w "Attempt $i: %{http_code}\n"
@@ -356,11 +356,11 @@ done
 
 ```bash
 # Test with valid token
-curl -X GET http://localhost:3333/api/users/profile \
+curl -X GET http://localhost:3334/api/users/profile \
   -H "Authorization: Bearer <valid-jwt-token>"
 
 # Test with invalid token
-curl -X GET http://localhost:3333/api/users/profile \
+curl -X GET http://localhost:3334/api/users/profile \
   -H "Authorization: Bearer invalid-token"
 ```
 

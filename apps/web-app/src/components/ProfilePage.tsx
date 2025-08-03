@@ -1,6 +1,7 @@
-import React, { useState, useContext, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import { AuthContext } from '../context/AuthContext';
 import * as styles from '../styles/theme.css';
+import { getApiUrl } from '../utils/api-url';
 
 interface UserProfile {
   id: string;
@@ -23,7 +24,7 @@ export const ProfilePage: React.FC = () => {
 
     setLoading(true);
     try {
-      const response = await fetch('/api/users/profile', {
+      const response = await fetch(`${getApiUrl()}/api/users/profile`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
@@ -56,7 +57,7 @@ export const ProfilePage: React.FC = () => {
     setError('');
 
     try {
-      const response = await fetch('/api/users/profile', {
+      const response = await fetch(`${getApiUrl()}/api/users/profile`, {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -92,7 +93,7 @@ export const ProfilePage: React.FC = () => {
   if (!profile) {
     return (
       <div className={styles.container}>
-        <div className={styles.card}>
+        <div className={styles.featureCard}>
           <h1 style={{ marginBottom: '1rem' }}>Profile</h1>
           {error && <div className={styles.errorMessage}>{error}</div>}
           <p>Failed to load profile. Please try again.</p>
@@ -110,7 +111,7 @@ export const ProfilePage: React.FC = () => {
 
   return (
     <div className={styles.container}>
-      <div className={styles.card}>
+      <div className={styles.featureCard}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
           <h1>User Profile</h1>
           <button

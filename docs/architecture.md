@@ -15,7 +15,7 @@ This enterprise NX monorepo follows modern microservices architecture patterns w
 - **Storybook** - Component development and documentation
 
 ### Backend APIs
-- **Express 4** - Traditional REST API with middleware support
+- **Fastify 5** - High-performance REST API with built-in validation
 - **Fastify 5** - High-performance API with built-in validation
 - **JWT Authentication** - Secure token-based authentication
 - **OpenAPI/Swagger** - API documentation and validation
@@ -54,10 +54,10 @@ app-starter/
 │   │   ├── vite.config.ts         # Vite configuration
 │   │   └── project.json           # NX project configuration
 │   │
-│   ├── express-api/               # Express REST API
+│   ├── fastify-api/               # Fastify REST API
 │   │   ├── src/
 │   │   │   ├── routes/            # API route handlers
-│   │   │   ├── middleware/        # Express middleware
+│   │   │   ├── middleware/        # Fastify middleware
 │   │   │   ├── models/            # Data models
 │   │   │   ├── services/          # Business logic
 │   │   │   └── utils/             # Utility functions
@@ -83,7 +83,7 @@ app-starter/
 ├── infrastructure/                # Infrastructure as Code
 │   ├── docker/                    # Docker configurations
 │   │   ├── web-app.Dockerfile
-│   │   ├── express-api.Dockerfile
+│   │   ├── fastify-api.Dockerfile
 │   │   └── fastify-api.Dockerfile
 │   ├── aws/                       # CloudFormation templates
 │   │   ├── main-infrastructure.yml
@@ -122,7 +122,7 @@ app-starter/
 
 ### Data Flow
 ```
-Frontend (React) → API Layer (Express/Fastify) → Business Logic → Database (PostgreSQL)
+Frontend (React) → API Layer (Fastify) → Business Logic → Database (PostgreSQL)
                                 ↓
                            Cache Layer (Redis)
                                 ↓

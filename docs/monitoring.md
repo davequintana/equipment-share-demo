@@ -10,7 +10,7 @@ Comprehensive monitoring and observability setup for production environments wit
 
 All services expose health check endpoints for monitoring and load balancer health checks.
 
-#### Express API Health Check
+#### Fastify API Health Check
 
 ```http
 GET /health
@@ -137,13 +137,13 @@ export class HealthCheckService {
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: express-api
+  name: fastify-api
 spec:
   template:
     spec:
       containers:
-      - name: express-api
-        image: express-api:latest
+      - name: fastify-api
+        image: fastify-api:latest
         ports:
         - containerPort: 3333
         livenessProbe:
@@ -190,7 +190,7 @@ All applications use structured logging with consistent format and levels.
 {
   "timestamp": "2024-01-15T10:30:00.000Z",
   "level": "info",
-  "service": "express-api",
+  "service": "fastify-api",
   "version": "1.0.0",
   "requestId": "req-123456",
   "userId": "user-789",
@@ -254,7 +254,7 @@ if (process.env.NODE_ENV === 'production') {
 #### Request Logging Middleware
 
 ```typescript
-// Express request logging
+// Fastify request logging
 import { v4 as uuidv4 } from 'uuid';
 
 export const requestLogger = (req: Request, res: Response, next: NextFunction) => {
@@ -418,7 +418,7 @@ app.get('/metrics', async (req, res) => {
 #### Metrics Middleware
 
 ```typescript
-// Express metrics middleware
+// Fastify metrics middleware
 export const metricsMiddleware = (req: Request, res: Response, next: NextFunction) => {
   const startTime = Date.now();
   
@@ -465,9 +465,9 @@ data:
         action: replace
         target_label: __metrics_path__
         regex: (.+)
-    - job_name: 'express-api'
+    - job_name: 'fastify-api'
       static_configs:
-      - targets: ['express-api:3333']
+      - targets: ['fastify-api:3334']
       metrics_path: '/metrics'
     - job_name: 'fastify-api'
       static_configs:

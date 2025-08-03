@@ -27,8 +27,33 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({ onSuccess, onSwitchT
       return;
     }
 
-    if (password.length < 6) {
-      setError('Password must be at least 6 characters long');
+    // Validate password strength to match backend requirements
+    if (password.length < 8) {
+      setError('Password must be at least 8 characters long');
+      setLoading(false);
+      return;
+    }
+
+    if (!/[A-Z]/.test(password)) {
+      setError('Password must contain at least one uppercase letter');
+      setLoading(false);
+      return;
+    }
+
+    if (!/[a-z]/.test(password)) {
+      setError('Password must contain at least one lowercase letter');
+      setLoading(false);
+      return;
+    }
+
+    if (!/[0-9]/.test(password)) {
+      setError('Password must contain at least one number');
+      setLoading(false);
+      return;
+    }
+
+    if (!/[!@#$%^&*(),.?":{}|<>]/.test(password)) {
+      setError('Password must contain at least one special character');
       setLoading(false);
       return;
     }
@@ -88,9 +113,12 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({ onSuccess, onSwitchT
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           required
-          placeholder="At least 6 characters"
-          minLength={6}
+          placeholder="Min 8 chars, uppercase, lowercase, number, special char"
+          minLength={8}
         />
+        <small style={{ fontSize: '0.8rem', color: '#666', marginTop: '0.25rem', display: 'block' }}>
+          Password must contain: 8+ characters, uppercase, lowercase, number, and special character
+        </small>
       </div>
 
       <div className={styles.formGroup}>

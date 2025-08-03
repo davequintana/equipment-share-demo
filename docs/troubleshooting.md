@@ -81,7 +81,7 @@ docker-compose logs redis
 # Find process using the port
 lsof -i :5432  # PostgreSQL
 lsof -i :6379  # Redis
-lsof -i :3333  # Express API
+lsof -i :3334  # Fastify API
 lsof -i :3334  # Fastify API
 lsof -i :4200  # React app
 
@@ -161,22 +161,22 @@ rm -rf apps/web-app/.tsbuildinfo
 
 ### API Server Issues
 
-#### Issue: Express/Fastify API won't start
+#### Issue: Fastify API won't start
 
 **Solution:**
 ```bash
 # Check for syntax errors
-npx nx lint express-api
+npx nx lint fastify-api
 npx nx lint fastify-api
 
 # Check environment variables
 cat .env
 
 # Start with verbose logging
-DEBUG=* npx nx serve express-api
+DEBUG=* npx nx serve fastify-api
 
 # Check database connection
-npx nx serve express-api --verbose
+npx nx serve fastify-api --verbose
 ```
 
 #### Issue: Authentication not working
@@ -190,7 +190,7 @@ echo $JWT_SECRET
 docker-compose exec postgres psql -U enterprise -d enterprise_db -c "SELECT * FROM users;"
 
 # Test API endpoints directly
-curl -X POST http://localhost:3333/api/auth/login \
+curl -X POST http://localhost:3334/api/auth/login \
   -H "Content-Type: application/json" \
   -d '{"email":"admin@example.com","password":"password"}'
 ```
@@ -279,7 +279,7 @@ export NODE_OPTIONS="--max-old-space-size=4096"
 
 # Build projects individually
 npx nx build web-app
-npx nx build express-api
+npx nx build fastify-api
 npx nx build fastify-api
 
 # Clear NX cache
@@ -380,7 +380,7 @@ docker-compose exec postgres psql -U enterprise -d test_db -c "TRUNCATE TABLE us
 
 # Start services before running E2E tests
 pnpm run serve:web-app &
-pnpm run serve:express-api &
+pnpm run serve:fastify-api &
 sleep 10
 npx nx e2e e2e
 ```
@@ -414,7 +414,7 @@ kubectl describe pod <pod-name>
 
 # Check logs
 kubectl logs -f deployment/web-app
-kubectl logs -f deployment/express-api
+kubectl logs -f deployment/fastify-api
 
 # Check resource limits
 kubectl top pods
@@ -431,7 +431,7 @@ kubectl describe node
 docker stats
 
 # Check for memory leaks
-node --inspect apps/express-api/dist/main.js
+node --inspect apps/fastify-api/dist/main.js
 
 # Optimize database queries
 # Add indexes for frequently queried fields
@@ -463,7 +463,7 @@ docker-compose exec redis redis-cli info stats
 echo $JWT_SECRET
 
 # Test token generation
-curl -X POST http://localhost:3333/api/auth/login \
+curl -X POST http://localhost:3334/api/auth/login \
   -H "Content-Type: application/json" \
   -d '{"email":"admin@example.com","password":"password"}' | jq .
 
@@ -482,7 +482,7 @@ grep -r "CORS_ORIGINS" .
 export CORS_ORIGINS="http://localhost:4200,http://localhost:4201"
 
 # Restart API servers
-pnpm run serve:express-api &
+pnpm run serve:fastify-api &
 pnpm run serve:fastify-api &
 ```
 
@@ -498,10 +498,10 @@ pnpm run serve:fastify-api &
   "version": "0.2.0",
   "configurations": [
     {
-      "name": "Debug Express API",
+      "name": "Debug Fastify API",
       "type": "node",
       "request": "launch",
-      "program": "${workspaceFolder}/apps/express-api/src/main.ts",
+      "program": "${workspaceFolder}/apps/fastify-api/src/main.ts",
       "env": {
         "NODE_ENV": "development"
       },

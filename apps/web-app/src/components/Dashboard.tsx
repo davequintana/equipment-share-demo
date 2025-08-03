@@ -20,7 +20,7 @@ export const Dashboard: React.FC = () => {
     },
     {
       icon: '🚀',
-      title: 'Express & Fastify',
+      title: 'Fastify API',
       description: 'Multiple backend options with JWT authentication',
     },
     {
@@ -109,7 +109,7 @@ export const Dashboard: React.FC = () => {
             </p>
             <ul style={{ textAlign: 'left', marginTop: '1rem' }}>
               <li><strong>Frontend (Port 4200):</strong> React app with Vite and Vanilla Extract</li>
-              <li><strong>Express API (Port 3333):</strong> Traditional REST API with authentication</li>
+              <li><strong>Fastify API (Port 3334):</strong> High-performance REST API with authentication</li>
               <li><strong>Fastify API (Port 3334):</strong> High-performance API with OpenAPI documentation</li>
               <li><strong>PostgreSQL:</strong> Database for persistent data storage</li>
               <li><strong>Kafka:</strong> Message broker for event-driven communication</li>

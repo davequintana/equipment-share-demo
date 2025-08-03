@@ -23,3 +23,39 @@
 {"level":30,"time":1754188109426,"pid":84516,"hostname":"Mac","reqId":"req-6","res":{"statusCode":200},"responseTime":0.5815829932689667,"msg":"request completed"}
 {"level":30,"time":1754188109429,"pid":84516,"hostname":"Mac","reqId":"req-7","req":{"method":"GET","url":"/api/users/profile","host":"localhost:3333","remoteAddress":"127.0.0.1","remotePort":61459},"msg":"incoming request"}
 {"level":30,"time":1754188109429,"pid":84516,"hostname":"Mac","reqId":"req-7","res":{"statusCode":200},"responseTime":0.4029169976711273,"msg":"request completed"}
+[ [32mwatch[39m ] build succeeded, watching for changes...
+[1m[31mDebugger listening on ws://localhost:9229/aa01e24e-83b8-4287-b45f-adbb6905f839[39m[22m
+[1m[31mDebugger listening on ws://localhost:9229/aa01e24e-83b8-4287-b45f-adbb6905f839[39m[22m
+[1m[31mFor help, see: https://nodejs.org/en/docs/inspector[39m[22m
+[1m[31m[39m[22m
+{"level":30,"time":1754189370355,"pid":52462,"hostname":"Mac","msg":"Server listening at http://127.0.0.1:3333"}
+🚀 Fastify API server ready at http://localhost:3333
+{"level":30,"time":1754189370356,"pid":52462,"hostname":"Mac","msg":"Server listening at http://192.168.50.185:3333"}
+[ [32mwatch[39m ] build succeeded, watching for changes...
+[1m[31mDebugger listening on ws://localhost:9229/fd9cb057-ea3f-4785-aab6-798190dfc1ed[39m[22m
+[1m[31mDebugger listening on ws://localhost:9229/fd9cb057-ea3f-4785-aab6-798190dfc1ed[39m[22m
+[1m[31mFor help, see: https://nodejs.org/en/docs/inspector[39m[22m
+[1m[31m[39m[22m
+{"level":30,"time":1754189486005,"pid":86049,"hostname":"Mac","msg":"Server listening at http://127.0.0.1:3333"}
+🚀 Fastify API server ready at http://localhost:3333
+{"level":30,"time":1754189486005,"pid":86049,"hostname":"Mac","msg":"Server listening at http://192.168.50.185:3333"}
+[ [32mwatch[39m ] build succeeded, watching for changes...
+[1m[31mDebugger listening on ws://localhost:9229/9f911507-5058-41b6-9d3b-5b0c1a9a1737[39m[22m
+[1m[31mDebugger listening on ws://localhost:9229/9f911507-5058-41b6-9d3b-5b0c1a9a1737[39m[22m
+[1m[31mFor help, see: https://nodejs.org/en/docs/inspector[39m[22m
+[1m[31m[39m[22m
+{"level":30,"time":1754189542523,"pid":3014,"hostname":"Mac","msg":"Server listening at http://127.0.0.1:3333"}
+🚀 Fastify API server ready at http://localhost:3333
+{"level":30,"time":1754189542523,"pid":3014,"hostname":"Mac","msg":"Server listening at http://192.168.50.185:3333"}
+[1m[31mWatch error: Daemon closed the connection[39m[22m
+
+
+
+ NX   Running target serve for project fastify-api failed
+
+Failed tasks:
+
+- fastify-api:serve:development
+
+Hint: run the command with --verbose for more details.
+

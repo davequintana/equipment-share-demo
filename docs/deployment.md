@@ -22,7 +22,7 @@ docker-compose ps
 
 # View logs
 docker-compose logs -f web-app
-docker-compose logs -f express-api
+docker-compose logs -f fastify-api
 docker-compose logs -f fastify-api
 ```
 
@@ -36,7 +36,7 @@ docker-compose -f docker-compose.prod.yml build
 
 # Build individual services
 docker build -f infrastructure/docker/web-app.Dockerfile -t web-app:latest .
-docker build -f infrastructure/docker/express-api.Dockerfile -t express-api:latest .
+docker build -f infrastructure/docker/fastify-api.Dockerfile -t fastify-api:latest .
 docker build -f infrastructure/docker/fastify-api.Dockerfile -t fastify-api:latest .
 ```
 
@@ -47,7 +47,7 @@ docker build -f infrastructure/docker/fastify-api.Dockerfile -t fastify-api:late
 docker-compose -f docker-compose.prod.yml up -d
 
 # Scale services
-docker-compose -f docker-compose.prod.yml up -d --scale express-api=3 --scale fastify-api=2
+docker-compose -f docker-compose.prod.yml up -d --scale fastify-api=3
 
 # Health check
 docker-compose -f docker-compose.prod.yml ps
@@ -60,12 +60,12 @@ Push images to container registry:
 ```bash
 # Tag images for registry
 docker tag web-app:latest your-registry.com/web-app:v1.0.0
-docker tag express-api:latest your-registry.com/express-api:v1.0.0
+docker tag fastify-api:latest your-registry.com/fastify-api:v1.0.0
 docker tag fastify-api:latest your-registry.com/fastify-api:v1.0.0
 
 # Push to registry
 docker push your-registry.com/web-app:v1.0.0
-docker push your-registry.com/express-api:v1.0.0
+docker push your-registry.com/fastify-api:v1.0.0
 docker push your-registry.com/fastify-api:v1.0.0
 ```
 
@@ -96,7 +96,7 @@ kubectl apply -f k8s/postgres/
 kubectl apply -f k8s/redis/
 kubectl apply -f k8s/kafka/
 kubectl apply -f k8s/web-app/
-kubectl apply -f k8s/express-api/
+kubectl apply -f k8s/fastify-api/
 kubectl apply -f k8s/fastify-api/
 kubectl apply -f k8s/ingress.yaml
 ```
@@ -112,7 +112,7 @@ kubectl get ingress
 
 # View pod logs
 kubectl logs -f deployment/web-app
-kubectl logs -f deployment/express-api
+kubectl logs -f deployment/fastify-api
 kubectl logs -f deployment/fastify-api
 
 # Check pod details
@@ -124,11 +124,11 @@ kubectl describe pod <pod-name>
 ```bash
 # Scale deployments
 kubectl scale deployment web-app --replicas=3
-kubectl scale deployment express-api --replicas=5
+kubectl scale deployment fastify-api --replicas=5
 kubectl scale deployment fastify-api --replicas=3
 
 # Horizontal Pod Autoscaler
-kubectl autoscale deployment express-api --cpu-percent=70 --min=2 --max=10
+kubectl autoscale deployment fastify-api --cpu-percent=70 --min=2 --max=10
 kubectl autoscale deployment fastify-api --cpu-percent=70 --min=2 --max=10
 ```
 
@@ -137,16 +137,16 @@ kubectl autoscale deployment fastify-api --cpu-percent=70 --min=2 --max=10
 ```bash
 # Update image versions
 kubectl set image deployment/web-app web-app=your-registry.com/web-app:v1.1.0
-kubectl set image deployment/express-api express-api=your-registry.com/express-api:v1.1.0
+kubectl set image deployment/fastify-api fastify-api=your-registry.com/fastify-api:v1.1.0
 kubectl set image deployment/fastify-api fastify-api=your-registry.com/fastify-api:v1.1.0
 
 # Check rollout status
 kubectl rollout status deployment/web-app
-kubectl rollout status deployment/express-api
+kubectl rollout status deployment/fastify-api
 kubectl rollout status deployment/fastify-api
 
 # Rollback if needed
-kubectl rollout undo deployment/express-api
+kubectl rollout undo deployment/fastify-api
 ```
 
 ### Clean Up

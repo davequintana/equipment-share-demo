@@ -1,4 +1,5 @@
 import React, { createContext, useState, useEffect, ReactNode } from 'react';
+import 'isomorphic-fetch'; // For SSR compatibility
 
 interface User {
   id: string;
@@ -32,36 +33,41 @@ export const AuthContext = createContext<AuthContextType>({
 
 interface AuthProviderProps {
   children: ReactNode;
+  isSSR?: boolean;
 }
 
-export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
+export const AuthProvider: React.FC<AuthProviderProps> = ({ children, isSSR = false }) => {
   const [user, setUser] = useState<User | null>(null);
   const [token, setToken] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    // Check for stored token on app initialization
-    const storedToken = localStorage.getItem('token');
-    const storedUser = localStorage.getItem('user');
+    // Only run on client side
+    if (typeof window !== 'undefined') {
+      const storedToken = localStorage.getItem('token');
+      const storedUser = localStorage.getItem('user');
 
-    if (storedToken && storedUser) {
-      try {
-        const parsedUser = JSON.parse(storedUser);
+      if (storedToken && storedUser) {
         setToken(storedToken);
-        setUser(parsedUser);
-      } catch {
-        // Invalid JSON, clear storage
-        localStorage.removeItem('token');
-        localStorage.removeItem('user');
+        try {
+          setUser(JSON.parse(storedUser));
+        } catch (error) {
+          console.error('Error parsing stored user:', error);
+          localStorage.removeItem('user');
+          localStorage.removeItem('token');
+        }
       }
     }
-    setLoading(false);
   }, []);
 
   const login = async (email: string, password: string) => {
     setLoading(true);
     try {
-      const response = await fetch('/api/auth/login', {
+      const apiUrl = typeof window !== 'undefined'
+        ? '/api/auth/login'
+        : `${process.env['VITE_API_URL'] || 'http://localhost:3333'}/api/auth/login`;
+
+      const response = await fetch(apiUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -70,17 +76,23 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       });
 
       if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || 'Login failed');
+        const error = await response.json() as any;
+        // Handle different types of error responses
+        if (error.details && Array.isArray(error.details)) {
+          throw new Error(error.details.join(', '));
+        }
+        throw new Error(error.error || error.message || 'Login failed');
       }
 
-      const data = await response.json();
+      const data = await response.json() as any;
       setToken(data.token);
       setUser(data.user);
 
-      // Store in localStorage
-      localStorage.setItem('token', data.token);
-      localStorage.setItem('user', JSON.stringify(data.user));
+      // Store in localStorage only on client side
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('token', data.token);
+        localStorage.setItem('user', JSON.stringify(data.user));
+      }
     } finally {
       setLoading(false);
     }
@@ -89,7 +101,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const register = async (email: string, password: string, name: string) => {
     setLoading(true);
     try {
-      const response = await fetch('/api/auth/register', {
+      const apiUrl = typeof window !== 'undefined'
+        ? '/api/auth/register'
+        : `${process.env['VITE_API_URL'] || 'http://localhost:3333'}/api/auth/register`;
+
+      const response = await fetch(apiUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -98,27 +114,37 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       });
 
       if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || 'Registration failed');
+        const error = await response.json() as any;
+        // Handle different types of error responses
+        if (error.details && Array.isArray(error.details)) {
+          throw new Error(error.details.join(', '));
+        }
+        throw new Error(error.error || error.message || 'Registration failed');
       }
 
-      const data = await response.json();
+      const data = await response.json() as any;
       setToken(data.token);
       setUser(data.user);
 
-      // Store in localStorage
-      localStorage.setItem('token', data.token);
-      localStorage.setItem('user', JSON.stringify(data.user));
+      // Store in localStorage only on client side
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('token', data.token);
+        localStorage.setItem('user', JSON.stringify(data.user));
+      }
     } finally {
       setLoading(false);
     }
   };
 
   const logout = () => {
-    setToken(null);
     setUser(null);
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
+    setToken(null);
+
+    // Clear localStorage only on client side
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+    }
   };
 
   return (

@@ -38,7 +38,7 @@ const users: User[] = [
   },
 ];
 
-// Register plugins
+// Register core plugins first
 fastify.register(fastifyHelmet);
 fastify.register(fastifyCors, {
   origin: process.env['NODE_ENV'] === 'production'
@@ -49,6 +49,8 @@ fastify.register(fastifyCors, {
 fastify.register(fastifyJwt, {
   secret: process.env['JWT_SECRET'] || 'your-secret-key',
 });
+
+// Register Swagger documentation
 fastify.register(fastifySwagger, {
   openapi: {
     openapi: '3.0.0',
@@ -59,12 +61,28 @@ fastify.register(fastifySwagger, {
     },
     servers: [
       {
-        url: 'http://localhost:3333',
+        url: 'http://localhost:3334',
         description: 'Development server'
       }
     ],
+    components: {
+      securitySchemes: {
+        bearerAuth: {
+          type: 'http',
+          scheme: 'bearer',
+          bearerFormat: 'JWT'
+        }
+      }
+    },
+    tags: [
+      { name: 'Health', description: 'Health check endpoints' },
+      { name: 'Authentication', description: 'User authentication endpoints' },
+      { name: 'User', description: 'User management endpoints' },
+      { name: 'Events', description: 'Event publishing endpoints' }
+    ]
   },
 });
+
 fastify.register(fastifySwaggerUi, {
   routePrefix: '/documentation',
   uiConfig: {
@@ -75,37 +93,76 @@ fastify.register(fastifySwaggerUi, {
   transformStaticCSP: (header) => header,
 });
 
+// Register routes as a plugin to ensure they're registered after Swagger
+fastify.register(async function (fastify) {
+
 // Health check route
-fastify.get('/health', async () => {
+fastify.get('/health', {
+  schema: {
+    description: 'API health check endpoint',
+    tags: ['Health'],
+    summary: 'Check API server health status',
+    response: {
+      200: {
+        description: 'API is healthy',
+        type: 'object',
+        properties: {
+          status: { type: 'string', description: 'Health status' },
+          timestamp: { type: 'string', description: 'Current timestamp' },
+        },
+      },
+    },
+  },
+}, async () => {
   return { status: 'OK', timestamp: new Date().toISOString() };
 });
 
 // Authentication routes
 fastify.post('/api/auth/login', {
   schema: {
+    description: 'User login endpoint',
+    tags: ['Authentication'],
+    summary: 'Login with email and password',
     body: {
       type: 'object',
       required: ['email', 'password'],
       properties: {
-        email: { type: 'string', format: 'email' },
-        password: { type: 'string', minLength: 6 },
+        email: { type: 'string', format: 'email', description: 'User email address' },
+        password: { type: 'string', minLength: 6, description: 'User password (minimum 6 characters)' },
       },
     },
     response: {
       200: {
+        description: 'Successful login',
         type: 'object',
         properties: {
-          token: { type: 'string' },
+          token: { type: 'string', description: 'JWT authentication token' },
           user: {
             type: 'object',
             properties: {
-              id: { type: 'string' },
-              email: { type: 'string' },
-              name: { type: 'string' },
+              id: { type: 'string', description: 'User ID' },
+              email: { type: 'string', description: 'User email' },
+              name: { type: 'string', description: 'User name' },
             },
           },
         },
       },
+      401: {
+        description: 'Invalid credentials',
+        type: 'object',
+        properties: {
+          error: { type: 'string' },
+          code: { type: 'string' }
+        }
+      },
+      429: {
+        description: 'Too many login attempts',
+        type: 'object',
+        properties: {
+          error: { type: 'string' },
+          code: { type: 'string' }
+        }
+      }
     },
   },
 }, async (request, reply) => {
@@ -168,30 +225,51 @@ fastify.post('/api/auth/login', {
 // Registration route
 fastify.post('/api/auth/register', {
   schema: {
+    description: 'User registration endpoint',
+    tags: ['Authentication'],
+    summary: 'Register a new user account',
     body: {
       type: 'object',
       required: ['email', 'password', 'name'],
       properties: {
-        email: { type: 'string', format: 'email' },
-        password: { type: 'string', minLength: 6 },
-        name: { type: 'string', minLength: 2 },
+        email: { type: 'string', format: 'email', description: 'User email address' },
+        password: { type: 'string', minLength: 6, description: 'User password (minimum 6 characters)' },
+        name: { type: 'string', minLength: 2, description: 'User full name (minimum 2 characters)' },
       },
     },
     response: {
       201: {
+        description: 'User successfully registered',
         type: 'object',
         properties: {
-          token: { type: 'string' },
+          token: { type: 'string', description: 'JWT authentication token' },
           user: {
             type: 'object',
             properties: {
-              id: { type: 'string' },
-              email: { type: 'string' },
-              name: { type: 'string' },
+              id: { type: 'string', description: 'User ID' },
+              email: { type: 'string', description: 'User email' },
+              name: { type: 'string', description: 'User name' },
             },
           },
         },
       },
+      400: {
+        description: 'Invalid input data',
+        type: 'object',
+        properties: {
+          error: { type: 'string' },
+          code: { type: 'string' },
+          details: { type: 'array', items: { type: 'string' } }
+        }
+      },
+      409: {
+        description: 'User already exists',
+        type: 'object',
+        properties: {
+          error: { type: 'string' },
+          code: { type: 'string' }
+        }
+      }
     },
   },
 }, async (request, reply) => {
@@ -264,21 +342,40 @@ fastify.post('/api/auth/register', {
 fastify.get('/api/users/profile', {
   preHandler: authenticateUser,
   schema: {
+    description: 'Get current user profile information',
+    tags: ['User'],
+    summary: 'Retrieve authenticated user profile',
+    security: [{ bearerAuth: [] }],
     response: {
       200: {
+        description: 'User profile data',
         type: 'object',
         properties: {
           user: {
             type: 'object',
             properties: {
-              id: { type: 'string' },
-              email: { type: 'string' },
-              name: { type: 'string' },
-              createdAt: { type: 'string' },
+              id: { type: 'string', description: 'User ID' },
+              email: { type: 'string', description: 'User email' },
+              name: { type: 'string', description: 'User name' },
+              createdAt: { type: 'string', description: 'Account creation timestamp' },
             },
           },
         },
       },
+      401: {
+        description: 'Unauthorized - Invalid or missing token',
+        type: 'object',
+        properties: {
+          error: { type: 'string' }
+        }
+      },
+      500: {
+        description: 'User not found',
+        type: 'object',
+        properties: {
+          error: { type: 'string' }
+        }
+      }
     },
   },
 }, async (request) => {
@@ -306,27 +403,46 @@ fastify.get('/api/users/profile', {
 fastify.put('/api/users/profile', {
   preHandler: authenticateUser,
   schema: {
+    description: 'Update current user profile information',
+    tags: ['User'],
+    summary: 'Update authenticated user profile',
+    security: [{ bearerAuth: [] }],
     body: {
       type: 'object',
       properties: {
-        name: { type: 'string', minLength: 2 },
+        name: { type: 'string', minLength: 2, description: 'Updated user name (minimum 2 characters)' },
       },
     },
     response: {
       200: {
+        description: 'Updated user profile data',
         type: 'object',
         properties: {
           user: {
             type: 'object',
             properties: {
-              id: { type: 'string' },
-              email: { type: 'string' },
-              name: { type: 'string' },
-              createdAt: { type: 'string' },
+              id: { type: 'string', description: 'User ID' },
+              email: { type: 'string', description: 'User email' },
+              name: { type: 'string', description: 'Updated user name' },
+              createdAt: { type: 'string', description: 'Account creation timestamp' },
             },
           },
         },
       },
+      401: {
+        description: 'Unauthorized - Invalid or missing token',
+        type: 'object',
+        properties: {
+          error: { type: 'string' }
+        }
+      },
+      400: {
+        description: 'Invalid input data',
+        type: 'object',
+        properties: {
+          error: { type: 'string' }
+        }
+      }
     },
   },
 }, async (request) => {
@@ -363,6 +479,37 @@ fastify.put('/api/users/profile', {
 // Kafka producer endpoint (mock)
 fastify.post('/api/events', {
   preHandler: authenticateUser,
+  schema: {
+    description: 'Publish events to message queue',
+    tags: ['Events'],
+    summary: 'Send events to Kafka message queue',
+    security: [{ bearerAuth: [] }],
+    body: {
+      type: 'object',
+      required: ['event', 'data'],
+      properties: {
+        event: { type: 'string', description: 'Event type identifier' },
+        data: { type: 'object', description: 'Event payload data' },
+      },
+    },
+    response: {
+      200: {
+        description: 'Event successfully published',
+        type: 'object',
+        properties: {
+          success: { type: 'boolean', description: 'Operation success status' },
+          eventId: { type: 'string', description: 'Generated event ID' },
+        },
+      },
+      401: {
+        description: 'Unauthorized - Invalid or missing token',
+        type: 'object',
+        properties: {
+          error: { type: 'string' }
+        }
+      }
+    },
+  },
 }, async (request) => {
   const { event, data } = request.body as EventRequest;
 
@@ -372,10 +519,13 @@ fastify.post('/api/events', {
   return { success: true, eventId: Date.now().toString() };
 });
 
+// Close the routes plugin
+});
+
 const start = async () => {
   try {
-    await fastify.listen({ port: 3333, host: '0.0.0.0' });
-    console.log('🚀 Fastify API server ready at http://localhost:3333');
+    await fastify.listen({ port: 3334, host: '0.0.0.0' });
+    console.log('🚀 Fastify API server ready at http://localhost:3334');
   } catch (err) {
     fastify.log.error(err);
     process.exit(1);

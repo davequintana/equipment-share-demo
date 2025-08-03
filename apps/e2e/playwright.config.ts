@@ -8,7 +8,7 @@ export default defineConfig({
   workers: process.env.CI ? 1 : undefined,
   reporter: 'html',
   use: {
-    baseURL: 'http://localhost:4200',
+    baseURL: 'http://localhost:4201',
     trace: 'on-first-retry',
     screenshot: 'only-on-failure',
   },
@@ -38,12 +38,12 @@ export default defineConfig({
 
   webServer: [
     {
-      command: 'npm run serve:web-app',
-      port: 4200,
+      command: 'pnpm run serve:web-app',
+      port: 4201,
       reuseExistingServer: !process.env.CI,
     },
     {
-      command: 'npm run serve:fastify-api',
+      command: 'pnpm run serve:fastify-api',
       port: 3333,
       reuseExistingServer: !process.env.CI,
     },

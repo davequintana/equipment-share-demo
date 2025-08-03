@@ -46,10 +46,9 @@ pnpm run dev
 ```bash
 # Frontend only
 pnpm run serve:web-app         # CSR React app (port 4200)
-pnpm run serve:web-app-ssr     # SSR React app (port 4201)
+pnpm run serve:web-app       # React app with SSR (port 4201)
 
-# Backend APIs
-pnpm run serve:express-api     # Express API (port 3333)
+# Backend API
 pnpm run serve:fastify-api     # Fastify API (port 3334)
 
 # Development tools
@@ -65,7 +64,7 @@ npx nx run-many -t build
 
 # Build specific projects
 npx nx build web-app
-npx nx build express-api
+npx nx build fastify-api
 npx nx build fastify-api
 
 # Production builds
@@ -81,7 +80,7 @@ npx nx run-many -t test
 
 # Run specific tests
 npx nx test web-app
-npx nx test express-api
+npx nx test fastify-api
 npx nx test fastify-api
 
 # End-to-end testing
@@ -151,12 +150,12 @@ docker-compose up
 
 # Build specific images
 docker-compose build web-app
-docker-compose build express-api
+docker-compose build fastify-api
 docker-compose build fastify-api
 
 # View logs
 docker-compose logs -f web-app
-docker-compose logs -f express-api
+docker-compose logs -f fastify-api
 ```
 
 ### Docker Commands
@@ -164,12 +163,12 @@ docker-compose logs -f express-api
 ```bash
 # Build production images
 docker build -f infrastructure/docker/web-app.Dockerfile -t web-app .
-docker build -f infrastructure/docker/express-api.Dockerfile -t express-api .
+docker build -f infrastructure/docker/fastify-api.Dockerfile -t fastify-api .
 docker build -f infrastructure/docker/fastify-api.Dockerfile -t fastify-api .
 
 # Run individual containers
 docker run -p 4200:80 web-app
-docker run -p 3333:3333 express-api
+docker run -p 3334:3334 fastify-api
 docker run -p 3334:3334 fastify-api
 ```
 
@@ -224,7 +223,7 @@ JWT_SECRET=your-super-secret-jwt-key-change-in-production
 JWT_EXPIRES_IN=24h
 
 # API URLs
-REACT_APP_EXPRESS_API_URL=http://localhost:3333
+REACT_APP_FASTIFY_API_URL=http://localhost:3334
 REACT_APP_FASTIFY_API_URL=http://localhost:3334
 
 # Kafka
@@ -303,8 +302,8 @@ AWS_SECRET_ACCESS_KEY=your-secret-key
 #### Backend Debugging
 
 ```bash
-# Debug Express API
-npx nx serve express-api --inspect
+# Debug Fastify API
+npx nx serve fastify-api --inspect
 
 # Debug Fastify API
 npx nx serve fastify-api --inspect
@@ -316,7 +315,7 @@ npx nx serve fastify-api --inspect
 
 ```bash
 # Enable query logging in development
-DATABASE_LOGGING=true pnpm run serve:express-api
+DATABASE_LOGGING=true pnpm run serve:fastify-api
 
 # Monitor database connections
 docker-compose exec postgres psql -U enterprise -d enterprise_db -c "SELECT * FROM pg_stat_activity;"
@@ -347,7 +346,7 @@ npx nx build web-app --configuration=production
 1. **Port conflicts**
    ```bash
    # Find process using port
-   lsof -i :3333
+   lsof -i :3334
    
    # Kill process
    kill -9 <PID>

@@ -5,7 +5,7 @@
 ### What Was Accomplished
 
 ✅ **Complete SSR Setup**
-- Created new `web-app-ssr` application with full NX integration
+- Created new `web-app` application with full NX integration and SSR support
 - Implemented server-side rendering with React 19
 - Added client-side hydration for seamless user experience
 - Configured Vite 6 for SSR development and production builds
@@ -13,7 +13,7 @@
 ✅ **Architecture & Configuration**
 - **Server Entry**: `src/server/entry.tsx` - Renders React components to HTML strings
 - **Client Entry**: `src/client/main.tsx` - Hydrates server-rendered content 
-- **Express Server**: `src/server/main.ts` - Serves SSR content with Vite middleware
+- **Fastify Server**: `src/server/main.ts` - Serves SSR content with Vite middleware
 - **SSR-Compatible AuthContext**: Handles client/server differences gracefully
 
 ✅ **Build & Development**
@@ -45,23 +45,23 @@
 
 ```bash
 # Development (SSR + APIs)
-pnpm run dev:ssr
+pnpm run dev
 
 # Build SSR application  
-pnpm run build:web-app-ssr
+pnpm run build:web-app
 
 # Serve SSR application
-pnpm run serve:web-app-ssr
+pnpm run serve:web-app
 
 # Test SSR functionality
-pnpm run test:web-app-ssr
+pnpm run test:web-app
 ```
 
 ### Technical Stack
 
 - **React 19** with SSR capabilities
 - **Vite 6** for build tooling and SSR development
-- **Express** server with Vite middleware integration
+- **Fastify** server with Vite middleware integration
 - **TypeScript** with separate server/client configurations
 - **Vanilla Extract** for SSR-compatible styling
 - **React Router** with SSR routing support

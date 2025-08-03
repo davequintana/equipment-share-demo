@@ -11,9 +11,6 @@
     },
     {
       "path": "./apps/fastify-api"
-    },
-    {
-      "path": "./apps/web-app-ssr"
     }
   ]
 }

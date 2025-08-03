@@ -38,14 +38,14 @@ npx nx test web-app --testNamePattern="LoginComponent"
 Test API endpoints and business logic:
 
 ```bash
-# Run Express API tests
-npx nx test express-api
+# Run Fastify API tests
+npx nx test fastify-api
 
 # Run Fastify API tests
 npx nx test fastify-api
 
 # Run all backend tests
-npx nx run-many -t test --projects=express-api,fastify-api
+npx nx run-many -t test --projects=fastify-api,fastify-api
 ```
 
 ### Example Component Test
@@ -93,7 +93,7 @@ describe('LoginForm', () => {
 ### Example API Test
 
 ```typescript
-// apps/express-api/src/routes/auth.test.ts
+// apps/fastify-api/src/routes/auth.test.ts
 import request from 'supertest';
 import { app } from '../main';
 
@@ -153,7 +153,7 @@ describe('Auth Routes', () => {
 ### Database Integration Tests
 
 ```typescript
-// apps/express-api/src/services/user.test.ts
+// apps/fastify-api/src/services/user.test.ts
 import { UserService } from './user.service';
 import { testDb } from '../test-setup';
 
@@ -441,7 +441,7 @@ npx nx run web-app:test-storybook
 ```yaml
 # performance/load-test.yml
 config:
-  target: 'http://localhost:3333'
+  target: 'http://localhost:3334'
   phases:
     - duration: 60
       arrivalRate: 10

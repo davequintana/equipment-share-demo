@@ -1,6 +1,6 @@
 # Enterprise NX Monorepo
 
-A comprehensive, enterprise-level NX monorepo featuring modern technologies for full-stack development with React 19, TypeScript, Fastify/Express APIs, PostgreSQL, Redis, and Kafka.
+A comprehensive, enterprise-level NX monorepo featuring modern technologies for full-stack development with React 19, TypeScript, Fastify API, PostgreSQL, Redis, and Kafka.
 
 ## 🚀 Quick Start
 
@@ -20,17 +20,18 @@ pnpm run dev          # CSR React app + APIs
 pnpm run dev:ssr      # SSR React app + APIs
 
 # Or start services individually
-pnpm run serve:web-app      # React app (localhost:4200)
-pnpm run serve:express-api  # Express API (localhost:3333)
-pnpm run serve:fastify-api  # Fastify API (localhost:3334)
+```bash
+pnpm run serve:web-app       # React SSR app (localhost:4201)
+pnpm run serve:fastify-api   # Fastify API (localhost:3334)
+```
 
 # With Docker (full stack)
 docker-compose up -d
 ```
 
 ### Access Points
-- **Frontend**: http://localhost:4200
-- **Express API**: http://localhost:3333 
+
+- **Frontend**: http://localhost:4201
 - **Fastify API**: http://localhost:3334 (with Swagger docs at `/documentation`)
 
 ### Default Authentication
@@ -55,7 +56,7 @@ docker-compose up -d
 
 ✅ **React 19** with SSR support and modern concurrent features  
 ✅ **Enterprise Authentication** with JWT, rate limiting, and validation  
-✅ **High-Performance APIs** with Fastify and traditional Express  
+✅ **High-Performance API** with Fastify  
 ✅ **Type Safety** with TypeScript across the entire stack  
 ✅ **Modern Styling** with Vanilla Extract CSS-in-TypeScript  
 ✅ **Comprehensive Testing** with Playwright and Vitest  
@@ -68,10 +69,9 @@ docker-compose up -d
 
 ```
 apps/
-├── web-app/          # React 19 frontend with SSR
-├── express-api/      # Express.js REST API
-├── fastify-api/      # Fastify high-performance API
-└── e2e/             # Playwright end-to-end tests
+├── web-app/          # React 19 SSR application
+├── fastify-api/      # Fastify REST API
+└── e2e/              # Playwright E2E tests
 
 libs/                 # Shared libraries and utilities
 
@@ -87,7 +87,7 @@ docs/               # Comprehensive documentation
 ## � Technology Stack
 
 **Frontend**: React 19, TypeScript, Vanilla Extract, Vite, React Router, Storybook  
-**Backend**: Express 4, Fastify 5, JWT Auth, OpenAPI/Swagger  
+**Backend**: Fastify 5, JWT Auth, OpenAPI/Swagger  
 **Database**: PostgreSQL, Redis, Kafka  
 **Infrastructure**: Docker, Kubernetes, AWS CloudFormation  
 **Testing**: Playwright, Vitest, ESLint  
@@ -96,7 +96,7 @@ docs/               # Comprehensive documentation
 ## 📈 Performance & Security
 
 - **Enterprise-grade authentication** with bcrypt, JWT tokens, and rate limiting
-- **High-performance** Fastify API alongside traditional Express
+- **High-performance** Fastify API with comprehensive documentation
 - **Database optimization** with PostgreSQL connection pooling and Redis caching
 - **Security features** including CORS, input validation, and password complexity
 - **CDN ready** with optimized static asset builds

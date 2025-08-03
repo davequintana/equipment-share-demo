@@ -27,7 +27,7 @@ JWT_SECRET=your-development-jwt-secret-key-change-in-production
 JWT_EXPIRES_IN=24h
 
 # API URLs
-REACT_APP_EXPRESS_API_URL=http://localhost:3333
+REACT_APP_FASTIFY_API_URL=http://localhost:3334
 REACT_APP_FASTIFY_API_URL=http://localhost:3334
 
 # Kafka
@@ -67,7 +67,7 @@ JWT_SECRET=your-super-secure-256-bit-production-secret-key
 JWT_EXPIRES_IN=24h
 
 # API URLs
-REACT_APP_EXPRESS_API_URL=https://api.yourdomain.com
+REACT_APP_FASTIFY_API_URL=https://api.yourdomain.com
 REACT_APP_FASTIFY_API_URL=https://api-v2.yourdomain.com
 
 # Kafka (use AWS MSK)
@@ -260,14 +260,14 @@ METRICS_ENABLED=false
 }
 ```
 
-#### API Project (apps/express-api/project.json)
+#### API Project (apps/fastify-api/project.json)
 
 ```json
 {
-  "name": "express-api",
+  "name": "fastify-api",
   "$schema": "../../node_modules/nx/schemas/project-schema.json",
   "projectType": "application",
-  "sourceRoot": "apps/express-api/src",
+  "sourceRoot": "apps/fastify-api/src",
   "targets": {
     "build": {
       "executor": "@nx/webpack:webpack",
@@ -276,10 +276,10 @@ METRICS_ENABLED=false
       "options": {
         "target": "node",
         "compiler": "tsc",
-        "outputPath": "dist/apps/express-api",
-        "main": "apps/express-api/src/main.ts",
-        "tsConfig": "apps/express-api/tsconfig.app.json",
-        "assets": ["apps/express-api/src/assets"]
+        "outputPath": "dist/apps/fastify-api",
+        "main": "apps/fastify-api/src/main.ts",
+        "tsConfig": "apps/fastify-api/tsconfig.app.json",
+        "assets": ["apps/fastify-api/src/assets"]
       },
       "configurations": {
         "development": {},
@@ -289,8 +289,8 @@ METRICS_ENABLED=false
           "inspect": false,
           "fileReplacements": [
             {
-              "replace": "apps/express-api/src/environments/environment.ts",
-              "with": "apps/express-api/src/environments/environment.prod.ts"
+              "replace": "apps/fastify-api/src/environments/environment.ts",
+              "with": "apps/fastify-api/src/environments/environment.prod.ts"
             }
           ]
         }
@@ -300,14 +300,14 @@ METRICS_ENABLED=false
       "executor": "@nx/js:node",
       "defaultConfiguration": "development",
       "options": {
-        "buildTarget": "express-api:build"
+        "buildTarget": "fastify-api:build"
       },
       "configurations": {
         "development": {
-          "buildTarget": "express-api:build:development"
+          "buildTarget": "fastify-api:build:development"
         },
         "production": {
-          "buildTarget": "express-api:build:production"
+          "buildTarget": "fastify-api:build:production"
         }
       }
     },
@@ -315,7 +315,7 @@ METRICS_ENABLED=false
       "executor": "@nx/jest:jest",
       "outputs": ["{workspaceRoot}/coverage/{projectRoot}"],
       "options": {
-        "jestConfig": "apps/express-api/jest.config.ts",
+        "jestConfig": "apps/fastify-api/jest.config.ts",
         "passWithNoTests": true
       },
       "configurations": {
@@ -329,11 +329,11 @@ METRICS_ENABLED=false
       "executor": "@nx/linter:eslint",
       "outputs": ["{options.outputFile}"],
       "options": {
-        "lintFilePatterns": ["apps/express-api/**/*.ts"]
+        "lintFilePatterns": ["apps/fastify-api/**/*.ts"]
       }
     }
   },
-  "tags": ["scope:express-api", "type:api"]
+  "tags": ["scope:fastify-api", "type:api"]
 }
 ```
 
@@ -530,12 +530,12 @@ services:
       - NODE_ENV=production
     restart: unless-stopped
 
-  express-api:
+  fastify-api:
     build:
       context: .
-      dockerfile: infrastructure/docker/express-api.Dockerfile
+      dockerfile: infrastructure/docker/fastify-api.Dockerfile
     ports:
-      - "3333:3333"
+      - "3333:3334"
     environment:
       - NODE_ENV=production
       - DATABASE_URL=${DATABASE_URL}
@@ -678,9 +678,9 @@ const productionCorsOptions = {
 ### Security Headers
 
 ```typescript
-// Express security middleware
+// Fastify security middleware
 import helmet from 'helmet';
-import rateLimit from 'express-rate-limit';
+import rateLimit from '@fastify/rate-limit';
 
 const limiter = rateLimit({
   windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS || '900000'),

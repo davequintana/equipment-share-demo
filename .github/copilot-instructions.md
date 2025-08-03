@@ -7,7 +7,7 @@
 This is an enterprise-level NX monorepo featuring:
 
 - **Frontend**: React 19 with TypeScript, Vanilla Extract CSS-in-TS, Vite
-- **Backend APIs**: Express 4 and Fastify with JWT authentication
+- **Backend API**: Fastify with JWT authentication
 - **Database**: PostgreSQL with Redis caching
 - **Messaging**: Apache Kafka for event streaming
 - **Infrastructure**: Docker, Kubernetes, AWS CloudFormation
@@ -17,7 +17,7 @@ This is an enterprise-level NX monorepo featuring:
 ## Architecture Guidelines
 
 ### Folder Structure
-- `apps/` - Applications (web-app, express-api, fastify-api, e2e)
+- `apps/` - Applications (web-app, fastify-api, e2e)
 - `libs/` - Shared libraries and utilities
 - `infrastructure/` - Infrastructure as Code (Docker, K8s, AWS)
 - `k8s/` - Kubernetes manifests
@@ -39,7 +39,6 @@ This is an enterprise-level NX monorepo featuring:
 - Add Storybook stories for reusable components
 
 #### Backend APIs
-- Express for traditional REST APIs
 - Fastify for high-performance APIs with OpenAPI docs
 - JWT authentication with bcrypt password hashing
 - Proper error handling middleware
@@ -83,9 +82,8 @@ This is an enterprise-level NX monorepo featuring:
 2. Use `pnpm run dev` to start all services with CSR React app (recommended)
 3. Use `pnpm run dev:ssr` to start all services with SSR React app
 4. Use `pnpm run serve:web-app` for CSR frontend development only (localhost:4200)
-5. Use `pnpm run serve:web-app-ssr` for SSR frontend development only (localhost:4201)
-6. Use `pnpm run serve:express-api` for Express API only (localhost:3333)
-7. Use `pnpm run serve:fastify-api` for Fastify API only (localhost:3334)
+5. Use `pnpm run serve:web-app` for frontend development (localhost:4201)
+6. Use `pnpm run serve:fastify-api` for Fastify API only (localhost:3334)
 8. Use `docker-compose up` for full stack development with databases
 9. Run `pnpm run test:all` for testing all projects
 10. Use `npx nx e2e e2e` for end-to-end testing
