@@ -84,7 +84,7 @@ export default defineConfig({
       command: 'NODE_OPTIONS="--no-deprecation" pnpm run serve:web-app',
       port: 4201,
       reuseExistingServer: !process.env.CI,
-      timeout: 120 * 1000, // 2 minutes
+      timeout: process.env.CI ? 240 * 1000 : 120 * 1000, // 4 minutes for CI, 2 minutes for local
       stdout: 'pipe',
       stderr: 'pipe',
     },
@@ -92,7 +92,7 @@ export default defineConfig({
       command: 'NODE_OPTIONS="--no-deprecation" pnpm run serve:fastify-api',
       port: 3334,
       reuseExistingServer: !process.env.CI,
-      timeout: 120 * 1000, // 2 minutes
+      timeout: process.env.CI ? 240 * 1000 : 120 * 1000, // 4 minutes for CI, 2 minutes for local
       stdout: 'pipe',
       stderr: 'pipe',
     },
