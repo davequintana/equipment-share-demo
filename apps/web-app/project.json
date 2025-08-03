@@ -55,6 +55,11 @@
             "glob": "**/*",
             "input": "apps/web-app/src/assets",
             "output": "assets"
+          },
+          {
+            "glob": "index.html",
+            "input": "apps/web-app",
+            "output": "."
           }
         ],
         "esbuildOptions": {
@@ -70,7 +75,7 @@
           "esbuildOptions": {
             "sourcemap": false,
             "outExtension": {
-              ".js": ".cjs"
+              ".js": ".js"
             }
           }
         }
