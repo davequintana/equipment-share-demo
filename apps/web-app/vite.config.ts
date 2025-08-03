@@ -4,7 +4,7 @@ import react from '@vitejs/plugin-react';
 import { vanillaExtractPlugin } from '@vanilla-extract/vite-plugin';
 
 export default defineConfig(({ mode }) => ({
-  root: import.meta.dirname,
+  root: '.',
   cacheDir: '../../node_modules/.vite/apps/web-app',
 
   server: {
@@ -43,8 +43,8 @@ export default defineConfig(({ mode }) => ({
     },
     rollupOptions: {
       input: {
-        client: 'src/client/main.tsx',
-        server: 'src/server/entry.tsx',
+        client: 'apps/web-app/src/client/main.tsx',
+        server: 'apps/web-app/src/server/entry.tsx',
       },
       output: {
         entryFileNames: '[name].js',
