@@ -2,6 +2,11 @@ import fastify from 'fastify';
 import { createServer as createViteServer } from 'vite';
 import path from 'path';
 import fs from 'fs';
+import { fileURLToPath } from 'url';
+
+// ESM equivalent of __dirname
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const isProduction = process.env['NODE_ENV'] === 'production';
 const port = parseInt(process.env['PORT'] || '4201', 10);
@@ -11,26 +16,58 @@ async function createServer() {
   const app = fastify({ logger: true });
   let vite: any = null; // eslint-disable-line @typescript-eslint/no-explicit-any
 
-  if (isProduction) {
+  if (isProduction && process.env['CI'] !== 'true') {
     // For production, skip Vite and static file serving for now
     console.log('Running in production mode - simplified SSR');
   } else {
     // Create Vite server in middleware mode for development
-    const webAppRoot = path.resolve(process.cwd(), 'apps/web-app');
-    
+    const isBuilt = __filename.includes('dist/apps/web-app');
+    let webAppRoot: string;
+
+    if (isBuilt) {
+      // When running from built version in dist/apps/web-app/
+      webAppRoot = path.resolve(__dirname, '..', '..', '..', 'apps', 'web-app');
+    } else {
+      // When running from source in apps/web-app/src/server/
+      webAppRoot = path.resolve(process.cwd(), 'apps', 'web-app');
+    }
+
     console.log('Development mode - Creating Vite server');
     console.log('WebAppRoot for Vite:', webAppRoot);
-    
+    console.log('Process cwd:', process.cwd());
+    console.log('__dirname:', __dirname);
+    console.log('isBuilt:', isBuilt);
+
     if (!fs.existsSync(webAppRoot)) {
       console.error('Web app directory not found for Vite server creation');
+      console.log('Tried webAppRoot:', webAppRoot);
+      console.log('Directory contents of process.cwd():', fs.readdirSync(process.cwd()));
       throw new Error(`Web app directory not found: ${webAppRoot}`);
     }
-    
-    vite = await createViteServer({
-      server: { middlewareMode: true },
-      appType: 'custom',
-      root: webAppRoot,
-    });
+
+    // Change working directory to web-app for Vite context
+    process.chdir(webAppRoot);
+
+    try {
+      // Create Vite server with web-app as the root
+      vite = await createViteServer({
+        server: { middlewareMode: true },
+        appType: 'custom',
+        root: '.', // Current directory (web-app)
+        configFile: './vite.config.ts',
+        resolve: {
+          alias: {
+            '@': path.resolve('.', 'src'),
+          }
+        },
+        optimizeDeps: {
+          entries: ['./src/client/main.tsx']
+        }
+      });
+    } finally {
+      // Don't restore working directory immediately - keep it for Vite operation
+      // We'll restore it only when the server shuts down
+    }
 
     // API Proxy for development
     app.all('/api/*', async (request, reply) => {
@@ -88,7 +125,7 @@ async function createServer() {
   });
 
   // Register Vite middleware for development
-  if (!isProduction) {
+  if (!(isProduction && process.env['CI'] !== 'true')) {
     app.addHook('onRequest', async (request, reply) => {
       // Let Vite handle its dev server routes
       if (request.url.startsWith('/@') || request.url.startsWith('/src/') || request.url.match(/\.(js|css|ts|tsx)$/)) {
@@ -112,7 +149,7 @@ async function createServer() {
       let template: string;
       let render: (url: string) => string;
 
-      if (isProduction) {
+      if (isProduction && process.env['CI'] !== 'true') {
         // In production, use a simple static template
         template = `
           <!DOCTYPE html>
@@ -144,54 +181,28 @@ async function createServer() {
         `;
       } else {
         // Load template from index.html file in development
-        const webAppRoot = path.resolve(process.cwd(), 'apps/web-app');
-        
-        // Debug logging for CI troubleshooting
+        // We're already in the web-app directory due to process.chdir above
+        const indexPath = path.resolve('.', 'index.html');
+
         console.log('Debug - Current working directory:', process.cwd());
-        console.log('Debug - Resolved webAppRoot:', webAppRoot);
-        console.log('Debug - webAppRoot exists:', fs.existsSync(webAppRoot));
-        
-        let actualWebAppRoot = webAppRoot;
-        
-        if (!fs.existsSync(webAppRoot)) {
-          console.error('Web app directory not found, trying alternative paths...');
-          // List current directory contents for debugging
-          const cwd = process.cwd();
-          console.log('Directory contents of cwd:', fs.readdirSync(cwd));
-          
-          // Try alternative path resolution strategies
-          const alternatives = [
-            path.resolve(cwd, 'apps', 'web-app'),
-            path.join(cwd, 'apps', 'web-app'),
-            path.resolve(__dirname, '..', '..', '..', 'apps', 'web-app'),
-          ];
-          
-          let foundPath = null;
-          for (const altPath of alternatives) {
-            if (fs.existsSync(altPath)) {
-              console.log('Found alternative path:', altPath);
-              foundPath = altPath;
-              break;
-            }
-          }
-          
-          if (!foundPath) {
-            throw new Error(`Could not locate web-app directory. Tried: ${[webAppRoot, ...alternatives].join(', ')}`);
-          }
-          
-          actualWebAppRoot = foundPath;
-        }
-        
-        const indexPath = path.join(actualWebAppRoot, 'index.html');
         console.log('Debug - Index.html path:', indexPath);
         console.log('Debug - Index.html exists:', fs.existsSync(indexPath));
-        
+
         if (!fs.existsSync(indexPath)) {
-          throw new Error(`index.html not found at: ${indexPath}`);
+          // If index.html not found, try looking in the original location
+          const fallbackPath = path.resolve(__dirname, '..', '..', 'index.html');
+          console.log('Debug - Trying fallback path:', fallbackPath);
+
+          if (fs.existsSync(fallbackPath)) {
+            const templateFile = await fs.promises.readFile(fallbackPath, 'utf-8');
+            template = await vite.transformIndexHtml(url, templateFile);
+          } else {
+            throw new Error(`index.html not found at: ${indexPath} or ${fallbackPath}`);
+          }
+        } else {
+          const templateFile = await fs.promises.readFile(indexPath, 'utf-8');
+          template = await vite.transformIndexHtml(url, templateFile);
         }
-        
-        const templateFile = await fs.promises.readFile(indexPath, 'utf-8');
-        template = await vite.transformIndexHtml(url, templateFile);
 
         // Load the server-side render function
         render = (await vite.ssrLoadModule('/src/server/entry.tsx')).render;
@@ -205,7 +216,7 @@ async function createServer() {
 
       reply.type('text/html').code(200).send(html);
     } catch (error) {
-      if (!isProduction) {
+      if (!(isProduction && process.env['CI'] !== 'true')) {
         vite.ssrFixStacktrace(error as Error);
       }
       console.error('SSR Error:', error);
