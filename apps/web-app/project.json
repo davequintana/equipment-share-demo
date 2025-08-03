@@ -49,7 +49,7 @@
         "bundle": true,
         "main": "apps/web-app/src/server/main.ts",
         "tsConfig": "apps/web-app/tsconfig.server.json",
-        "external": ["vite", "fastify", "@fastify/static"],
+        "external": ["vite", "fastify", "@fastify/static", "react", "react-dom", "react-router-dom"],
         "assets": [
           {
             "glob": "**/*",
