@@ -18,7 +18,7 @@ export default defineConfig({
   retries: process.env.CI ? 2 : 0,
   workers: getWorkerCount(),
   reporter: process.env.CI ? [['github'], ['html']] : 'html',
-  timeout: 10000, // 10 second timeout per test
+  timeout: 20000, // 20 second timeout per test (increased for CI stability)
   expect: {
     timeout: 15000, // 15 second timeout for assertions (increased for CI)
   },

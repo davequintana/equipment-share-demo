@@ -20,14 +20,14 @@ echo "Step 2: Checking build outputs..."
 ls -la dist/apps/web-app/
 ls -la dist/apps/fastify-api/
 
-# Step 3: Try to run a quick e2e test (first few tests only)
+# Step 3: Try to run all e2e tests
 echo "Step 3: Running e2e tests..."
 # Set environment similar to CI
 export NODE_ENV=test
 export CI=true
 
-# Run a subset of tests to check if the server starts correctly
+# Run all tests from the e2e directory to avoid vitest workspace conflicts
 cd apps/e2e
-pnpm exec playwright test --grep "should display welcome page" --timeout 10000
+npx playwright test --project=chromium
 
 echo "CI simulation completed"
