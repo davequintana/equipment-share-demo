@@ -68,6 +68,7 @@
     "react-router-dom": "6.29.0"
   },
   "devDependencies": {
+    "@eslint/eslintrc": "^3.3.1",
     "@eslint/js": "^9.8.0",
     "@nx/devkit": "21.3.11",
     "@nx/esbuild": "^21.3.11",
