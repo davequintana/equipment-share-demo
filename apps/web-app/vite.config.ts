@@ -2,9 +2,10 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import { vanillaExtractPlugin } from '@vanilla-extract/vite-plugin';
+import { fileURLToPath, URL } from 'node:url';
 
 export default defineConfig(({ mode }) => ({
-  root: __dirname,
+  root: fileURLToPath(new URL('.', import.meta.url)),
   cacheDir: '../../node_modules/.vite/apps/web-app',
 
   server: {

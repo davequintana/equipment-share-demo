@@ -2,8 +2,9 @@ import fastify from 'fastify';
 import { createServer as createViteServer } from 'vite';
 import path from 'path';
 import fs from 'fs';
+import { fileURLToPath } from 'node:url';
 
-const __dirname = path.resolve();
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const isProduction = process.env['NODE_ENV'] === 'production';
 const port = parseInt(process.env['PORT'] || '4201', 10);
 

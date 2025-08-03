@@ -2,10 +2,10 @@
   "compilerOptions": {
     "outDir": "../../dist/out-tsc",
     "types": ["node"],
-    "module": "commonjs",
+    "module": "esnext",
     "target": "es2020",
     "lib": ["es2020", "dom", "dom.iterable"],
-    "moduleResolution": "node",
+    "moduleResolution": "bundler",
     "jsx": "react-jsx",
     "allowSyntheticDefaultImports": true,
     "esModuleInterop": true,

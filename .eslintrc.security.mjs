@@ -1,4 +1,4 @@
-module.exports = {
+export default {
   extends: [
     '@nx/eslint-plugin-nx/base',
     'plugin:security/recommended'

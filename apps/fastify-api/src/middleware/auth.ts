@@ -1,5 +1,5 @@
 import { FastifyRequest, FastifyReply } from 'fastify';
-import { JwtPayload } from '../types';
+import { JwtPayload } from '../types.js';
 
 // Authentication middleware for protected routes
 export const authenticateUser = async (request: FastifyRequest, reply: FastifyReply) => {

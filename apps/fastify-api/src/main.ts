@@ -13,7 +13,7 @@ import {
   RegisterRequest,
   ProfileUpdateRequest,
   EventRequest
-} from './types';
+} from './types.js';
 import {
   authenticateUser,
   validateEmail,
@@ -21,7 +21,7 @@ import {
   validateName,
   checkRateLimit,
   resetRateLimit
-} from './middleware/auth';
+} from './middleware/auth.js';
 
 dotenv.config();
 
