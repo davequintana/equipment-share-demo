@@ -166,13 +166,26 @@ jobs:
       - name: Build projects for E2E
         run: pnpm exec nx run-many -t build --projects=web-app,fastify-api --parallel
 
+      - name: Debug environment
+        run: |
+          echo "Node version: $(node --version)"
+          echo "NPM version: $(npm --version)"
+          echo "PNPM version: $(pnpm --version)"
+          echo "CI environment: $CI"
+          echo "NODE_ENV: $NODE_ENV"
+          echo "PWD: $(pwd)"
+          ls -la dist/
+
       - name: Run E2E tests
-        run: pnpm exec nx e2e e2e
+        run: pnpm exec nx e2e e2e --verbose
         env:
           DATABASE_URL: postgresql://postgres:postgres@localhost:5432/test_db
           REDIS_URL: redis://localhost:6379
           JWT_SECRET: test-secret-key
           NODE_ENV: test
+          CI: true
+          PLAYWRIGHT_WORKERS: 2
+          DEBUG: pw:webserver
 
       - name: Upload E2E test results
         uses: actions/upload-artifact@v4

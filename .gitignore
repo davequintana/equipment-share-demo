@@ -34,7 +34,8 @@ pnpm-debug.log*
 /connect.lock
 /coverage
 /libpeerconnection.log
-/playwright-report/*
+playwright-report/
+test-results/
 /coverage-final.json
 /coverage-final.json.gz
 /coverage/lcov.info
