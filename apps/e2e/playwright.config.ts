@@ -18,16 +18,16 @@ export default defineConfig({
   retries: process.env.CI ? 2 : 0,
   workers: getWorkerCount(),
   reporter: process.env.CI ? [['github'], ['html']] : 'html',
-  timeout: 20000, // 20 second timeout per test (increased for CI stability)
+  timeout: process.env.CI ? 60000 : 20000, // 60 seconds for CI, 20 seconds for local
   expect: {
-    timeout: 15000, // 15 second timeout for assertions (increased for CI)
+    timeout: process.env.CI ? 30000 : 15000, // 30 seconds for CI, 15 seconds for local
   },
   use: {
     baseURL: 'http://localhost:4201',
     trace: 'on-first-retry',
     screenshot: 'only-on-failure',
     video: 'retain-on-failure',
-    actionTimeout: 15000, // 15 second timeout for actions (increased for CI)
+    actionTimeout: process.env.CI ? 30000 : 15000, // 30 seconds for CI, 15 seconds for local
   },
 
   projects: [

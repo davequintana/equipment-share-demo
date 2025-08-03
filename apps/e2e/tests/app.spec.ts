@@ -2,7 +2,15 @@ import { test, expect } from '@playwright/test';
 
 test.describe('Enterprise App E2E Tests', () => {
   test.beforeEach(async ({ page }) => {
+    // Wait for servers to be ready before running tests
     await page.goto('http://localhost:4201');
+
+    // Wait for the main content to load, indicating the app is ready
+    await expect(page.locator('h1')).toBeVisible({ timeout: 30000 });
+
+    // Also check that the API server is responding
+    const apiHealthCheck = await page.request.get('http://localhost:3334/health');
+    expect(apiHealthCheck.status()).toBe(200);
   });
 
   test('should display welcome page', async ({ page }) => {
@@ -19,16 +27,19 @@ test.describe('Enterprise App E2E Tests', () => {
     await page.fill('input[type="email"]', 'admin@example.com');
     await page.fill('input[type="password"]', 'password');
 
-    // Submit form
-    await page.click('button[type="submit"]');
+    // Submit form and wait for the login response or navigation
+    const [response] = await Promise.all([
+      page.waitForResponse(response =>
+        response.url().includes('/api/auth/login'), { timeout: 30000 }
+      ),
+      page.click('button[type="submit"]')
+    ]);
 
-    // Wait for the API call to complete and the page to update
-    await page.waitForResponse(response =>
-      response.url().includes('/api/auth/login') && response.status() === 200
-    );
+    // Verify the login was successful
+    expect(response.status()).toBe(200);
 
     // Give the React state a moment to update after successful login
-    await page.waitForTimeout(1000);
+    await page.waitForTimeout(2000);
 
     // Wait for navigation to dashboard
     await expect(page.locator('h1')).toContainText('Enterprise NX Monorepo');
@@ -40,15 +51,20 @@ test.describe('Enterprise App E2E Tests', () => {
     await page.getByRole('button', { name: 'Login' }).click();
     await page.fill('input[type="email"]', 'admin@example.com');
     await page.fill('input[type="password"]', 'password');
-    await page.click('button[type="submit"]');
 
-    // Wait for the API call to complete and the page to update
-    await page.waitForResponse(response =>
-      response.url().includes('/api/auth/login') && response.status() === 200
-    );
+    // Submit form and wait for the login response
+    const [response] = await Promise.all([
+      page.waitForResponse(response =>
+        response.url().includes('/api/auth/login'), { timeout: 30000 }
+      ),
+      page.click('button[type="submit"]')
+    ]);
+
+    // Verify the login was successful
+    expect(response.status()).toBe(200);
 
     // Give the React state a moment to update after successful login
-    await page.waitForTimeout(1000);
+    await page.waitForTimeout(2000);
 
     // Check features are displayed
     await expect(page.getByRole('heading', { name: 'React 19' })).toBeVisible();
@@ -64,12 +80,19 @@ test.describe('Enterprise App E2E Tests', () => {
     await page.getByRole('button', { name: 'Login' }).click();
     await page.fill('input[type="email"]', 'admin@example.com');
     await page.fill('input[type="password"]', 'password');
-    await page.click('button[type="submit"]');
+
+    // Submit form and wait for the login response
+    const [response] = await Promise.all([
+      page.waitForResponse(response =>
+        response.url().includes('/api/auth/login'), { timeout: 30000 }
+      ),
+      page.click('button[type="submit"]')
+    ]);
+
+    // Verify the login was successful
+    expect(response.status()).toBe(200);
 
     // Wait for the API call to complete and the page to update
-    await page.waitForResponse(response =>
-      response.url().includes('/api/auth/login') && response.status() === 200
-    );
 
     // Give the React state a moment to update after successful login
     await page.waitForTimeout(1000);
