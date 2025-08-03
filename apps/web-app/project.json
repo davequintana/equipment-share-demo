@@ -45,7 +45,7 @@
       "options": {
         "platform": "node",
         "outputPath": "dist/apps/web-app",
-        "format": ["cjs"],
+        "format": ["esm"],
         "bundle": true,
         "main": "apps/web-app/src/server/main.ts",
         "tsConfig": "apps/web-app/tsconfig.server.json",
@@ -60,7 +60,7 @@
         "esbuildOptions": {
           "sourcemap": true,
           "outExtension": {
-            ".js": ".cjs"
+            ".js": ".js"
           }
         }
       },

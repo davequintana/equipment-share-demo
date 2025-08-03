@@ -19,7 +19,7 @@
     "test:fastify-api": "nx test fastify-api",
     "test:coverage": "nx run-many --target=test --all --coverage",
     "e2e": "nx e2e e2e",
-    "e2e:headless": "nx e2e e2e --headless",
+    "e2e:headless": "nx e2e e2e",
     "dev": "nx run-many --target=serve --projects=web-app,fastify-api --parallel",
     "dev:all": "pnpm run dev",
     "serve:web-app": "nx serve web-app",

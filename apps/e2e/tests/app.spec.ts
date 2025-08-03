@@ -74,7 +74,7 @@ test.describe('Enterprise App E2E Tests', () => {
 
   test('API health checks', async ({ request }) => {
     // Test Fastify API health
-    const fastifyHealth = await request.get('http://localhost:3333/health');
+    const fastifyHealth = await request.get('http://localhost:3334/health');
     expect(fastifyHealth.ok()).toBeTruthy();
     const fastifyData = await fastifyHealth.json();
     expect(fastifyData.status).toBe('OK');
@@ -82,7 +82,7 @@ test.describe('Enterprise App E2E Tests', () => {
 
   test('API authentication flow', async ({ request }) => {
     // Test Fastify API login
-    const loginResponse = await request.post('http://localhost:3333/api/auth/login', {
+    const loginResponse = await request.post('http://localhost:3334/api/auth/login', {
       data: {
         email: 'admin@example.com',
         password: 'password'
@@ -95,7 +95,7 @@ test.describe('Enterprise App E2E Tests', () => {
     expect(loginData.user.email).toBe('admin@example.com');
 
     // Test protected route with token
-    const profileResponse = await request.get('http://localhost:3333/api/users/profile', {
+    const profileResponse = await request.get('http://localhost:3334/api/users/profile', {
       headers: {
         'Authorization': `Bearer ${loginData.token}`
       }
