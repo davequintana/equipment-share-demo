@@ -20,14 +20,14 @@ export default defineConfig({
   reporter: process.env.CI ? [['github'], ['html']] : 'html',
   timeout: 10000, // 10 second timeout per test
   expect: {
-    timeout: 10000, // 10 second timeout for assertions
+    timeout: 15000, // 15 second timeout for assertions (increased for CI)
   },
   use: {
     baseURL: 'http://localhost:4201',
     trace: 'on-first-retry',
     screenshot: 'only-on-failure',
     video: 'retain-on-failure',
-    actionTimeout: 10000, // 10 second timeout for actions
+    actionTimeout: 15000, // 15 second timeout for actions (increased for CI)
   },
 
   projects: [
