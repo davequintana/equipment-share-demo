@@ -40,7 +40,7 @@ WORKDIR /app
 ENV NODE_ENV=production
 
 # Copy the built application and package.json
-COPY --from=builder /app/dist ./dist/
+COPY --from=builder /app/dist/apps/web-app ./dist/
 COPY --from=builder /app/package.json ./package.json
 
 # Install only production dependencies
@@ -62,4 +62,4 @@ HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
   CMD wget --no-verbose --tries=1 --spider http://localhost:3000 || exit 1
 
 # Start the SSR application - try multiple possible entry points
-CMD ["sh", "-c", "node dist/server.js || node dist/main.js || node dist/index.js || echo 'No entry point found'"]
+CMD ["node", "dist/server.js"]
