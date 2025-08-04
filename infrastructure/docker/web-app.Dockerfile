@@ -44,7 +44,7 @@ WORKDIR /app
 ENV NODE_ENV=production
 
 # Copy the built application and package.json - fix path to match NX output
-COPY --from=builder /dist/apps/web-app ./dist/
+COPY --from=builder /dist/apps/web-app ./dist/apps/web-app/
 COPY --from=builder /app/package.json ./package.json
 
 # Install only production dependencies
