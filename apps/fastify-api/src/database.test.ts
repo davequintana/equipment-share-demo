@@ -4,7 +4,12 @@ import { GenericContainer, StartedTestContainer } from 'testcontainers';
 import fs from 'fs/promises';
 import path from 'path';
 
-describe.skipIf(process.env.CI)('PostgreSQL Enterprise Configuration Tests', () => {
+// Skip database tests in CI environments or when Docker is not available
+const shouldSkipDatabaseTests = process.env.CI === 'true' ||
+                                process.env.GITHUB_ACTIONS === 'true' ||
+                                process.env.NODE_ENV === 'test';
+
+describe.skipIf(shouldSkipDatabaseTests)('PostgreSQL Enterprise Configuration Tests', () => {
   let container: StartedTestContainer;
   let pool: Pool;
   let client: Client;
