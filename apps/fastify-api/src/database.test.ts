@@ -64,15 +64,15 @@ describe('PostgreSQL Enterprise Configuration Tests', () => {
   describe('Database Extensions', () => {
     it('should have all required extensions installed', async () => {
       const result = await client.query(`
-        SELECT extname FROM pg_extension 
+        SELECT extname FROM pg_extension
         WHERE extname IN (
-          'pg_stat_statements', 
-          'btree_gin', 
-          'btree_gist', 
-          'pg_trgm', 
-          'uuid-ossp', 
-          'citext', 
-          'hstore', 
+          'pg_stat_statements',
+          'btree_gin',
+          'btree_gist',
+          'pg_trgm',
+          'uuid-ossp',
+          'citext',
+          'hstore',
           'ltree'
         )
         ORDER BY extname;
@@ -92,10 +92,10 @@ describe('PostgreSQL Enterprise Configuration Tests', () => {
     it('should have pg_stat_statements tracking enabled', async () => {
       // Execute a query to generate stats
       await client.query('SELECT 1 as test_query');
-      
+
       const result = await client.query(`
-        SELECT calls, query 
-        FROM pg_stat_statements 
+        SELECT calls, query
+        FROM pg_stat_statements
         WHERE query LIKE '%test_query%'
         LIMIT 1;
       `);
@@ -108,8 +108,8 @@ describe('PostgreSQL Enterprise Configuration Tests', () => {
   describe('Enterprise Schemas', () => {
     it('should have all required schemas created', async () => {
       const result = await client.query(`
-        SELECT schema_name 
-        FROM information_schema.schemata 
+        SELECT schema_name
+        FROM information_schema.schemata
         WHERE schema_name IN ('audit', 'reporting', 'analytics')
         ORDER BY schema_name;
       `);
@@ -189,11 +189,11 @@ describe('PostgreSQL Enterprise Configuration Tests', () => {
           id SERIAL PRIMARY KEY,
           status TEXT
         );
-        
+
         CREATE TRIGGER test_update_trigger
         AFTER INSERT OR UPDATE OR DELETE ON test_update_table
         FOR EACH ROW EXECUTE FUNCTION audit.log_changes();
-        
+
         INSERT INTO test_update_table (status) VALUES ('initial');
       `);
 
@@ -224,8 +224,8 @@ describe('PostgreSQL Enterprise Configuration Tests', () => {
   describe('Application Roles', () => {
     it('should have all application roles created', async () => {
       const result = await client.query(`
-        SELECT rolname 
-        FROM pg_roles 
+        SELECT rolname
+        FROM pg_roles
         WHERE rolname IN ('app_read', 'app_write', 'app_admin')
         ORDER BY rolname;
       `);
@@ -287,26 +287,26 @@ describe('PostgreSQL Enterprise Configuration Tests', () => {
       // Insert old audit entries
       await client.query(`
         INSERT INTO audit.data_changes (table_name, operation, new_data, changed_at)
-        VALUES 
+        VALUES
           ('test_old', 'INSERT', '{}', NOW() - INTERVAL '100 days'),
           ('test_recent', 'INSERT', '{}', NOW() - INTERVAL '10 days');
       `);
 
       // Run cleanup function (keep 30 days)
       const result = await client.query('SELECT analytics.cleanup_old_audit_logs(30)');
-      
+
       expect(result.rows[0].cleanup_old_audit_logs).toBeGreaterThan(0);
 
       // Verify old entries are removed but recent ones remain
       const remainingOld = await client.query(`
-        SELECT COUNT(*) as count 
-        FROM audit.data_changes 
+        SELECT COUNT(*) as count
+        FROM audit.data_changes
         WHERE table_name = 'test_old'
       `);
-      
+
       const remainingRecent = await client.query(`
-        SELECT COUNT(*) as count 
-        FROM audit.data_changes 
+        SELECT COUNT(*) as count
+        FROM audit.data_changes
         WHERE table_name = 'test_recent'
       `);
 
@@ -316,7 +316,7 @@ describe('PostgreSQL Enterprise Configuration Tests', () => {
 
     it('should have backup validation function working', async () => {
       const result = await client.query('SELECT * FROM analytics.validate_backup_integrity() LIMIT 5');
-      
+
       expect(result.rows.length).toBeGreaterThan(0);
       result.rows.forEach(row => {
         expect(row).toHaveProperty('table_name');

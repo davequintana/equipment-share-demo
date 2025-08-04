@@ -6,6 +6,7 @@ import fastifySwagger from '@fastify/swagger';
 import fastifySwaggerUi from '@fastify/swagger-ui';
 import bcrypt from 'bcryptjs';
 import dotenv from 'dotenv';
+import { EnterpriseSecretsManager, type DatabaseCredentials } from './enterprise-secrets-manager.js';
 import {
   User,
   JwtPayload,
@@ -23,59 +24,88 @@ import {
   resetRateLimit
 } from './middleware/auth.js';
 
+// Load environment variables (fallback for development)
 dotenv.config();
 
-const fastify = Fastify({ logger: true });
+// Initialize secrets management
+const secretsManager = new EnterpriseSecretsManager();
 
-// Log startup environment info
-fastify.log.info('Server starting up...');
-fastify.log.info('Node version:', process.version);
-fastify.log.info('Environment:', process.env['NODE_ENV'] || 'development');
-fastify.log.info('Working directory:', process.cwd());
+async function createApp() {
+  // Initialize secrets first
+  let jwtSecret: string;
+  let databaseCredentials: DatabaseCredentials | null = null;
 
-// Test bcrypt availability at startup with comprehensive error handling
-try {
-  const testHash = '$2a$10$9v8ezzQoCjPvTpLB8FvGq.KxsetvZ/rT4dFLBJ1z4Q7d..tEEgK32';
-  const testResult = bcrypt.compareSync('password', testHash);
-  if (testResult) {
-    fastify.log.info('bcrypt is working correctly');
-  } else {
-    fastify.log.error('bcrypt test returned false - hash verification failed');
+  try {
+    // Get secrets from AWS Secrets Manager or environment variables
+    jwtSecret = await secretsManager.getJwtSecret();
+
+    // For now, we'll use environment variables for database
+    // In the future, this will come from AWS Secrets Manager
+    if (process.env['NODE_ENV'] === 'production') {
+      databaseCredentials = await secretsManager.getDatabaseCredentials();
+    }
+
+    console.log('✅ Secrets initialized successfully');
+  } catch (error) {
+    console.error('❌ Failed to initialize secrets:', error);
+    // Fallback to environment variables for development
+    jwtSecret = process.env['JWT_SECRET'] || 'fallback-secret-for-development';
+    console.warn('⚠️  Using fallback secrets for development');
   }
-} catch (error) {
-  fastify.log.error('bcrypt test failed:', error);
-  if (process.env['CI'] === 'true') {
-    fastify.log.warn('Continuing in CI environment despite bcrypt test failure');
+
+  const fastify = Fastify({ logger: true });
+
+  // Log startup environment info
+  fastify.log.info('Server starting up...');
+  fastify.log.info('Node version:', process.version);
+  fastify.log.info('Environment:', process.env['NODE_ENV'] || 'development');
+  fastify.log.info('Working directory:', process.cwd());
+
+  // Test bcrypt availability at startup with comprehensive error handling
+  try {
+    const testHash = '$2a$10$9v8ezzQoCjPvTpLB8FvGq.KxsetvZ/rT4dFLBJ1z4Q7d..tEEgK32';
+    const testResult = bcrypt.compareSync('password', testHash);
+    if (testResult) {
+      fastify.log.info('bcrypt is working correctly');
+    } else {
+      fastify.log.error('bcrypt test returned false - hash verification failed');
+    }
+  } catch (error) {
+    fastify.log.error('bcrypt test failed:', error);
+    if (process.env['CI'] === 'true') {
+      fastify.log.warn('Continuing in CI environment despite bcrypt test failure');
+    }
   }
-}
 
-// Mock user database with CI-friendly setup
-const users: User[] = [
-  {
-    id: '1',
-    email: 'admin@example.com',
-    password: process.env['CI'] === 'true' || process.env['NODE_ENV'] === 'test'
-      ? 'password' // Plain text for CI/test environments
-      : '$2a$10$9v8ezzQoCjPvTpLB8FvGq.KxsetvZ/rT4dFLBJ1z4Q7d..tEEgK32', // bcrypt hash for dev/prod
-    name: 'Admin User',
-    createdAt: new Date('2024-01-01T00:00:00Z').toISOString(),
-  },
-];
+  // Register core plugins with the correct JWT secret
+  fastify.register(fastifyHelmet);
+  fastify.register(fastifyCors, {
+    origin: process.env['NODE_ENV'] === 'production'
+      ? ['https://yourdomain.com'] // Add your production domain here
+      : ['http://localhost:4200', 'http://localhost:4201'], // Development origins
+    credentials: true,
+  });
 
-// Register core plugins first
-fastify.register(fastifyHelmet);
-fastify.register(fastifyCors, {
-  origin: process.env['NODE_ENV'] === 'production'
-    ? ['https://yourdomain.com'] // Add your production domain here
-    : ['http://localhost:4200', 'http://localhost:4201'], // Development origins
-  credentials: true,
-});
-fastify.register(fastifyJwt, {
-  secret: process.env['JWT_SECRET'] || 'your-secret-key',
-});
+  // Register JWT with the secret we retrieved
+  fastify.register(fastifyJwt, {
+    secret: jwtSecret,
+  });
 
-// Register Swagger documentation
-fastify.register(fastifySwagger, {
+  // Mock user database with CI-friendly setup
+  const users: User[] = [
+    {
+      id: '1',
+      email: 'admin@example.com',
+      password: process.env['CI'] === 'true' || process.env['NODE_ENV'] === 'test'
+        ? 'password' // Plain text for CI/test environments
+        : '$2a$10$9v8ezzQoCjPvTpLB8FvGq.KxsetvZ/rT4dFLBJ1z4Q7d..tEEgK32', // bcrypt hash for dev/prod
+      name: 'Admin User',
+      createdAt: new Date('2024-01-01T00:00:00Z').toISOString(),
+    },
+  ];
+
+  // Register Swagger documentation
+  fastify.register(fastifySwagger, {
   openapi: {
     openapi: '3.0.0',
     info: {
@@ -683,8 +713,14 @@ fastify.post('/api/events', {
 // Close the routes plugin
 });
 
+  return { fastify, jwtSecret, databaseCredentials };
+}
+
 const start = async () => {
   try {
+    // Initialize the app with secrets
+    const { fastify } = await createApp();
+
     fastify.log.info('Starting Fastify server...');
     fastify.log.info('Port: 3334, Host: 0.0.0.0');
 
@@ -695,9 +731,9 @@ const start = async () => {
     fastify.log.info('Server started successfully, running post-startup tests...');
 
   } catch (err) {
-    fastify.log.error('Failed to start server:', err);
+    console.error('Failed to start server:', err);
     if (err instanceof Error) {
-      fastify.log.error('Error details:', {
+      console.error('Error details:', {
         message: err.message,
         stack: err.stack,
         name: err.name

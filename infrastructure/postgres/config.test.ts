@@ -84,7 +84,7 @@ describe('PostgreSQL Configuration Files Tests', () => {
     });
 
     it('should use scram-sha-256 authentication for security', () => {
-      const scramLines = hbaContent.split('\n').filter(line => 
+      const scramLines = hbaContent.split('\n').filter(line =>
         line.includes('scram-sha-256') && !line.trim().startsWith('#')
       );
       expect(scramLines.length).toBeGreaterThan(0);
@@ -221,7 +221,7 @@ describe('PostgreSQL Configuration Files Tests', () => {
     beforeAll(async () => {
       const postgresqlPath = path.join(process.cwd(), 'infrastructure/postgres/postgresql.conf');
       const enterprisePath = path.join(process.cwd(), 'infrastructure/postgres/enterprise-config.sql');
-      
+
       postgresqlConf = await fs.readFile(postgresqlPath, 'utf8');
       enterpriseSql = await fs.readFile(enterprisePath, 'utf8');
     });
@@ -270,7 +270,7 @@ describe('PostgreSQL Configuration Files Tests', () => {
     it('should have proper file structure in infrastructure directory', async () => {
       const infraPath = path.join(process.cwd(), 'infrastructure/postgres');
       const dir = await fs.readdir(infraPath);
-      
+
       expect(dir).toContain('postgresql.conf');
       expect(dir).toContain('pg_hba.conf');
       expect(dir).toContain('enterprise-config.sql');

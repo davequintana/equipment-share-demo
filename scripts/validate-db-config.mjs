@@ -22,7 +22,7 @@ function log(message, color = colors.reset) {
 
 async function validatePostgreSQLConf() {
   log('\n🔍 Validating postgresql.conf...', colors.blue);
-  
+
   try {
     const configPath = path.join(process.cwd(), 'infrastructure/postgres/postgresql.conf');
     const content = await fs.readFile(configPath, 'utf8');
@@ -49,9 +49,9 @@ async function validatePostgreSQLConf() {
       }
     }
 
-    log(`\n📊 postgresql.conf: ${passed}/${checks.length} checks passed`, 
+    log(`\n📊 postgresql.conf: ${passed}/${checks.length} checks passed`,
         passed === checks.length ? colors.green : colors.yellow);
-    
+
     return passed === checks.length;
   } catch (error) {
     log(`❌ Error reading postgresql.conf: ${error.message}`, colors.red);
@@ -61,7 +61,7 @@ async function validatePostgreSQLConf() {
 
 async function validatePgHba() {
   log('\n🔍 Validating pg_hba.conf...', colors.blue);
-  
+
   try {
     const hbaPath = path.join(process.cwd(), 'infrastructure/postgres/pg_hba.conf');
     const content = await fs.readFile(hbaPath, 'utf8');
@@ -85,9 +85,9 @@ async function validatePgHba() {
       }
     }
 
-    log(`\n📊 pg_hba.conf: ${passed}/${checks.length} checks passed`, 
+    log(`\n📊 pg_hba.conf: ${passed}/${checks.length} checks passed`,
         passed === checks.length ? colors.green : colors.yellow);
-    
+
     return passed === checks.length;
   } catch (error) {
     log(`❌ Error reading pg_hba.conf: ${error.message}`, colors.red);
@@ -97,7 +97,7 @@ async function validatePgHba() {
 
 async function validateEnterpriseSQL() {
   log('\n🔍 Validating enterprise-config.sql...', colors.blue);
-  
+
   try {
     const sqlPath = path.join(process.cwd(), 'infrastructure/postgres/enterprise-config.sql');
     const content = await fs.readFile(sqlPath, 'utf8');
@@ -127,9 +127,9 @@ async function validateEnterpriseSQL() {
       }
     }
 
-    log(`\n📊 enterprise-config.sql: ${passed}/${checks.length} checks passed`, 
+    log(`\n📊 enterprise-config.sql: ${passed}/${checks.length} checks passed`,
         passed === checks.length ? colors.green : colors.yellow);
-    
+
     return passed === checks.length;
   } catch (error) {
     log(`❌ Error reading enterprise-config.sql: ${error.message}`, colors.red);
@@ -139,7 +139,7 @@ async function validateEnterpriseSQL() {
 
 async function validateDockerCompose() {
   log('\n🔍 Validating docker-compose.yml...', colors.blue);
-  
+
   try {
     const composePath = path.join(process.cwd(), 'docker-compose.yml');
     const content = await fs.readFile(composePath, 'utf8');
@@ -167,9 +167,9 @@ async function validateDockerCompose() {
       }
     }
 
-    log(`\n📊 docker-compose.yml: ${passed}/${checks.length} checks passed`, 
+    log(`\n📊 docker-compose.yml: ${passed}/${checks.length} checks passed`,
         passed === checks.length ? colors.green : colors.yellow);
-    
+
     return passed === checks.length;
   } catch (error) {
     log(`❌ Error reading docker-compose.yml: ${error.message}`, colors.red);
@@ -192,7 +192,7 @@ async function main() {
   const totalTests = results.length;
 
   log('\n' + '='.repeat(60), colors.blue);
-  log(`\n🎯 Overall Results: ${totalPassed}/${totalTests} components validated`, 
+  log(`\n🎯 Overall Results: ${totalPassed}/${totalTests} components validated`,
       totalPassed === totalTests ? colors.green : colors.yellow);
 
   if (totalPassed === totalTests) {
