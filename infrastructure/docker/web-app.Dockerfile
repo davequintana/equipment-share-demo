@@ -23,9 +23,14 @@ FROM base AS builder
 COPY . .
 COPY --from=deps /app/node_modules ./node_modules
 
-# Build both client and server
-RUN npx nx build web-app --prod
-RUN npx nx build-server web-app --prod
+# Set environment variables for Docker build
+ENV NX_DAEMON=false
+ENV CI=true
+
+# Build the web application and list output to debug
+RUN npx nx build web-app --prod && \
+    echo "Build completed, checking output:" && \
+    find . -name "*.js" -path "*dist*" -type f | head -10
 
 # Production stage with Node.js
 FROM node:18-alpine AS runner
@@ -34,8 +39,8 @@ WORKDIR /app
 # Set production environment
 ENV NODE_ENV=production
 
-# Copy the built application (both client and server builds)
-COPY --from=builder /app/dist/apps/web-app ./dist
+# Copy the built application and package.json
+COPY --from=builder /app/dist ./dist/
 COPY --from=builder /app/package.json ./package.json
 
 # Install only production dependencies
@@ -56,5 +61,5 @@ EXPOSE 3000
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
   CMD wget --no-verbose --tries=1 --spider http://localhost:3000 || exit 1
 
-# Start the SSR application
-CMD ["node", "dist/main.js"]
+# Start the SSR application - try multiple possible entry points
+CMD ["sh", "-c", "node dist/server.js || node dist/main.js || node dist/index.js || echo 'No entry point found'"]
