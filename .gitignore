@@ -12,7 +12,34 @@ node_modules
 .pnpm-store
 .pnpm-debug.log
 pnpm-debug.log*
-pnpm-lock.yaml
+
+# Environment files - NEVER commit secrets
+.env.local
+.env.*.local
+.env.production
+.env.staging
+*.key
+*.pem
+*.p12
+
+# IDEs and editors
+/.idea
+.project
+.classpath
+.c9/ithub.com/en/get-started/getting-started-with-git/ignoring-files for more about ignoring files.
+
+# compiled output
+dist
+tmp
+out-tsc
+
+# dependencies
+node_modules
+
+# pnpm
+.pnpm-store
+.pnpm-debug.log
+pnpm-debug.log*
 
 # IDEs and editors
 /.idea
@@ -35,6 +62,13 @@ pnpm-lock.yaml
 /connect.lock
 /coverage
 /libpeerconnection.log
+playwright-report/
+test-results/
+/coverage-final.json
+/coverage-final.json.gz
+/coverage/lcov.info
+/coverage/lcov-report
+
 npm-debug.log
 yarn-error.log
 testem.log

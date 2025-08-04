@@ -4,16 +4,13 @@
   "files": [],
   "references": [
     {
-      "path": "./apps/web-app-e2e"
-    },
-    {
       "path": "./apps/web-app"
     },
     {
-      "path": "./apps/express-api"
+      "path": "./apps/fastify-api"
     },
     {
-      "path": "./apps/fastify-api"
+      "path": "./libs/secrets"
     }
   ]
 }

@@ -1,0 +1,49 @@
+version: 2
+updates:
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "06:00"
+    open-pull-requests-limit: 10
+    reviewers:
+      - "davequintana"
+    assignees:
+      - "davequintana"
+    commit-message:
+      prefix: "chore"
+      include: "scope"
+    groups:
+      nx:
+        patterns:
+          - "@nx/*"
+          - "nx"
+      react:
+        patterns:
+          - "react*"
+          - "@types/react*"
+      testing:
+        patterns:
+          - "@testing-library/*"
+          - "@playwright/*"
+          - "vitest*"
+          - "@vitest/*"
+      eslint:
+        patterns:
+          - "eslint*"
+          - "@eslint/*"
+      fastify:
+        patterns:
+          - "fastify*"
+          - "@fastify/*"
+
+  - package-ecosystem: "docker"
+    directory: "/infrastructure/docker"
+    schedule:
+      interval: "weekly"
+
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"

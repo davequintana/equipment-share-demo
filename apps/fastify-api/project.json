@@ -12,7 +12,7 @@
       "options": {
         "platform": "node",
         "outputPath": "dist/apps/fastify-api",
-        "format": ["cjs"],
+        "format": ["esm"],
         "bundle": false,
         "main": "apps/fastify-api/src/main.ts",
         "tsConfig": "apps/fastify-api/tsconfig.app.json",

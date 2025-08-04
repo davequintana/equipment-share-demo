@@ -3,53 +3,68 @@ import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import { vanillaExtractPlugin } from '@vanilla-extract/vite-plugin';
 
-export default defineConfig(() => ({
-  root: __dirname,
+export default defineConfig(({ mode }) => ({
+  root: '.',
   cacheDir: '../../node_modules/.vite/apps/web-app',
+  publicDir: 'public',
+
   server: {
-    port: 4200,
+    port: 4201,
     host: 'localhost',
+    hmr: {
+      port: 4202,
+    },
     proxy: {
       '/api': {
-        target: 'http://localhost:3333',
-        changeOrigin: true,
-        secure: false,
-      },
-      '/fastify-api': {
         target: 'http://localhost:3334',
         changeOrigin: true,
         secure: false,
-        rewrite: (path) => path.replace(/^\/fastify-api/, ''),
       },
     },
   },
+
   preview: {
-    port: 4300,
+    port: 4301,
     host: 'localhost',
   },
+
   plugins: [react(), vanillaExtractPlugin()],
-  // Uncomment this if you are using workers.
-  // worker: {
-  //  plugins: [ nxViteTsPaths() ],
-  // },
+
+  // SSR Configuration
+  ssr: {
+    noExternal: ['@vanilla-extract/css'],
+    target: 'node',
+  },
+
   build: {
-    outDir: './dist',
-    emptyOutDir: true,
+    outDir: '../../dist/apps/web-app',
     reportCompressedSize: true,
+    copyPublicDir: true,
     commonjsOptions: {
       transformMixedEsModules: true,
     },
+    rollupOptions: {
+      input: {
+        client: 'apps/web-app/src/client/main.tsx',
+        server: 'apps/web-app/src/server/entry.tsx',
+      },
+      output: {
+        entryFileNames: '[name].js',
+      },
+    },
   },
+
   test: {
-    watch: false,
+    passWithNoTests: true,
     globals: true,
     environment: 'jsdom',
-    setupFiles: ['./src/test-setup.ts'],
-    include: ['{src,tests}/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}'],
+    setupFiles: ['apps/web-app/src/test-setup.ts'],
+    css: true,
+    include: ['apps/web-app/src/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}'],
     reporters: ['default'],
     coverage: {
-      reportsDirectory: './test-output/vitest/coverage',
-      provider: 'v8' as const,
+      reportsDirectory: '../../coverage/apps/web-app',
+      provider: 'v8',
     },
   },
 }));

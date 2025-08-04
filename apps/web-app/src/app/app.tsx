@@ -1,5 +1,5 @@
 import { useContext, useState } from 'react';
-import { Route, Routes, Link } from 'react-router-dom';
+import { Route, Routes } from 'react-router-dom';
 import { AuthProvider, AuthContext } from '../context/AuthContext';
 import { Header } from '../components/Header';
 import { Dashboard } from '../components/Dashboard';
@@ -82,10 +82,10 @@ function AppContent() {
               <div className={styles.main}>
                 <div className={styles.hero}>
                   <h1 className={styles.heroTitle}>
-                    Welcome to Enterprise NX Monorepo
+                    Welcome to Enterprise NX Monorepo with SSR
                   </h1>
                   <p className={styles.heroSubtitle}>
-                    A comprehensive full-stack application with modern technologies
+                    Server-side rendered React application with modern technologies
                   </p>
                   <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', marginTop: '2rem' }}>
                     <button
@@ -113,7 +113,7 @@ function AppContent() {
               <ProfilePage />
             ) : (
               <div className={styles.main}>
-                <div className={styles.card}>
+                <div className={styles.featureCard}>
                   <h2>Access Denied</h2>
                   <p>Please log in to view your profile.</p>
                   <button
@@ -148,6 +148,8 @@ function AppContent() {
     </div>
   );
 }
+
+export { AppContent };
 
 export function App() {
   return (

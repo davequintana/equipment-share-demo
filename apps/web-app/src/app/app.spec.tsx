@@ -1,26 +1,18 @@
-import { render } from '@testing-library/react';
-import { MemoryRouter } from 'react-router-dom';
+import { describe, it, expect } from 'vitest';
+import { render } from '../server/entry';
 
-import App from './app';
-
-describe('App', () => {
-  it('should render successfully', () => {
-    const { baseElement } = render(
-      <MemoryRouter>
-        <App />
-      </MemoryRouter>
-    );
-    expect(baseElement).toBeTruthy();
+describe('SSR Entry', () => {
+  it('should render the app on server side', () => {
+    const html = render('/');
+    expect(html).toContain('Enterprise NX Monorepo with SSR');
+    expect(html).toContain('Server-side rendered React application');
   });
 
-  it('should have a greeting as the title', () => {
-    const { getAllByText } = render(
-      <MemoryRouter>
-        <App />
-      </MemoryRouter>
-    );
-    expect(
-      getAllByText(new RegExp('Welcome to Enterprise NX Monorepo', 'gi')).length > 0
-    ).toBeTruthy();
+  it('should render different routes', () => {
+    const profileHtml = render('/profile');
+    expect(profileHtml).toContain('Access Denied');
+
+    const loginHtml = render('/login');
+    expect(loginHtml).toContain('Login');
   });
 });
