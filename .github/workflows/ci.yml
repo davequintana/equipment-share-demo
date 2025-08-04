@@ -157,7 +157,7 @@ jobs:
           echo "Contents of dist/apps/:"
           ls -la dist/apps/ || echo "No dist/apps directory found"
           echo "Looking for ${{ matrix.project }} build output:"
-          
+
           if [ -d "dist/apps/${{ matrix.project }}" ]; then
             echo "✅ Build directory exists: dist/apps/${{ matrix.project }}"
             echo "Contents:"
@@ -169,10 +169,10 @@ jobs:
             find dist -type d 2>/dev/null || echo "No directories found in dist/"
             echo "Looking for any ${{ matrix.project }} directories:"
             find . -type d -name "${{ matrix.project }}" 2>/dev/null || echo "No ${{ matrix.project }} directories found anywhere"
-            
+
             echo "=== Debug: NX build output ==="
             pnpm exec nx show project ${{ matrix.project }} --json | jq -r '.targets.build.outputs[]' || echo "Could not get build outputs"
-            
+
             exit 1
           fi
 
