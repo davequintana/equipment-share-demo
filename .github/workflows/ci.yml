@@ -137,15 +137,39 @@ jobs:
 
       - name: Fix build output location (workaround for NX path resolution issue)
         run: |
+          # The NX Vite executor has a path resolution bug where it builds to the wrong location
           # Check for build output in common incorrect locations and move to correct location
+          echo "=== Checking for build artifacts in incorrect locations ==="
+          
+          # GitHub Actions runner home directory (most likely location)
           if [ -d "/home/runner/dist/apps/${{ matrix.project }}" ]; then
-            echo "Found build in /home/runner/dist/apps/${{ matrix.project }}, moving to correct location"
+            echo "✅ Found build in /home/runner/dist/apps/${{ matrix.project }}"
             mkdir -p dist/apps/
             mv "/home/runner/dist/apps/${{ matrix.project }}" "dist/apps/"
+            echo "✅ Moved to dist/apps/${{ matrix.project }}"
+          
+          # Parent directory 
           elif [ -d "../dist/apps/${{ matrix.project }}" ]; then
-            echo "Found build in ../dist/apps/${{ matrix.project }}, moving to correct location"
+            echo "✅ Found build in ../dist/apps/${{ matrix.project }}"
             mkdir -p dist/apps/
             mv "../dist/apps/${{ matrix.project }}" "dist/apps/"
+            echo "✅ Moved to dist/apps/${{ matrix.project }}"
+          
+          # Check in user home directory (fallback)
+          elif [ -d "~/dist/apps/${{ matrix.project }}" ]; then
+            echo "✅ Found build in ~/dist/apps/${{ matrix.project }}"
+            mkdir -p dist/apps/
+            mv "~/dist/apps/${{ matrix.project }}" "dist/apps/"
+            echo "✅ Moved to dist/apps/${{ matrix.project }}"
+            
+          else
+            echo "⚠️  Build artifacts not found in expected incorrect locations"
+            echo "Searching for any ${{ matrix.project }} build directories:"
+            find /home/runner -type d -name "${{ matrix.project }}" 2>/dev/null | head -10 || echo "No directories found"
+            
+            # Try to find any dist directories
+            echo "Searching for any dist directories:"
+            find /home/runner -type d -name "dist" 2>/dev/null | head -10 || echo "No dist directories found"
           fi
 
       - name: Verify build output exists
