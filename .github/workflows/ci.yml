@@ -23,6 +23,9 @@ jobs:
 
       - name: Setup Node.js and pnpm
         uses: ./.github/actions/setup-node-pnpm
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          pnpm-version: ${{ env.PNPM_VERSION }}
 
       - name: Derive appropriate SHAs for base and head for `nx affected` commands
         uses: nrwl/nx-set-shas@v4
@@ -77,6 +80,9 @@ jobs:
 
       - name: Setup Node.js and pnpm
         uses: ./.github/actions/setup-node-pnpm
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          pnpm-version: ${{ env.PNPM_VERSION }}
 
       - name: Derive appropriate SHAs for base and head for `nx affected` commands
         uses: nrwl/nx-set-shas@v4
@@ -118,6 +124,9 @@ jobs:
 
       - name: Setup Node.js and pnpm
         uses: ./.github/actions/setup-node-pnpm
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          pnpm-version: ${{ env.PNPM_VERSION }}
 
       - name: Derive appropriate SHAs for base and head for `nx affected` commands
         uses: nrwl/nx-set-shas@v4
@@ -132,9 +141,36 @@ jobs:
           path: dist/apps/${{ matrix.project }}
           retention-days: 1
 
+  # Security scan runs in parallel with other jobs
+  security-scan:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
+      actions: read
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: 'fs'
+          scan-ref: '.'
+          format: 'sarif'
+          output: 'trivy-results.sarif'
+
+      - name: Upload Trivy scan results
+        uses: github/codeql-action/upload-sarif@v3
+        if: always() && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository)
+        with:
+          sarif_file: 'trivy-results.sarif'
+
+  # E2E tests only need builds, not lint or test
   e2e-tests:
     runs-on: ubuntu-latest
-    needs: [lint, build]
+    needs: [build]
 
     services:
       postgres:
@@ -169,6 +205,9 @@ jobs:
 
       - name: Setup Node.js and pnpm
         uses: ./.github/actions/setup-node-pnpm
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          pnpm-version: ${{ env.PNPM_VERSION }}
 
       - name: Download build artifacts
         uses: actions/download-artifact@v4
@@ -210,34 +249,10 @@ jobs:
             apps/e2e/test-results/
           retention-days: 30
 
-  security-scan:
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      security-events: write
-      actions: read
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Run Trivy vulnerability scanner
-        uses: aquasecurity/trivy-action@master
-        with:
-          scan-type: 'fs'
-          scan-ref: '.'
-          format: 'sarif'
-          output: 'trivy-results.sarif'
-
-      - name: Upload Trivy scan results
-        uses: github/codeql-action/upload-sarif@v3
-        if: always() && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository)
-        with:
-          sarif_file: 'trivy-results.sarif'
-
+  # Docker builds only need build artifacts, not tests
   build-docker:
     runs-on: ubuntu-latest
-    needs: [test, build]
+    needs: [build]
     if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop'
     strategy:
       matrix:
@@ -281,9 +296,10 @@ jobs:
           cache-to: type=gha,mode=max,scope=${{ matrix.app }}
           platforms: linux/amd64
 
+  # Deployment only needs successful E2E tests and Docker builds
   deploy-staging:
     runs-on: ubuntu-latest
-    needs: [test, e2e-tests, build-docker]
+    needs: [e2e-tests, build-docker]
     if: github.ref == 'refs/heads/develop'
     environment: staging
 
@@ -306,7 +322,7 @@ jobs:
 
   deploy-production:
     runs-on: ubuntu-latest
-    needs: [test, e2e-tests, build-docker]
+    needs: [e2e-tests, build-docker]
     if: github.ref == 'refs/heads/main'
     environment: production
 
