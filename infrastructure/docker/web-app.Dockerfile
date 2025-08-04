@@ -1,4 +1,4 @@
-# Multi-stage Dockerfile for React Web App
+# Multi-stage Dockerfile for React SSR Web App
 FROM node:18-alpine AS base
 
 # Install pnpm globally
@@ -23,36 +23,38 @@ FROM base AS builder
 COPY . .
 COPY --from=deps /app/node_modules ./node_modules
 
-# Build the web application
+# Build both client and server
 RUN npx nx build web-app --prod
+RUN npx nx build-server web-app --prod
 
-# Production stage with nginx
-FROM nginx:alpine AS runner
+# Production stage with Node.js
+FROM node:18-alpine AS runner
+WORKDIR /app
 
-# Copy built application to nginx html directory
-COPY --from=builder /app/dist/apps/web-app /usr/share/nginx/html
+# Set production environment
+ENV NODE_ENV=production
 
-# Copy custom nginx configuration
-COPY infrastructure/nginx/nginx.conf /etc/nginx/nginx.conf
+# Copy the built application (both client and server builds)
+COPY --from=builder /app/dist/apps/web-app ./dist
+COPY --from=builder /app/package.json ./package.json
+
+# Install only production dependencies
+RUN npm install --omit=dev
 
 # Create non-root user for security
-RUN addgroup --system --gid 1001 nginx-app
-RUN adduser --system --uid 1001 nginx-user --ingroup nginx-app
+RUN addgroup --system --gid 1001 nodejs
+RUN adduser --system --uid 1001 webapp
 
-# Create necessary directories and set permissions
-RUN mkdir -p /var/cache/nginx /var/log/nginx /var/run/nginx
-RUN chown -R nginx-user:nginx-app /var/cache/nginx /var/log/nginx /var/run/nginx /usr/share/nginx/html
-RUN chmod -R 755 /usr/share/nginx/html
+# Change ownership of the app directory
+RUN chown -R webapp:nodejs /app
+USER webapp
 
-# Switch to non-root user
-USER nginx-user
-
-# Expose port 80
-EXPOSE 80
+# Expose the web app port
+EXPOSE 3000
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-  CMD wget --no-verbose --tries=1 --spider http://localhost:80 || exit 1
+  CMD wget --no-verbose --tries=1 --spider http://localhost:3000 || exit 1
 
-# Start nginx
-CMD ["nginx", "-g", "daemon off;"]
+# Start the SSR application
+CMD ["node", "dist/main.js"]
