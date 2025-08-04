@@ -5,5 +5,6 @@ export default defineConfig({
     globals: true,
     environment: 'node',
     setupFiles: ['./apps/fastify-api/src/test-setup.ts'],
+    include: ['apps/fastify-api/src/**/*.{test,spec}.{ts,js}'],
   },
 });

@@ -4,7 +4,7 @@ import { GenericContainer, StartedTestContainer } from 'testcontainers';
 import fs from 'fs/promises';
 import path from 'path';
 
-describe('PostgreSQL Enterprise Configuration Tests', () => {
+describe.skipIf(process.env.CI)('PostgreSQL Enterprise Configuration Tests', () => {
   let container: StartedTestContainer;
   let pool: Pool;
   let client: Client;

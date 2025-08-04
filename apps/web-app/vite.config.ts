@@ -58,9 +58,9 @@ export default defineConfig(({ mode }) => ({
     passWithNoTests: true,
     globals: true,
     environment: 'jsdom',
-    setupFiles: ['src/test-setup.ts'],
+    setupFiles: ['apps/web-app/src/test-setup.ts'],
     css: true,
-    include: ['src/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}'],
+    include: ['apps/web-app/src/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}'],
     reporters: ['default'],
     coverage: {
       reportsDirectory: '../../coverage/apps/web-app',
