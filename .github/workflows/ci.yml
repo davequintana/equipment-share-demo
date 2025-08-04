@@ -135,8 +135,21 @@ jobs:
       - name: Build ${{ matrix.project }}
         run: pnpm exec nx build ${{ matrix.project }} --prod
 
+      - name: Verify build output
+        run: |
+          if [ -d "dist/apps/${{ matrix.project }}" ]; then
+            echo "Build directory exists: dist/apps/${{ matrix.project }}"
+            ls -la dist/apps/${{ matrix.project }}
+          else
+            echo "Build directory does not exist: dist/apps/${{ matrix.project }}"
+            echo "Available directories:"
+            find dist -type d -name "${{ matrix.project }}" 2>/dev/null || echo "No ${{ matrix.project }} directories found"
+            exit 1
+          fi
+
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
+        if: success()
         with:
           name: build-${{ matrix.project }}
           path: dist/apps/${{ matrix.project }}

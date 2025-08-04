@@ -14,7 +14,7 @@ const port = parseInt(process.env['PORT'] || '4201', 10);
 async function createServer() {
   console.log('Creating SSR server...');
   const app = fastify({ logger: true });
-  let vite: any = null; // eslint-disable-line @typescript-eslint/no-explicit-any
+  let vite: import('vite').ViteDevServer | null = null;
 
   if (isProduction && process.env['CI'] !== 'true') {
     // For production, skip Vite and static file serving for now
@@ -106,7 +106,7 @@ async function createServer() {
     // Register Vite middleware for development
     app.addHook('onRequest', async (request, reply) => {
       // Let Vite handle its dev server routes
-      if (request.url.startsWith('/@') || request.url.startsWith('/src/') || request.url.match(/\.(js|css|ts|tsx)$/)) {
+      if (vite && (request.url.startsWith('/@') || request.url.startsWith('/src/') || request.url.match(/\.(js|css|ts|tsx)$/))) {
         const viteHandler = vite.middlewares;
         await new Promise<void>((resolve, reject) => {
           viteHandler(request.raw, reply.raw, (err: Error | null) => {
@@ -128,7 +128,7 @@ async function createServer() {
   if (!(isProduction && process.env['CI'] !== 'true')) {
     app.addHook('onRequest', async (request, reply) => {
       // Let Vite handle its dev server routes
-      if (request.url.startsWith('/@') || request.url.startsWith('/src/') || request.url.match(/\.(js|css|ts|tsx)$/)) {
+      if (vite && (request.url.startsWith('/@') || request.url.startsWith('/src/') || request.url.match(/\.(js|css|ts|tsx)$/))) {
         const viteHandler = vite.middlewares;
         await new Promise<void>((resolve, reject) => {
           viteHandler(request.raw, reply.raw, (err: Error | null) => {
@@ -195,17 +195,17 @@ async function createServer() {
 
           if (fs.existsSync(fallbackPath)) {
             const templateFile = await fs.promises.readFile(fallbackPath, 'utf-8');
-            template = await vite.transformIndexHtml(url, templateFile);
+            template = vite ? await vite.transformIndexHtml(url, templateFile) : templateFile;
           } else {
             throw new Error(`index.html not found at: ${indexPath} or ${fallbackPath}`);
           }
         } else {
           const templateFile = await fs.promises.readFile(indexPath, 'utf-8');
-          template = await vite.transformIndexHtml(url, templateFile);
+          template = vite ? await vite.transformIndexHtml(url, templateFile) : templateFile;
         }
 
         // Load the server-side render function
-        render = (await vite.ssrLoadModule('/src/server/entry.tsx')).render;
+        render = vite ? (await vite.ssrLoadModule('/src/server/entry.tsx')).render : null;
       }
 
       // Render the app HTML
@@ -216,7 +216,7 @@ async function createServer() {
 
       reply.type('text/html').code(200).send(html);
     } catch (error) {
-      if (!(isProduction && process.env['CI'] !== 'true')) {
+      if (!(isProduction && process.env['CI'] !== 'true') && vite) {
         vite.ssrFixStacktrace(error as Error);
       }
       console.error('SSR Error:', error);
