@@ -135,6 +135,19 @@ jobs:
       - name: Build ${{ matrix.project }}
         run: pnpm exec nx build ${{ matrix.project }} --prod
 
+      - name: Fix build output location (workaround for NX path resolution issue)
+        run: |
+          # Check for build output in common incorrect locations and move to correct location
+          if [ -d "/home/runner/dist/apps/${{ matrix.project }}" ]; then
+            echo "Found build in /home/runner/dist/apps/${{ matrix.project }}, moving to correct location"
+            mkdir -p dist/apps/
+            mv "/home/runner/dist/apps/${{ matrix.project }}" "dist/apps/"
+          elif [ -d "../dist/apps/${{ matrix.project }}" ]; then
+            echo "Found build in ../dist/apps/${{ matrix.project }}, moving to correct location"
+            mkdir -p dist/apps/
+            mv "../dist/apps/${{ matrix.project }}" "dist/apps/"
+          fi
+
       - name: Verify build output exists
         run: |
           echo "=== Build verification for ${{ matrix.project }} ==="

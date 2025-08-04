@@ -37,7 +37,7 @@ export default defineConfig(({ mode }) => ({
   },
 
   build: {
-    outDir: '../../dist/apps/web-app',
+    // Remove outDir - let NX executor handle this via outputPath in project.json
     reportCompressedSize: true,
     copyPublicDir: true,
     commonjsOptions: {
