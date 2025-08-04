@@ -3,10 +3,10 @@
   "version": "0.0.0",
   "license": "MIT",
   "type": "module",
-  "packageManager": "pnpm@9.0.0",
+  "packageManager": "pnpm@9.15.3",
   "engines": {
     "node": "23.6.0",
-    "pnpm": "9.0.0"
+    "pnpm": ">=9.0.0"
   },
   "bundlesize": [
     {
@@ -21,6 +21,10 @@
     "test:all": "nx run-many --target=test --all",
     "test:web-app": "nx test web-app",
     "test:fastify-api": "nx test fastify-api",
+    "test:database": "vitest run apps/fastify-api/src/database.test.ts",
+    "test:infrastructure": "vitest run infrastructure/**/*.test.ts",
+    "test:db-config": "vitest run infrastructure/postgres/config.test.ts",
+    "validate:db-config": "node scripts/validate-db-config.mjs",
     "test:coverage": "nx run-many --target=test --all --coverage",
     "e2e": "nx e2e e2e",
     "e2e:headless": "nx e2e e2e",
@@ -99,6 +103,7 @@
     "@types/isomorphic-fetch": "^0.0.36",
     "@types/jsonwebtoken": "^9.0.10",
     "@types/node": "^20.19.9",
+    "@types/pg": "^8.15.5",
     "@types/react": "19.0.0",
     "@types/react-dom": "19.0.0",
     "@vanilla-extract/css": "^1.17.4",
@@ -117,11 +122,14 @@
     "jiti": "2.4.2",
     "jsdom": "~22.1.0",
     "nx": "21.3.11",
+    "pg": "^8.16.3",
     "prettier": "^2.6.2",
+    "testcontainers": "^11.5.0",
     "tslib": "^2.3.0",
     "typescript": "~5.8.2",
     "typescript-eslint": "^8.29.0",
     "vite": "^6.0.0",
-    "vitest": "^3.2.4"
+    "vitest": "^3.2.4",
+    "yaml": "^2.8.0"
   }
 }

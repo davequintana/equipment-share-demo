@@ -290,18 +290,18 @@ Resources:
         effective_cache_size: !If [IsProd, '{DBInstanceClassMemory*3/4}', '{DBInstanceClassMemory/2}']
         work_mem: !If [IsProd, '32MB', '16MB']
         maintenance_work_mem: !If [IsProd, '512MB', '256MB']
-        
+
         # WAL and Checkpoint Settings
         wal_buffers: '64MB'
         checkpoint_completion_target: '0.9'
         max_wal_size: !If [IsProd, '4GB', '2GB']
         min_wal_size: !If [IsProd, '1GB', '512MB']
-        
+
         # Query Planning
         random_page_cost: '1.1'
         seq_page_cost: '1.0'
         default_statistics_target: '500'
-        
+
         # Logging and Monitoring
         log_statement: 'mod'
         log_min_duration_statement: '5000'
@@ -310,14 +310,14 @@ Resources:
         log_disconnections: 'on'
         log_lock_waits: 'on'
         log_temp_files: '0'
-        
+
         # Performance Extensions
         'pg_stat_statements.max': '10000'
         'pg_stat_statements.track': 'all'
         'auto_explain.log_min_duration': '10s'
         'auto_explain.log_analyze': 'on'
         'auto_explain.log_verbose': 'on'
-        
+
         # Security
         ssl: 'on'
         ssl_ciphers: 'HIGH:MEDIUM:+3DES:!aNULL'

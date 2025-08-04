@@ -57,7 +57,7 @@ $$ LANGUAGE plpgsql;
 
 -- Create performance monitoring view
 CREATE OR REPLACE VIEW reporting.query_performance AS
-SELECT 
+SELECT
     query,
     calls,
     total_time,
@@ -70,7 +70,7 @@ ORDER BY mean_time DESC;
 
 -- Create connection monitoring view
 CREATE OR REPLACE VIEW reporting.connection_stats AS
-SELECT 
+SELECT
     datname as database_name,
     usename as username,
     client_addr,
@@ -84,7 +84,7 @@ WHERE state IS NOT NULL;
 
 -- Create database size monitoring view
 CREATE OR REPLACE VIEW reporting.database_sizes AS
-SELECT 
+SELECT
     datname as database_name,
     pg_size_pretty(pg_database_size(datname)) as size,
     pg_database_size(datname) as size_bytes
@@ -93,7 +93,7 @@ ORDER BY pg_database_size(datname) DESC;
 
 -- Create table size monitoring view
 CREATE OR REPLACE VIEW reporting.table_sizes AS
-SELECT 
+SELECT
     schemaname,
     tablename,
     attname,
@@ -140,11 +140,11 @@ RETURNS INTEGER AS $$
 DECLARE
     deleted_count INTEGER;
 BEGIN
-    DELETE FROM audit.data_changes 
+    DELETE FROM audit.data_changes
     WHERE changed_at < NOW() - INTERVAL '1 day' * days_to_keep;
-    
+
     GET DIAGNOSTICS deleted_count = ROW_COUNT;
-    
+
     RAISE NOTICE 'Deleted % old audit log entries', deleted_count;
     RETURN deleted_count;
 END;
@@ -155,7 +155,7 @@ CREATE OR REPLACE FUNCTION analytics.validate_backup_integrity()
 RETURNS TABLE(table_name TEXT, row_count BIGINT, last_modified TIMESTAMP WITH TIME ZONE) AS $$
 BEGIN
     RETURN QUERY
-    SELECT 
+    SELECT
         t.table_name::TEXT,
         COALESCE(s.n_tup_ins + s.n_tup_upd + s.n_tup_del, 0) as row_count,
         GREATEST(s.last_vacuum, s.last_autovacuum, s.last_analyze, s.last_autoanalyze) as last_modified
