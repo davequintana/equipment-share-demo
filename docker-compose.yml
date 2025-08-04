@@ -27,9 +27,9 @@ services:
         condition: service_started
     environment:
       - NODE_ENV=production
-      - DATABASE_URL=postgresql://enterprise:password@postgres:5432/enterprise_db
+      - DATABASE_URL=postgresql://enterprise:${POSTGRES_PASSWORD:-enterprise_secure_password}@postgres:5432/enterprise_db
       - REDIS_URL=redis://redis:6379
-      - JWT_SECRET=your-super-secret-jwt-key-change-in-production
+      - JWT_SECRET=${JWT_SECRET:-REPLACE_ME_WITH_SECURE_JWT_SECRET}
       - KAFKA_BROKERS=kafka:9092
     restart: unless-stopped
 
@@ -41,7 +41,7 @@ services:
     environment:
       POSTGRES_DB: enterprise_db
       POSTGRES_USER: enterprise
-      POSTGRES_PASSWORD: enterprise_secure_password
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-REPLACE_ME_WITH_SECURE_DB_PASSWORD}
       # Enterprise-level configuration with SCRAM authentication
       POSTGRES_INITDB_ARGS: '--auth-host=scram-sha-256 --auth-local=scram-sha-256'
     volumes:

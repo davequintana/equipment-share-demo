@@ -31,7 +31,7 @@ describe('Docker Compose PostgreSQL Configuration Tests', () => {
       const env = postgresService.environment;
       expect(env.POSTGRES_DB).toBe('enterprise_db');
       expect(env.POSTGRES_USER).toBe('enterprise');
-      expect(env.POSTGRES_PASSWORD).toBe('enterprise_secure_password');
+      expect(env.POSTGRES_PASSWORD).toBe('${POSTGRES_PASSWORD:-enterprise_secure_password}');
       expect(env.POSTGRES_INITDB_ARGS).toBe('--auth-host=scram-sha-256 --auth-local=scram-sha-256');
     });
 

@@ -1,5 +1,5 @@
 # Multi-stage Dockerfile for React SSR Web App
-FROM node:18-alpine AS base
+FROM node:23-alpine AS base
 
 # Install pnpm globally
 RUN npm install -g pnpm@9.15.3
@@ -37,7 +37,7 @@ RUN npx nx build web-app --prod && \
     ls -la /dist/apps/web-app/assets/ || echo "No assets directory"
 
 # Production stage with Node.js
-FROM node:18-alpine AS runner
+FROM node:23-alpine AS runner
 WORKDIR /app
 
 # Set production environment
