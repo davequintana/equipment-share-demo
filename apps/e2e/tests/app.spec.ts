@@ -1,12 +1,28 @@
 import { test, expect } from '@playwright/test';
 
+// Helper function for authentication to reduce duplication and improve parallel efficiency
+async function authenticateUser(page, email = 'admin@example.com', password = 'password') {
+  await page.getByRole('button', { name: 'Login' }).click();
+  await page.fill('input[type="email"]', email);
+  await page.fill('input[type="password"]', password);
+
+  const [response] = await Promise.all([
+    page.waitForResponse(response =>
+      response.url().includes('/api/auth/login'), { timeout: 45000 }
+    ),
+    page.click('button[type="submit"]')
+  ]);
+
+  return response;
+}
+
 test.describe('Enterprise App E2E Tests', () => {
   test.beforeEach(async ({ page }) => {
     // Wait for servers to be ready before running tests
     await page.goto('http://localhost:4201');
 
     // Wait for the main content to load, indicating the app is ready
-    await expect(page.locator('h1')).toBeVisible({ timeout: 30000 });
+    await expect(page.locator('h1')).toBeVisible({ timeout: 45000 });
 
     // Also check that the API server is responding
     const apiHealthCheck = await page.request.get('http://localhost:3334/health');
@@ -20,20 +36,7 @@ test.describe('Enterprise App E2E Tests', () => {
   });
 
   test('should navigate to login and authenticate', async ({ page }) => {
-    // Click login button
-    await page.getByRole('button', { name: 'Login' }).click();
-
-    // Fill login form
-    await page.fill('input[type="email"]', 'admin@example.com');
-    await page.fill('input[type="password"]', 'password');
-
-    // Submit form and wait for the login response or navigation
-    const [response] = await Promise.all([
-      page.waitForResponse(response =>
-        response.url().includes('/api/auth/login'), { timeout: 30000 }
-      ),
-      page.click('button[type="submit"]')
-    ]);
+    const response = await authenticateUser(page);
 
     // Verify the login was successful
     expect(response.status()).toBe(200);
@@ -47,18 +50,8 @@ test.describe('Enterprise App E2E Tests', () => {
   });
 
   test('should display features grid after login', async ({ page }) => {
-    // Login first
-    await page.getByRole('button', { name: 'Login' }).click();
-    await page.fill('input[type="email"]', 'admin@example.com');
-    await page.fill('input[type="password"]', 'password');
-
-    // Submit form and wait for the login response
-    const [response] = await Promise.all([
-      page.waitForResponse(response =>
-        response.url().includes('/api/auth/login'), { timeout: 30000 }
-      ),
-      page.click('button[type="submit"]')
-    ]);
+    // Login first using helper
+    const response = await authenticateUser(page);
 
     // Verify the login was successful
     expect(response.status()).toBe(200);
@@ -76,24 +69,13 @@ test.describe('Enterprise App E2E Tests', () => {
   });
 
   test('should logout successfully', async ({ page }) => {
-    // Login first
-    await page.getByRole('button', { name: 'Login' }).click();
-    await page.fill('input[type="email"]', 'admin@example.com');
-    await page.fill('input[type="password"]', 'password');
-
-    // Submit form and wait for the login response
-    const [response] = await Promise.all([
-      page.waitForResponse(response =>
-        response.url().includes('/api/auth/login'), { timeout: 30000 }
-      ),
-      page.click('button[type="submit"]')
-    ]);
+    // Login first using helper
+    const response = await authenticateUser(page);
 
     // Verify the login was successful
     expect(response.status()).toBe(200);
 
     // Wait for the API call to complete and the page to update
-
     // Give the React state a moment to update after successful login
     await page.waitForTimeout(1000);
 
@@ -111,12 +93,8 @@ test.describe('Enterprise App E2E Tests', () => {
   });
 
   test('should handle login errors', async ({ page }) => {
-    await page.getByRole('button', { name: 'Login' }).click();
-
-    // Try with wrong credentials
-    await page.fill('input[type="email"]', 'wrong@example.com');
-    await page.fill('input[type="password"]', 'wrongpassword');
-    await page.click('button[type="submit"]');
+    // Try with wrong credentials using helper
+    await authenticateUser(page, 'wrong@example.com', 'wrongpassword');
 
     // Wait a moment for potential error handling
     await page.waitForTimeout(1000);

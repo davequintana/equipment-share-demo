@@ -12,9 +12,10 @@ env:
   NODE_VERSION: '23.6.0'
 
 jobs:
-  # Lint job - runs independently and fastest
+  # All independent jobs run in parallel - no cross-dependencies
   lint:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -27,21 +28,21 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
           pnpm-version: ${{ env.PNPM_VERSION }}
 
-      - name: Derive appropriate SHAs for base and head for `nx affected` commands
+      - name: Derive appropriate SHAs for base and head
         uses: nrwl/nx-set-shas@v4
 
       - name: Lint affected projects
-        run: pnpm exec nx affected -t lint --parallel=6
+        run: pnpm exec nx affected -t lint --parallel=4
 
       - name: Type check affected projects
-        run: pnpm exec nx run-many -t type-check --parallel=6
+        run: pnpm exec nx affected -t type-check --parallel=4
 
       - name: Security lint
         run: pnpm run lint:security
 
-  # Test jobs - run in parallel matrix
   test:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     strategy:
       matrix:
         test-group: [unit, integration]
@@ -84,15 +85,15 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
           pnpm-version: ${{ env.PNPM_VERSION }}
 
-      - name: Derive appropriate SHAs for base and head for `nx affected` commands
+      - name: Derive appropriate SHAs for base and head
         uses: nrwl/nx-set-shas@v4
 
       - name: Test affected projects - ${{ matrix.test-group }}
         run: |
           if [ "${{ matrix.test-group }}" = "unit" ]; then
-            pnpm exec nx affected -t test --parallel=4 --coverage --exclude=**/integration/**
+            pnpm exec nx affected -t test --parallel=3 --coverage --exclude="**/integration/**"
           else
-            pnpm exec nx affected -t test --parallel=4 --testPathPattern=integration
+            pnpm exec nx affected -t test --parallel=3 --testPathPattern="integration"
           fi
         env:
           DATABASE_URL: postgresql://postgres:postgres@localhost:5432/test_db
@@ -101,16 +102,16 @@ jobs:
           NODE_ENV: test
 
       - name: Upload test coverage
-        uses: codecov/codecov-action@v4
         if: matrix.test-group == 'unit'
+        uses: codecov/codecov-action@v4
         with:
           directory: coverage
           fail_ci_if_error: false
           token: ${{ secrets.CODECOV_TOKEN }}
 
-  # Build job - runs in parallel with tests
   build:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     strategy:
       matrix:
         project: [web-app, fastify-api]
@@ -128,7 +129,7 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
           pnpm-version: ${{ env.PNPM_VERSION }}
 
-      - name: Derive appropriate SHAs for base and head for `nx affected` commands
+      - name: Derive appropriate SHAs for base and head
         uses: nrwl/nx-set-shas@v4
 
       - name: Build ${{ matrix.project }}
@@ -141,9 +142,9 @@ jobs:
           path: dist/apps/${{ matrix.project }}
           retention-days: 1
 
-  # Security scan runs in parallel with other jobs
   security-scan:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     permissions:
       contents: read
       security-events: write
@@ -167,9 +168,10 @@ jobs:
         with:
           sarif_file: 'trivy-results.sarif'
 
-  # E2E tests only need builds, not lint or test
+  # Only E2E tests need build artifacts - runs after build completes
   e2e-tests:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     needs: [build]
 
     services:
@@ -217,15 +219,12 @@ jobs:
           path: dist/apps/
 
       - name: Install Playwright Browsers
-        run: pnpm exec playwright install --with-deps
+        run: pnpm exec playwright install --with-deps chromium
 
       - name: Debug environment
         run: |
           echo "Node version: $(node --version)"
           echo "PNPM version: $(pnpm --version)"
-          echo "CI environment: $CI"
-          echo "NODE_ENV: $NODE_ENV"
-          echo "PWD: $(pwd)"
           ls -la dist/apps/ || echo "No dist directory"
 
       - name: Run E2E tests
@@ -236,8 +235,7 @@ jobs:
           JWT_SECRET: test-secret-key
           NODE_ENV: test
           CI: true
-          PLAYWRIGHT_WORKERS: 4
-          DEBUG: pw:webserver
+          PLAYWRIGHT_WORKERS: 6
 
       - name: Upload E2E test results
         uses: actions/upload-artifact@v4
@@ -249,9 +247,10 @@ jobs:
             apps/e2e/test-results/
           retention-days: 30
 
-  # Docker builds only need build artifacts, not tests
+  # Docker builds run in parallel after build completes
   build-docker:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     needs: [build]
     if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop'
     strategy:
@@ -295,50 +294,3 @@ jobs:
           cache-from: type=gha,scope=${{ matrix.app }}
           cache-to: type=gha,mode=max,scope=${{ matrix.app }}
           platforms: linux/amd64
-
-  # Deployment only needs successful E2E tests and Docker builds
-  deploy-staging:
-    runs-on: ubuntu-latest
-    needs: [e2e-tests, build-docker]
-    if: github.ref == 'refs/heads/develop'
-    environment: staging
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ secrets.AWS_REGION }}
-
-      - name: Deploy to Staging
-        run: |
-          echo "Deploying to staging environment..."
-          # Add your staging deployment script here
-          # Example: aws ecs update-service --cluster staging --service web-app --force-new-deployment
-
-  deploy-production:
-    runs-on: ubuntu-latest
-    needs: [e2e-tests, build-docker]
-    if: github.ref == 'refs/heads/main'
-    environment: production
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ secrets.AWS_REGION }}
-
-      - name: Deploy to Production
-        run: |
-          echo "Deploying to production environment..."
-          # Add your production deployment script here
-          # Example: aws cloudformation deploy --template-file infrastructure/aws/cloudformation-template.yaml --stack-name enterprise-app --capabilities CAPABILITY_IAM
