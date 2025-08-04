@@ -135,25 +135,51 @@ jobs:
       - name: Build ${{ matrix.project }}
         run: pnpm exec nx build ${{ matrix.project }} --prod
 
-      - name: Verify build output
+      - name: Verify build output exists
         run: |
+          echo "=== Build verification for ${{ matrix.project }} ==="
+          echo "Current directory: $(pwd)"
+          echo "Contents of dist/:"
+          ls -la dist/ || echo "No dist directory found"
+          echo "Contents of dist/apps/:"
+          ls -la dist/apps/ || echo "No dist/apps directory found"
+          echo "Looking for ${{ matrix.project }} build output:"
+          
           if [ -d "dist/apps/${{ matrix.project }}" ]; then
-            echo "Build directory exists: dist/apps/${{ matrix.project }}"
-            ls -la dist/apps/${{ matrix.project }}
+            echo "✅ Build directory exists: dist/apps/${{ matrix.project }}"
+            echo "Contents:"
+            ls -la "dist/apps/${{ matrix.project }}"
+            echo "File count: $(find dist/apps/${{ matrix.project }} -type f | wc -l)"
           else
-            echo "Build directory does not exist: dist/apps/${{ matrix.project }}"
-            echo "Available directories:"
-            find dist -type d -name "${{ matrix.project }}" 2>/dev/null || echo "No ${{ matrix.project }} directories found"
+            echo "❌ Build directory does not exist: dist/apps/${{ matrix.project }}"
+            echo "Available directories in dist/:"
+            find dist -type d 2>/dev/null || echo "No directories found in dist/"
+            echo "Looking for any ${{ matrix.project }} directories:"
+            find . -type d -name "${{ matrix.project }}" 2>/dev/null || echo "No ${{ matrix.project }} directories found anywhere"
+            
+            echo "=== Debug: NX build output ==="
+            pnpm exec nx show project ${{ matrix.project }} --json | jq -r '.targets.build.outputs[]' || echo "Could not get build outputs"
+            
             exit 1
           fi
 
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
-        if: success()
+        if: success() && hashFiles('dist/apps/${{ matrix.project }}/**/*') != ''
         with:
           name: build-${{ matrix.project }}
           path: dist/apps/${{ matrix.project }}
           retention-days: 1
+          if-no-files-found: error
+
+      - name: Upload build artifacts (fallback)
+        uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: debug-${{ matrix.project }}-dist
+          path: dist/
+          retention-days: 1
+          if-no-files-found: ignore
 
   security-scan:
     runs-on: ubuntu-latest
@@ -226,10 +252,23 @@ jobs:
 
       - name: Download build artifacts
         uses: actions/download-artifact@v4
+        continue-on-error: true
         with:
           pattern: build-*
           merge-multiple: true
           path: dist/apps/
+
+      - name: Verify downloaded artifacts
+        run: |
+          echo "=== Downloaded build artifacts ==="
+          ls -la dist/apps/ || echo "No dist/apps directory found"
+          if [ ! -d "dist/apps" ] || [ -z "$(ls -A dist/apps 2>/dev/null)" ]; then
+            echo "⚠️  No build artifacts found - building locally for E2E tests"
+            pnpm exec nx build web-app --prod
+            pnpm exec nx build fastify-api --prod
+          else
+            echo "✅ Build artifacts downloaded successfully"
+          fi
 
       - name: Install Playwright Browsers
         run: pnpm exec playwright install --with-deps chromium
