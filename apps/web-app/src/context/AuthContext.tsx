@@ -1,5 +1,7 @@
 import React, { createContext, useState, useEffect, ReactNode } from 'react';
 import 'isomorphic-fetch'; // For SSR compatibility
+import { isLocalOnlyMode } from '../utils/api-url';
+import { localAuth } from '../utils/local-auth';
 
 interface User {
   id: string;
@@ -63,35 +65,43 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children, isSSR = fa
   const login = async (email: string, password: string) => {
     setLoading(true);
     try {
-      const apiUrl = typeof window !== 'undefined'
-        ? '/api/auth/login'
-        : `${process.env['VITE_API_URL'] || 'http://localhost:3333'}/api/auth/login`;
+      // Use local auth for GitHub Pages, API for development
+      if (isLocalOnlyMode()) {
+        const { user, token } = await localAuth.login(email, password);
+        setToken(token);
+        setUser(user);
+      } else {
+        // Original API logic for development
+        const apiUrl = typeof window !== 'undefined'
+          ? '/api/auth/login'
+          : `${process.env['VITE_API_URL'] || 'http://localhost:3333'}/api/auth/login`;
 
-      const response = await fetch(apiUrl, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email, password }),
-      });
+        const response = await fetch(apiUrl, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ email, password }),
+        });
 
-      if (!response.ok) {
-        const error = await response.json() as any;
-        // Handle different types of error responses
-        if (error.details && Array.isArray(error.details)) {
-          throw new Error(error.details.join(', '));
+        if (!response.ok) {
+          const error = await response.json() as { error?: string; message?: string; details?: string[] };
+          // Handle different types of error responses
+          if (error.details && Array.isArray(error.details)) {
+            throw new Error(error.details.join(', '));
+          }
+          throw new Error(error.error || error.message || 'Login failed');
         }
-        throw new Error(error.error || error.message || 'Login failed');
-      }
 
-      const data = await response.json() as any;
-      setToken(data.token);
-      setUser(data.user);
+        const data = await response.json() as { token: string; user: User };
+        setToken(data.token);
+        setUser(data.user);
 
-      // Store in localStorage only on client side
-      if (typeof window !== 'undefined') {
-        localStorage.setItem('token', data.token);
-        localStorage.setItem('user', JSON.stringify(data.user));
+        // Store in localStorage only on client side
+        if (typeof window !== 'undefined') {
+          localStorage.setItem('token', data.token);
+          localStorage.setItem('user', JSON.stringify(data.user));
+        }
       }
     } finally {
       setLoading(false);
@@ -101,35 +111,43 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children, isSSR = fa
   const register = async (email: string, password: string, name: string) => {
     setLoading(true);
     try {
-      const apiUrl = typeof window !== 'undefined'
-        ? '/api/auth/register'
-        : `${process.env['VITE_API_URL'] || 'http://localhost:3333'}/api/auth/register`;
+      // Use local auth for GitHub Pages, API for development
+      if (isLocalOnlyMode()) {
+        const { user, token } = await localAuth.register(email, password, name);
+        setToken(token);
+        setUser(user);
+      } else {
+        // Original API logic for development
+        const apiUrl = typeof window !== 'undefined'
+          ? '/api/auth/register'
+          : `${process.env['VITE_API_URL'] || 'http://localhost:3333'}/api/auth/register`;
 
-      const response = await fetch(apiUrl, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email, password, name }),
-      });
+        const response = await fetch(apiUrl, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ email, password, name }),
+        });
 
-      if (!response.ok) {
-        const error = await response.json() as any;
-        // Handle different types of error responses
-        if (error.details && Array.isArray(error.details)) {
-          throw new Error(error.details.join(', '));
+        if (!response.ok) {
+          const error = await response.json() as { error?: string; message?: string; details?: string[] };
+          // Handle different types of error responses
+          if (error.details && Array.isArray(error.details)) {
+            throw new Error(error.details.join(', '));
+          }
+          throw new Error(error.error || error.message || 'Registration failed');
         }
-        throw new Error(error.error || error.message || 'Registration failed');
-      }
 
-      const data = await response.json() as any;
-      setToken(data.token);
-      setUser(data.user);
+        const data = await response.json() as { token: string; user: User };
+        setToken(data.token);
+        setUser(data.user);
 
-      // Store in localStorage only on client side
-      if (typeof window !== 'undefined') {
-        localStorage.setItem('token', data.token);
-        localStorage.setItem('user', JSON.stringify(data.user));
+        // Store in localStorage only on client side
+        if (typeof window !== 'undefined') {
+          localStorage.setItem('token', data.token);
+          localStorage.setItem('user', JSON.stringify(data.user));
+        }
       }
     } finally {
       setLoading(false);
