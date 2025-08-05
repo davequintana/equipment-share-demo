@@ -1,5 +1,5 @@
 import React from 'react';
-import { hydrateRoot } from 'react-dom/client';
+import { createRoot } from 'react-dom/client';
 import { BrowserRouter } from 'react-router-dom';
 import { App } from '../app/app';
 
@@ -29,8 +29,9 @@ if (root) {
   // Handle any stored route before rendering
   handleStoredRoute();
 
-  hydrateRoot(
-    root,
+  // Use createRoot for client-side rendering (not SSR)
+  const reactRoot = createRoot(root);
+  reactRoot.render(
     <React.StrictMode>
       <BrowserRouter basename={getBasename()}>
         <App />

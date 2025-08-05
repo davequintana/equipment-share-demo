@@ -84,6 +84,12 @@ jobs:
           if [ -d "dist/apps/web-app-pages" ]; then
             echo "✅ Found built web app in dist/apps/web-app-pages"
             cp -r dist/apps/web-app-pages/* ./pages/
+
+            # Rename index.pages.html to index.html for GitHub Pages
+            if [ -f "./pages/index.pages.html" ]; then
+              mv ./pages/index.pages.html ./pages/index.html
+              echo "✅ Renamed index.pages.html to index.html"
+            fi
           else
             echo "❌ Built web app not found. Checking available directories:"
             find . -name "dist" -type d | head -10
