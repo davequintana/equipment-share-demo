@@ -1,0 +1,30 @@
+# Codecov configuration
+coverage:
+  status:
+    project:
+      default:
+        target: auto
+        threshold: 1%
+        informational: true
+    patch:
+      default:
+        target: auto
+        threshold: 1%
+        informational: true
+
+ignore:
+  - "**/*.test.ts"
+  - "**/*.spec.ts"
+  - "**/test/**"
+  - "**/tests/**"
+  - "**/__tests__/**"
+  - "**/coverage/**"
+  - "**/node_modules/**"
+  - "**/dist/**"
+  - "**/*.config.ts"
+  - "**/*.config.js"
+
+comment:
+  layout: "reach,diff,flags,tree"
+  behavior: default
+  require_changes: false
