@@ -14,32 +14,17 @@ node_modules
 pnpm-debug.log*
 
 # Environment files - NEVER commit secrets
+.env
 .env.local
 .env.*.local
 .env.production
 .env.staging
+.env.development
+.env.test
+!.env.example
 *.key
 *.pem
 *.p12
-
-# IDEs and editors
-/.idea
-.project
-.classpath
-.c9/ithub.com/en/get-started/getting-started-with-git/ignoring-files for more about ignoring files.
-
-# compiled output
-dist
-tmp
-out-tsc
-
-# dependencies
-node_modules
-
-# pnpm
-.pnpm-store
-.pnpm-debug.log
-pnpm-debug.log*
 
 # IDEs and editors
 /.idea
