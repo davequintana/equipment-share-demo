@@ -20,6 +20,12 @@ This repository implements comprehensive security scanning using multiple tools 
   - Security-extended query suite
   - Custom configuration excluding test files
 
+- **☁️ SonarCloud Code Quality & Security**:
+  - Continuous code quality analysis
+  - Security hotspot detection
+  - Code coverage tracking
+  - Quality gate enforcement
+
 - **📦 Dependency Security Audit**:
   - pnpm audit for npm package vulnerabilities  
   - Automated vulnerability severity assessment

@@ -431,3 +431,75 @@ jobs:
           }
 
           echo "✅ No moderate or high severity vulnerabilities found"
+
+  # SonarCloud code analysis
+  sonarcloud:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    needs: [test]
+    if: github.actor != 'dependabot[bot]'
+    permissions:
+      contents: read
+      pull-requests: read
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          # Disable shallow clones for better SonarCloud analysis
+          fetch-depth: 0
+
+      - name: Setup Node.js and pnpm
+        uses: ./.github/actions/setup-node-pnpm
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          pnpm-version: ${{ env.PNPM_VERSION }}
+
+      - name: Derive appropriate SHAs for base and head
+        uses: nrwl/nx-set-shas@v4
+
+      - name: Run tests with coverage for SonarCloud
+        run: pnpm exec nx affected -t test --parallel=3 --coverage
+        env:
+          NODE_ENV: test
+          JWT_SECRET: test-secret-key
+
+      - name: Consolidate coverage for SonarCloud
+        run: |
+          echo "Consolidating coverage reports for SonarCloud..."
+          mkdir -p coverage
+          
+          # Copy coverage from individual projects
+          for app in apps/*/coverage; do
+            if [ -d "$app" ]; then
+              app_name=$(basename $(dirname $app))
+              echo "Copying coverage from $app_name..."
+              mkdir -p "coverage/$app_name"
+              cp -r "$app"/* "coverage/$app_name/"
+            fi
+          done
+          
+          # Look for lcov.info files and copy to root coverage
+          find . -name "lcov.info" -path "*/coverage/*" -exec cp {} coverage/ \; 2>/dev/null || true
+          
+          echo "Coverage files for SonarCloud:"
+          find coverage -name "*.info" -o -name "*.xml" | head -10
+
+      - name: SonarCloud Scan
+        uses: SonarSource/sonarcloud-github-action@master
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        with:
+          args: >
+            -Dsonar.projectKey=davequintana_equipment-share-demo
+            -Dsonar.organization=davequintana
+            -Dsonar.projectName="Equipment Share Demo"
+            -Dsonar.projectVersion=1.0
+            -Dsonar.sources=apps,libs
+            -Dsonar.tests=apps,libs
+            -Dsonar.test.inclusions="**/*.test.ts,**/*.spec.ts,**/*.test.tsx,**/*.spec.tsx"
+            -Dsonar.exclusions="**/node_modules/**,**/dist/**,**/coverage/**,**/*.test.ts,**/*.spec.ts,**/*.test.tsx,**/*.spec.tsx,**/e2e/**,**/playwright.config.ts,**/vite.config.ts,**/vitest.config.ts,**/*.config.js,**/*.config.ts,**/infrastructure/**"
+            -Dsonar.javascript.lcov.reportPaths=coverage/lcov.info
+            -Dsonar.typescript.tsconfigPath=tsconfig.base.json
+            -Dsonar.qualitygate.wait=true
