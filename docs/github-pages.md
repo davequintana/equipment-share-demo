@@ -41,10 +41,13 @@ base: '/your-repository-name/', // Update this
 If your application needs to connect to a backend API, update the API URL:
 
 **`.github/workflows/deploy-pages.yml`**:
+
 ```yaml
 env:
   VITE_API_URL: https://your-api-domain.com
 ```
+
+**📋 Note**: By default, the app runs in Demo Mode with mock API responses. See [API Configuration Guide](github-pages-api.md) for details on connecting a real backend.
 
 ## 🚀 Deployment Process
 

@@ -6,7 +6,30 @@ import { Dashboard } from '../components/Dashboard';
 import { LoginForm } from '../components/LoginForm';
 import { RegisterForm } from '../components/RegisterForm';
 import { ProfilePage } from '../components/ProfilePage';
+import { isLocalOnlyMode } from '../utils/api-url';
 import * as styles from '../styles/theme.css';
+
+// Demo Mode Banner Component
+function DemoBanner() {
+  if (!isLocalOnlyMode()) return null;
+
+  return (
+    <div style={{
+      background: 'linear-gradient(90deg, #667eea 0%, #764ba2 100%)',
+      color: 'white',
+      padding: '8px 16px',
+      textAlign: 'center',
+      fontSize: '14px',
+      fontWeight: '500',
+      boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+    }}>
+      <span role="img" aria-label="theater mask">🎭</span> Demo Mode: This is a static demo with mock API responses.
+      <span style={{ marginLeft: '8px', opacity: 0.9 }}>
+        Try: demo@example.com / any password
+      </span>
+    </div>
+  );
+}
 
 function AppContent() {
   const { user, loading } = useContext(AuthContext);
@@ -29,6 +52,7 @@ function AppContent() {
 
   return (
     <div className={styles.container}>
+      <DemoBanner />
       <Header />
       <Routes>
         <Route
