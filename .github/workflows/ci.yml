@@ -43,10 +43,6 @@ jobs:
   test:
     runs-on: ubuntu-latest
     timeout-minutes: 15
-    strategy:
-      matrix:
-        test-group: [unit, integration]
-      fail-fast: false
 
     services:
       postgres:
@@ -88,13 +84,8 @@ jobs:
       - name: Derive appropriate SHAs for base and head
         uses: nrwl/nx-set-shas@v4
 
-      - name: Test affected projects - ${{ matrix.test-group }}
-        run: |
-          if [ "${{ matrix.test-group }}" = "unit" ]; then
-            pnpm exec nx affected -t test --parallel=3 --coverage --exclude="**/integration/**"
-          else
-            pnpm exec nx affected -t test --parallel=3 --testPathPattern="integration"
-          fi
+      - name: Test affected projects
+        run: pnpm exec nx affected -t test --parallel=3 --coverage
         env:
           DATABASE_URL: postgresql://postgres:postgres@localhost:5432/test_db
           REDIS_URL: redis://localhost:6379
@@ -102,7 +93,6 @@ jobs:
           NODE_ENV: test
 
       - name: Upload test coverage
-        if: matrix.test-group == 'unit'
         uses: codecov/codecov-action@v4
         with:
           directory: coverage
