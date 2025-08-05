@@ -147,9 +147,17 @@ export function setupDemoMode() {
     window.fetch = async (input: RequestInfo | URL, init?: RequestInit) => {
       const url = typeof input === 'string' ? input : input.toString();
 
-      // Only intercept API calls
-      if (url.includes('/api/') || url.startsWith('https://api.your-domain.com')) {
-        return demoFetch(url, init);
+      // Only intercept API calls - use proper URL validation
+      try {
+        const urlObj = new URL(url, window.location.origin);
+        if (urlObj.pathname.startsWith('/api/')) {
+          return demoFetch(url, init);
+        }
+      } catch {
+        // If URL parsing fails, check for relative API paths
+        if (url.startsWith('/api/')) {
+          return demoFetch(url, init);
+        }
       }
 
       // Use original fetch for non-API requests
