@@ -92,12 +92,53 @@ jobs:
           JWT_SECRET: test-secret-key
           NODE_ENV: test
 
+      - name: Check coverage reports
+        run: |
+          echo "Checking for coverage reports..."
+          find . -name "coverage" -type d | head -10
+          echo "Coverage files found:"
+          find . -name "*.json" -path "*/coverage/*" | head -10
+          echo "Contents of ./coverage directory:"
+          ls -la ./coverage/ || echo "No ./coverage directory found"
+          if [ -d "./coverage" ]; then
+            find ./coverage -name "*.json" | head -5
+          fi
+
+      - name: Consolidate coverage reports
+        run: |
+          echo "Consolidating coverage reports..."
+          mkdir -p coverage
+
+          # Copy coverage from apps projects
+          if [ -d "apps/fastify-api/coverage" ]; then
+            echo "Copying fastify-api coverage..."
+            mkdir -p coverage/apps/fastify-api
+            cp -r apps/fastify-api/coverage/* coverage/apps/fastify-api/
+          fi
+
+          if [ -d "apps/web-app/coverage" ]; then
+            echo "Copying web-app coverage..."
+            mkdir -p coverage/apps/web-app
+            cp -r apps/web-app/coverage/* coverage/apps/web-app/
+          fi
+
+          # Copy any coverage files from the expected NX output location
+          if [ -d "coverage/apps" ] && [ "$(find coverage/apps -name '*.json' | wc -l)" -gt 0 ]; then
+            echo "Found existing coverage in NX output location"
+          fi
+
+          echo "Final coverage structure:"
+          find coverage -name "*.json" 2>/dev/null | head -10 || echo "No coverage JSON files found"
+
+          # For debugging: show total coverage files found
+          echo "Total JSON coverage files: $(find coverage -name "*.json" 2>/dev/null | wc -l)"
+
       - name: Upload test coverage
         uses: codecov/codecov-action@v4
         with:
           directory: coverage
           fail_ci_if_error: false
-          token: ${{ secrets.CODECOV_TOKEN }}
+        continue-on-error: true
 
   build:
     runs-on: ubuntu-latest
