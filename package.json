@@ -110,7 +110,7 @@
     "@testing-library/react": "^16.1.0",
     "@testing-library/user-event": "^14.6.1",
     "@types/bcryptjs": "^3.0.0",
-    "@types/isomorphic-fetch": "^0.0.36",
+    "@types/isomorphic-fetch": "^0.0.39",
     "@types/jsonwebtoken": "^9.0.10",
     "@types/node": "^20.19.9",
     "@types/pg": "^8.15.5",
