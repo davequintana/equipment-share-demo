@@ -27,7 +27,7 @@ JWT_SECRET=${JWT_SECRET}
 JWT_EXPIRES_IN=24h
 
 # Database Configuration
-POSTGRES_PASSWORD=${DB_PASSWORD}
+POSTGRES_PASSWORD=${DB_PASSWORD:-enterprise_secure_password_change_me}
 DATABASE_URL=postgresql://enterprise:\${POSTGRES_PASSWORD}@localhost:5432/enterprise_db
 
 # Redis Configuration
@@ -49,7 +49,7 @@ EOF
 echo "✅ Environment setup complete!"
 echo ""
 echo "📋 Generated secrets:"
-echo "   JWT_SECRET: ${JWT_SECRET:0:32}... (64 bytes)"
+echo "   JWT_SECRET: [Generated] (64 bytes)"
 echo "   POSTGRES_PASSWORD: ${DB_PASSWORD}"
 echo ""
 echo "🔒 Security reminders:"

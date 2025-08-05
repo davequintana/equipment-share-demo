@@ -205,7 +205,7 @@ async function createServer() {
         }
 
         // Load the server-side render function
-        render = vite ? (await vite.ssrLoadModule('/src/server/entry.tsx')).render : null;
+        render = (await vite.ssrLoadModule('/src/server/entry.tsx')).render;
       }
 
       // Render the app HTML
