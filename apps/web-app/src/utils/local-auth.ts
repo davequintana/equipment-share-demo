@@ -37,7 +37,7 @@ export const localAuth = {
       if (!stored) return null;
 
       const auth: StoredAuth = JSON.parse(stored);
-      
+
       // Check if token is expired
       if (Date.now() - auth.timestamp > TOKEN_EXPIRY) {
         localStorage.removeItem(AUTH_KEY);
@@ -123,10 +123,10 @@ export const localAuth = {
     if (!auth) {
       throw new Error('Not authenticated');
     }
-    
+
     // Simulate network delay
     await new Promise(resolve => setTimeout(resolve, 200));
-    
+
     return auth.user;
   },
 

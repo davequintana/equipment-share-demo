@@ -20,7 +20,7 @@ const demoDelay = (ms = 500) => new Promise(resolve => setTimeout(resolve, ms));
 export const mockAuthResponses = {
   login: async (email: string, password: string) => {
     await demoDelay();
-    
+
     // Simple demo validation
     if (email && password) {
       return {
@@ -32,7 +32,7 @@ export const mockAuthResponses = {
         })
       };
     }
-    
+
     return {
       ok: false,
       json: async () => ({
@@ -43,7 +43,7 @@ export const mockAuthResponses = {
 
   register: async (email: string, password: string, name?: string) => {
     await demoDelay();
-    
+
     // Simple demo validation
     if (email && password) {
       return {
@@ -55,7 +55,7 @@ export const mockAuthResponses = {
         })
       };
     }
-    
+
     return {
       ok: false,
       json: async () => ({
@@ -66,7 +66,7 @@ export const mockAuthResponses = {
 
   profile: async () => {
     await demoDelay();
-    
+
     return {
       ok: true,
       json: async () => ({
@@ -78,7 +78,7 @@ export const mockAuthResponses = {
 
   updateProfile: async (data: Record<string, unknown>) => {
     await demoDelay();
-    
+
     return {
       ok: true,
       json: async () => ({
@@ -99,7 +99,7 @@ export async function demoFetch(url: string, options?: RequestInit): Promise<Res
   // Parse the URL to determine which mock response to use
   const urlPath = new URL(url, window.location.origin).pathname;
   const method = options?.method?.toUpperCase() || 'GET';
-  
+
   console.log(`🎭 Demo Mode: ${method} ${urlPath}`);
 
   // Mock auth endpoints
@@ -107,12 +107,12 @@ export async function demoFetch(url: string, options?: RequestInit): Promise<Res
     const body = JSON.parse(options?.body as string || '{}');
     return mockAuthResponses.login(body.email, body.password) as Promise<Response>;
   }
-  
-  if (urlPath.includes('/api/auth/register') && method === 'POST') {  
+
+  if (urlPath.includes('/api/auth/register') && method === 'POST') {
     const body = JSON.parse(options?.body as string || '{}');
     return mockAuthResponses.register(body.email, body.password, body.name) as Promise<Response>;
   }
-  
+
   if (urlPath.includes('/api/users/profile')) {
     if (method === 'GET') {
       return mockAuthResponses.profile() as Promise<Response>;
@@ -122,7 +122,7 @@ export async function demoFetch(url: string, options?: RequestInit): Promise<Res
       return mockAuthResponses.updateProfile(body) as Promise<Response>;
     }
   }
-  
+
   // Default response for unknown endpoints
   await demoDelay();
   return {
@@ -139,19 +139,19 @@ export async function demoFetch(url: string, options?: RequestInit): Promise<Res
 export function setupDemoMode() {
   if (isLocalOnlyMode()) {
     console.log('🎭 Demo Mode Enabled - Using mock API responses');
-    
+
     // Store original fetch
     const originalFetch = window.fetch;
-    
+
     // Replace fetch with demo version
     window.fetch = async (input: RequestInfo | URL, init?: RequestInit) => {
       const url = typeof input === 'string' ? input : input.toString();
-      
+
       // Only intercept API calls
       if (url.includes('/api/') || url.startsWith('https://api.your-domain.com')) {
         return demoFetch(url, init);
       }
-      
+
       // Use original fetch for non-API requests
       return originalFetch(input, init);
     };
