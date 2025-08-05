@@ -134,7 +134,7 @@ jobs:
           echo "Total JSON coverage files: $(find coverage -name "*.json" 2>/dev/null | wc -l)"
 
       - name: Upload test coverage
-        uses: codecov/codecov-action@v4
+        uses: codecov/codecov-action@v5
         with:
           directory: coverage
           fail_ci_if_error: false
