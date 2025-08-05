@@ -19,12 +19,11 @@
    - ✅ Unit and integration tests 
    - ✅ Build for web-app and fastify-api
    - ✅ **E2E tests with 6 workers** (`PLAYWRIGHT_WORKERS: 6`)
-   - ✅ Security scanning with Trivy
+   - ✅ Security scanning with dependency audit
    - ✅ Docker builds for deployments
 
 2. **`release.yml`** - Release-based deployment
-3. **`security.yml`** - Security monitoring
-4. **`performance.yml`** - Performance benchmarks
+3. **`performance.yml`** - Performance benchmarks
 
 ### 🔒 **Security Configuration**
 - ✅ **Secrets properly used**: `${{ secrets.POSTGRES_PASSWORD || 'postgres' }}`

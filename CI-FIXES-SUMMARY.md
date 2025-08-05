@@ -61,7 +61,7 @@
 ✅ build (web-app): Pass (artifacts verified)
 ✅ build (fastify-api): Pass (artifacts verified)
 ✅ e2e-tests: Pass (21 tests, 6 workers, 35.1s)
-✅ security-scan: Pass (Trivy scanning)
+✅ security-scan: Pass (Dependency scanning)
 ✅ build-docker: Pass (multi-platform builds)
 ```
 

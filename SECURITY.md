@@ -1,6 +1,5 @@
 # Security Policy
-
-## Supported Versions
+- **🔎 CodeQL Static Analysis**:## Supported Versions
 
 We actively support security updates for the following versions:
 
@@ -16,12 +15,6 @@ This repository implements comprehensive security scanning using multiple tools 
 
 ### Automated Security Scans
 
-- **🛡️ Trivy Vulnerability Scanner**: 
-  - Filesystem scanning for vulnerabilities and misconfigurations
-  - Docker image security scanning for all base images
-  - License compliance checking
-  - Daily scheduled scans + PR-triggered scans
-
 - **🔎 CodeQL Static Analysis**:
   - JavaScript/TypeScript security vulnerability detection
   - Security-extended query suite
@@ -35,15 +28,7 @@ This repository implements comprehensive security scanning using multiple tools 
 - **🐳 Docker Security Scanning**:
   - Base image vulnerability assessment
   - Multi-image scanning matrix
-  - SARIF reporting for security dashboard
-
-### Security Scan Configuration
-
-Our Trivy configuration (`.trivy.yaml`) includes:
-- CRITICAL/HIGH/MEDIUM severity reporting
-- Ignore unfixed vulnerabilities option
-- Custom skip policies for false positives
-- Optimized performance settings
+  - Security best practices validation
 
 ### Scan Frequency & Triggers
 

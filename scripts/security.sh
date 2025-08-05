@@ -98,8 +98,7 @@ check_docker_images() {
     done
 
     echo ""
-    echo -e "${YELLOW}💡 For full Docker image security scanning, use GitHub Actions or install Trivy locally${NC}"
-    echo "   Install Trivy: https://aquasecurity.github.io/trivy/latest/getting-started/installation/"
+    echo -e "${YELLOW}💡 For full Docker image security scanning, use GitHub Actions${NC}"
     echo ""
 }
 
@@ -110,16 +109,9 @@ install_security_tools() {
     echo "📦 Checking if Homebrew is available..."
     if command -v brew &> /dev/null; then
         echo "✅ Homebrew found"
-
-        echo "🔍 Installing Trivy..."
-        if brew install trivy; then
-            echo -e "${GREEN}✅ Trivy installed successfully${NC}"
-        else
-            echo -e "${YELLOW}⚠️ Trivy installation failed or already installed${NC}"
-        fi
+        echo "ℹ️ Security tools can be installed as needed"
     else
-        echo -e "${YELLOW}⚠️ Homebrew not found. Please install manually:${NC}"
-        echo "   Trivy: https://aquasecurity.github.io/trivy/latest/getting-started/installation/"
+        echo -e "${YELLOW}⚠️ Homebrew not found. Security tools can be installed manually as needed${NC}"
     fi
 
     echo ""
@@ -140,12 +132,6 @@ show_security_status() {
         echo -e "  ❌ GitHub Actions Security Workflow: ${RED}Missing${NC}"
     fi
 
-    if [ -f ".trivy.yaml" ]; then
-        echo -e "  ✅ Trivy Configuration: ${GREEN}Present${NC}"
-    else
-        echo -e "  ❌ Trivy Configuration: ${RED}Missing${NC}"
-    fi
-
     if [ -f "SECURITY.md" ]; then
         echo -e "  ✅ Security Policy: ${GREEN}Present${NC}"
     else
@@ -155,12 +141,6 @@ show_security_status() {
     # Check security tools
     echo ""
     echo "🛠️ Security Tools:"
-
-    if command -v trivy &> /dev/null; then
-        echo -e "  ✅ Trivy: ${GREEN}Installed${NC} ($(trivy version | head -1))"
-    else
-        echo -e "  ❌ Trivy: ${YELLOW}Not installed locally${NC}"
-    fi
 
     if command -v docker &> /dev/null; then
         echo -e "  ✅ Docker: ${GREEN}Available${NC} ($(docker --version | cut -d' ' -f3 | cut -d',' -f1))"
