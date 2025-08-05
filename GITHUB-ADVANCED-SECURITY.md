@@ -31,7 +31,7 @@ We've implemented alternative dependency security scanning in `.github/workflows
 - ✅ **Dependency Vulnerability Audit**: `pnpm audit --audit-level moderate`
 - ✅ **License Compliance Check**: Scans for GPL/AGPL licenses
 - ✅ **Package Change Analysis**: Detects package.json modifications
-- ✅ **Trivy Container Scanning**: File system vulnerability scanning
+- ✅ **Dependency Scanning**: File system vulnerability scanning
 - ✅ **CodeQL Static Analysis**: JavaScript/TypeScript code scanning
 
 #### Security Coverage:
@@ -43,7 +43,7 @@ dependency-security:
   - Manual review prompts for security implications
 
 security-scan:
-  - Trivy file system scanning
+  - Dependency vulnerability scanning
   - SARIF output for GitHub Security tab
   - Container and dependency vulnerability detection
 
