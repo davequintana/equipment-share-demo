@@ -1,5 +1,5 @@
 # Multi-stage Dockerfile for React SSR Web App
-FROM node:23-alpine AS base
+FROM node:24-alpine AS base
 
 # Install system dependencies for native builds
 RUN apk add --no-cache python3 make g++
@@ -40,7 +40,7 @@ RUN npx nx build web-app --prod && \
     ls -la dist/apps/web-app/assets/ || echo "No assets directory"
 
 # Production stage with Node.js
-FROM node:23-alpine AS runner
+FROM node:24-alpine AS runner
 WORKDIR /app
 
 # Set production environment
