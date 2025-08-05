@@ -1,6 +1,9 @@
 # Multi-stage Dockerfile for React SSR Web App
 FROM node:23-alpine AS base
 
+# Install system dependencies for native builds
+RUN apk add --no-cache python3 make g++
+
 # Install pnpm globally
 RUN npm install -g pnpm@9.15.3
 
@@ -30,11 +33,11 @@ ENV CI=true
 # Build the web application and verify output structure
 RUN npx nx build web-app --prod && \
     echo "Build completed, verifying output structure:" && \
-    echo "Contents of /dist/apps/web-app:" && \
-    ls -la /dist/apps/web-app/ && \
+    echo "Contents of dist/apps/web-app (from workdir):" && \
+    ls -la dist/apps/web-app/ && \
     echo "Key files:" && \
-    ls -la /dist/apps/web-app/*.js || echo "No JS files in root" && \
-    ls -la /dist/apps/web-app/assets/ || echo "No assets directory"
+    ls -la dist/apps/web-app/*.js || echo "No JS files in root" && \
+    ls -la dist/apps/web-app/assets/ || echo "No assets directory"
 
 # Production stage with Node.js
 FROM node:23-alpine AS runner
@@ -44,7 +47,7 @@ WORKDIR /app
 ENV NODE_ENV=production
 
 # Copy the built application and package.json - fix path to match NX output
-COPY --from=builder /dist/apps/web-app ./dist/apps/web-app/
+COPY --from=builder /app/dist/apps/web-app ./dist/apps/web-app/
 COPY --from=builder /app/package.json ./package.json
 
 # Install only production dependencies
