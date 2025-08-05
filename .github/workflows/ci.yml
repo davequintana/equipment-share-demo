@@ -468,7 +468,7 @@ jobs:
         run: |
           echo "Consolidating coverage reports for SonarCloud..."
           mkdir -p coverage
-          
+
           # Copy coverage from individual projects
           for app in apps/*/coverage; do
             if [ -d "$app" ]; then
@@ -478,15 +478,15 @@ jobs:
               cp -r "$app"/* "coverage/$app_name/"
             fi
           done
-          
+
           # Look for lcov.info files and copy to root coverage
           find . -name "lcov.info" -path "*/coverage/*" -exec cp {} coverage/ \; 2>/dev/null || true
-          
+
           echo "Coverage files for SonarCloud:"
           find coverage -name "*.info" -o -name "*.xml" | head -10
 
       - name: SonarCloud Scan
-        uses: SonarSource/sonarcloud-github-action@master
+        uses: SonarSource/sonarqube-scan-action@v5.0.0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
