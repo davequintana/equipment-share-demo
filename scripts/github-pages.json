@@ -1,0 +1,7 @@
+{
+  "name": "preview-pages",
+  "scripts": {
+    "build": "pnpm exec nx build-pages web-app",
+    "preview": "pnpm exec nx preview web-app --port 4302 --open"
+  }
+}

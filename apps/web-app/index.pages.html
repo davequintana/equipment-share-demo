@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Equipment Share Demo - Enterprise NX Monorepo</title>
+    <base href="/equipment-share-demo/" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="icon" type="image/x-icon" href="/favicon.ico" />
+    <meta name="description" content="A comprehensive full-stack application showcasing modern enterprise development with React 19, TypeScript, and cutting-edge DevOps practices" />
+
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://davequintana.github.io/equipment-share-demo/" />
+    <meta property="og:title" content="Equipment Share Demo - Enterprise NX Monorepo" />
+    <meta property="og:description" content="A comprehensive full-stack application showcasing modern enterprise development" />
+
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image" />
+    <meta property="twitter:url" content="https://davequintana.github.io/equipment-share-demo/" />
+    <meta property="twitter:title" content="Equipment Share Demo - Enterprise NX Monorepo" />
+    <meta property="twitter:description" content="A comprehensive full-stack application showcasing modern enterprise development" />
+
+    <!-- PWA -->
+    <meta name="theme-color" content="#667eea" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+
+    <!-- Performance -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  </head>
+  <body>
+    <div id="root">
+      <!-- Fallback content for GitHub Pages -->
+      <div style="display: flex; align-items: center; justify-content: center; min-height: 100vh; font-family: system-ui, -apple-system, sans-serif;">
+        <div style="text-align: center;">
+          <div style="width: 50px; height: 50px; border: 3px solid #f3f3f3; border-top: 3px solid #667eea; border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto 20px;"></div>
+          <p style="color: #666; font-size: 14px;">Loading Equipment Share Demo...</p>
+        </div>
+      </div>
+      <style>
+        @keyframes spin {
+          0% { transform: rotate(0deg); }
+          100% { transform: rotate(360deg); }
+        }
+      </style>
+    </div>
+    <script type="module" src="/src/client/main.tsx"></script>
+  </body>
+</html>

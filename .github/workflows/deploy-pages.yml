@@ -1,0 +1,159 @@
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
+env:
+  NODE_VERSION: '23.6.0'
+  PNPM_VERSION: '9.15.3'
+
+jobs:
+  build-for-pages:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js and pnpm
+        uses: ./.github/actions/setup-node-pnpm
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          pnpm-version: ${{ env.PNPM_VERSION }}
+
+      - name: Setup Pages
+        id: setup-pages
+        uses: actions/configure-pages@v4
+        with:
+          # Enable GitHub Pages if not already enabled
+          enablement: true
+          # Use the default token
+          token: ${{ secrets.GITHUB_TOKEN }}
+        continue-on-error: true
+
+      - name: Check Pages Setup
+        if: steps.setup-pages.outcome == 'failure'
+        run: |
+          echo "⚠️ GitHub Pages setup failed. This might be due to:"
+          echo "1. GitHub Pages is not enabled in repository settings"
+          echo "2. Repository doesn't have the correct permissions"
+          echo "3. Organization/account restrictions"
+          echo ""
+          echo "📋 To fix this:"
+          echo "1. Go to Settings → Pages in your GitHub repository"
+          echo "2. Set Source to 'GitHub Actions'"
+          echo "3. Ensure the repository has Pages enabled"
+          echo ""
+          echo "🔄 Continuing with build anyway..."
+
+      - name: Build web application for GitHub Pages
+        run: |
+          echo "🏗️ Building web application for GitHub Pages..."
+
+          # Build the web app with the GitHub Pages configuration
+          pnpm exec nx build-pages web-app --prod
+        env:
+          NODE_ENV: production
+          VITE_API_URL: https://api.your-domain.com # Update this to your API endpoint
+          VITE_APP_ENV: production
+
+      - name: Prepare GitHub Pages deployment
+        run: |
+          echo "📦 Preparing GitHub Pages deployment..."
+
+          # Create pages directory structure
+          mkdir -p ./pages
+
+          # Copy built web app to pages directory
+          if [ -d "dist/apps/web-app-pages" ]; then
+            echo "✅ Found built web app in dist/apps/web-app-pages"
+            cp -r dist/apps/web-app-pages/* ./pages/
+          else
+            echo "❌ Built web app not found. Checking available directories:"
+            find . -name "dist" -type d | head -10
+            find . -name "index.html" | head -10
+            exit 1
+          fi
+
+          echo "📋 Pages directory contents:"
+          ls -la ./pages/
+
+      - name: Upload GitHub Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: ./pages
+
+  deploy-pages:
+    needs: build-for-pages
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
+        continue-on-error: true
+
+      - name: Handle Deployment Result
+        run: |
+          if [ "${{ steps.deployment.outcome }}" = "success" ]; then
+            echo "✅ Deployment successful!"
+            echo "🌐 Your site is live at: ${{ steps.deployment.outputs.page_url }}"
+          else
+            echo "❌ Deployment failed. Common solutions:"
+            echo ""
+            echo "1. 🔧 Repository Settings:"
+            echo "   • Go to Settings → Pages"
+            echo "   • Set Source to 'GitHub Actions'"
+            echo "   • Ensure Pages is enabled"
+            echo ""
+            echo "2. 🔑 Permissions:"
+            echo "   • Check repository permissions"
+            echo "   • Verify workflow permissions in Settings → Actions"
+            echo ""
+            echo "3. 📋 Branch Requirements:"
+            echo "   • Ensure you're pushing to the main branch"
+            echo "   • Check branch protection rules"
+            echo ""
+            echo "🆘 For more help, see: docs/github-pages.md"
+            exit 1
+          fi
+
+      - name: Deployment Summary
+        if: steps.deployment.outcome == 'success'
+        run: |
+          echo "## 🌐 GitHub Pages Deployment" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Status:** ✅ Deployed Successfully" >> $GITHUB_STEP_SUMMARY
+          echo "**URL:** ${{ steps.deployment.outputs.page_url }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Features:**" >> $GITHUB_STEP_SUMMARY
+          echo "- 🚀 React 19 with TypeScript" >> $GITHUB_STEP_SUMMARY
+          echo "- 🎨 Vanilla Extract CSS-in-TS" >> $GITHUB_STEP_SUMMARY
+          echo "- ⚡ Vite Build System" >> $GITHUB_STEP_SUMMARY
+          echo "- 📱 Responsive Design" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Next Steps:**" >> $GITHUB_STEP_SUMMARY
+          echo "1. Visit the deployed site: ${{ steps.deployment.outputs.page_url }}" >> $GITHUB_STEP_SUMMARY
+          echo "2. Configure API endpoint in workflow if needed" >> $GITHUB_STEP_SUMMARY
+          echo "3. Set up custom domain (optional)" >> $GITHUB_STEP_SUMMARY

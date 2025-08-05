@@ -39,6 +39,8 @@
     "serve:fastify-api": "nx serve fastify-api",
     "build:web-app": "nx build web-app",
     "build:fastify-api": "nx build fastify-api",
+    "build:pages": "nx build-pages web-app",
+    "preview:pages": "pnpm run build:pages && nx preview web-app --port 4302",
     "docker:build": "docker-compose build",
     "docker:up": "docker-compose up -d",
     "docker:down": "docker-compose down",

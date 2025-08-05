@@ -2,6 +2,12 @@
 
 A comprehensive, enterprise-level NX monorepo featuring modern technologies for full-stack development with React 19, TypeScript, Fastify API, PostgreSQL, Redis, and Kafka.
 
+## 🌐 Live Demo
+
+**🔗 [View Live Application](https://davequintana.github.io/equipment-share-demo/)**
+
+The application is automatically deployed to GitHub Pages from the main branch.
+
 ## 🚀 Quick Start
 
 ### Prerequisites
@@ -45,6 +51,7 @@ docker-compose up -d
 | [🏗️ Architecture](docs/architecture.md) | Project structure, tech stack, and design patterns |
 | [🛠️ Development](docs/development.md) | Development workflows, commands, and best practices |
 | [🔐 Authentication](docs/authentication.md) | JWT auth, security features, and API endpoints |
+| [🌐 GitHub Pages](docs/github-pages.md) | Static deployment setup and configuration |
 | [🐳 Deployment](docs/deployment.md) | Docker, Kubernetes, and AWS deployment guides |
 | [🧪 Testing](docs/testing.md) | Unit tests, E2E tests, and testing strategies |
 | [⚙️ Configuration](docs/configuration.md) | Environment variables, NX config, and settings |
