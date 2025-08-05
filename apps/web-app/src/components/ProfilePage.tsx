@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { AuthContext } from '../context/AuthContext';
 import * as styles from '../styles/theme.css';
-import { getApiUrl } from '../utils/api-url';
+import { getApiUrl, isLocalOnlyMode } from '../utils/api-url';
+import { localAuth } from '../utils/local-auth';
 
 interface UserProfile {
   id: string;
@@ -24,22 +25,30 @@ export const ProfilePage: React.FC = () => {
 
     setLoading(true);
     try {
-      const response = await fetch(`${getApiUrl()}/api/users/profile`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-      });
+      // Use local auth for GitHub Pages, API for development
+      if (isLocalOnlyMode()) {
+        const userData = await localAuth.getProfile();
+        setProfile(userData);
+        setName(userData.name);
+      } else {
+        // Original API logic for development
+        const response = await fetch(`${getApiUrl()}/api/users/profile`, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+        });
 
-      if (!response.ok) {
-        throw new Error('Failed to fetch profile');
+        if (!response.ok) {
+          throw new Error('Failed to fetch profile');
+        }
+
+        const data = await response.json();
+        setProfile(data.user);
+        setName(data.user.name);
       }
-
-      const data = await response.json();
-      setProfile(data.user);
-      setName(data.user.name);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load profile');
+      setError(err instanceof Error ? err.message : 'Failed to fetch profile');
     } finally {
       setLoading(false);
     }
@@ -57,22 +66,30 @@ export const ProfilePage: React.FC = () => {
     setError('');
 
     try {
-      const response = await fetch(`${getApiUrl()}/api/users/profile`, {
-        method: 'PUT',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ name }),
-      });
+      // Use local auth for GitHub Pages, API for development
+      if (isLocalOnlyMode()) {
+        const updatedUser = await localAuth.updateProfile({ name });
+        setProfile(updatedUser);
+        setIsEditing(false);
+      } else {
+        // Original API logic for development
+        const response = await fetch(`${getApiUrl()}/api/users/profile`, {
+          method: 'PUT',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ name }),
+        });
 
-      if (!response.ok) {
-        throw new Error('Failed to update profile');
+        if (!response.ok) {
+          throw new Error('Failed to update profile');
+        }
+
+        const data = await response.json();
+        setProfile(data.user);
+        setIsEditing(false);
       }
-
-      const data = await response.json();
-      setProfile(data.user);
-      setIsEditing(false);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to update profile');
     } finally {
