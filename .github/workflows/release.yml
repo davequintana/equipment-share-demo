@@ -90,6 +90,13 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Configure package permissions
+        run: |
+          echo "📦 Configuring package permissions for GHCR..."
+          echo "Repository: ${{ github.repository }}"
+          echo "Actor: ${{ github.actor }}"
+          echo "Token permissions configured for packages: write"
+
       - name: Extract version
         id: version
         run: echo "version=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
@@ -101,8 +108,8 @@ jobs:
           file: ./infrastructure/docker/web-app.Dockerfile
           push: true
           tags: |
-            ghcr.io/${{ github.repository }}/web-app:${{ steps.version.outputs.version }}
-            ghcr.io/${{ github.repository }}/web-app:latest
+            ghcr.io/${{ github.repository_owner }}/equipment-share-demo-web-app:${{ steps.version.outputs.version }}
+            ghcr.io/${{ github.repository_owner }}/equipment-share-demo-web-app:latest
           cache-from: type=gha,scope=web-app
           cache-to: type=gha,mode=max,scope=web-app
           platforms: linux/amd64
@@ -114,8 +121,8 @@ jobs:
           file: ./infrastructure/docker/fastify-api.Dockerfile
           push: true
           tags: |
-            ghcr.io/${{ github.repository }}/fastify-api:${{ steps.version.outputs.version }}
-            ghcr.io/${{ github.repository }}/fastify-api:latest
+            ghcr.io/${{ github.repository_owner }}/equipment-share-demo-fastify-api:${{ steps.version.outputs.version }}
+            ghcr.io/${{ github.repository_owner }}/equipment-share-demo-fastify-api:latest
           cache-from: type=gha,scope=fastify-api
           cache-to: type=gha,mode=max,scope=fastify-api
           platforms: linux/amd64
@@ -140,7 +147,7 @@ jobs:
           cat > deployment/docker-compose.prod.yml << EOF
           services:
             web-app:
-              image: ghcr.io/${{ github.repository }}/web-app:${{ needs.build-and-push-release.outputs.version }}
+              image: ghcr.io/${{ github.repository_owner }}/equipment-share-demo-web-app:${{ needs.build-and-push-release.outputs.version }}
               ports:
                 - "80:3000"
               depends_on:
@@ -157,7 +164,7 @@ jobs:
                 start_period: 40s
 
             fastify-api:
-              image: ghcr.io/${{ github.repository }}/fastify-api:${{ needs.build-and-push-release.outputs.version }}
+              image: ghcr.io/${{ github.repository_owner }}/equipment-share-demo-fastify-api:${{ needs.build-and-push-release.outputs.version }}
               ports:
                 - "3333:3333"
               depends_on:
@@ -272,8 +279,8 @@ jobs:
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "**Version:** ${{ needs.build-and-push-release.outputs.version }}" >> $GITHUB_STEP_SUMMARY
           echo "**Images Built:**" >> $GITHUB_STEP_SUMMARY
-          echo "- \`ghcr.io/${{ github.repository }}/web-app:${{ needs.build-and-push-release.outputs.version }}\`" >> $GITHUB_STEP_SUMMARY
-          echo "- \`ghcr.io/${{ github.repository }}/fastify-api:${{ needs.build-and-push-release.outputs.version }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "- \`ghcr.io/${{ github.repository_owner }}/equipment-share-demo-web-app:${{ needs.build-and-push-release.outputs.version }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "- \`ghcr.io/${{ github.repository_owner }}/equipment-share-demo-fastify-api:${{ needs.build-and-push-release.outputs.version }}\`" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "**Deployment Files:**" >> $GITHUB_STEP_SUMMARY
           echo "- Production docker-compose.yml generated" >> $GITHUB_STEP_SUMMARY
