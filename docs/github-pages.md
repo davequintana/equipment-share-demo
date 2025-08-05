@@ -48,9 +48,26 @@ env:
 
 ## 🚀 Deployment Process
 
+### First-Time Setup
+
+**Method 1: Manual Setup (Recommended)**
+
+1. Go to your repository **Settings** → **Pages**
+2. Set **Source** to "GitHub Actions"
+3. Save the settings
+
+**Method 2: Automated Setup**
+
+1. Go to **Actions** tab in your repository
+2. Find **Enable GitHub Pages** workflow
+3. Click **Run workflow**
+4. Enter your repository name
+5. Click **Run workflow**
+
 ### Automatic Deployment
 
 The application automatically deploys when:
+
 - Code is pushed to `main` branch
 - Pull requests are opened (build only)
 - Manual workflow dispatch is triggered

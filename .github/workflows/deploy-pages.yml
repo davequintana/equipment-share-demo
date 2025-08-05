@@ -38,7 +38,29 @@ jobs:
           pnpm-version: ${{ env.PNPM_VERSION }}
 
       - name: Setup Pages
+        id: setup-pages
         uses: actions/configure-pages@v4
+        with:
+          # Enable GitHub Pages if not already enabled
+          enablement: true
+          # Use the default token
+          token: ${{ secrets.GITHUB_TOKEN }}
+        continue-on-error: true
+
+      - name: Check Pages Setup
+        if: steps.setup-pages.outcome == 'failure'
+        run: |
+          echo "⚠️ GitHub Pages setup failed. This might be due to:"
+          echo "1. GitHub Pages is not enabled in repository settings"
+          echo "2. Repository doesn't have the correct permissions"
+          echo "3. Organization/account restrictions"
+          echo ""
+          echo "📋 To fix this:"
+          echo "1. Go to Settings → Pages in your GitHub repository"
+          echo "2. Set Source to 'GitHub Actions'"
+          echo "3. Ensure the repository has Pages enabled"
+          echo ""
+          echo "🔄 Continuing with build anyway..."
 
       - name: Build web application for GitHub Pages
         run: |
@@ -90,8 +112,35 @@ jobs:
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
+        continue-on-error: true
+
+      - name: Handle Deployment Result
+        run: |
+          if [ "${{ steps.deployment.outcome }}" = "success" ]; then
+            echo "✅ Deployment successful!"
+            echo "🌐 Your site is live at: ${{ steps.deployment.outputs.page_url }}"
+          else
+            echo "❌ Deployment failed. Common solutions:"
+            echo ""
+            echo "1. 🔧 Repository Settings:"
+            echo "   • Go to Settings → Pages"
+            echo "   • Set Source to 'GitHub Actions'"
+            echo "   • Ensure Pages is enabled"
+            echo ""
+            echo "2. 🔑 Permissions:"
+            echo "   • Check repository permissions"
+            echo "   • Verify workflow permissions in Settings → Actions"
+            echo ""
+            echo "3. 📋 Branch Requirements:"
+            echo "   • Ensure you're pushing to the main branch"
+            echo "   • Check branch protection rules"
+            echo ""
+            echo "🆘 For more help, see: docs/github-pages.md"
+            exit 1
+          fi
 
       - name: Deployment Summary
+        if: steps.deployment.outcome == 'success'
         run: |
           echo "## 🌐 GitHub Pages Deployment" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY

@@ -1,0 +1,46 @@
+name: Enable GitHub Pages
+
+on:
+  workflow_dispatch:
+    inputs:
+      repository_name:
+        description: 'Repository name (for base path configuration)'
+        required: true
+        default: 'equipment-share-demo'
+        type: string
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+jobs:
+  enable-pages:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Enable GitHub Pages
+        uses: actions/configure-pages@v4
+        with:
+          enablement: true
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup complete
+        run: |
+          echo "## 🌐 GitHub Pages Setup Complete" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "✅ GitHub Pages has been enabled for this repository!" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Next Steps:**" >> $GITHUB_STEP_SUMMARY
+          echo "1. Push code to the main branch to trigger deployment" >> $GITHUB_STEP_SUMMARY
+          echo "2. Your site will be available at: https://${{ github.repository_owner }}.github.io/${{ inputs.repository_name }}/" >> $GITHUB_STEP_SUMMARY
+          echo "3. Check the 'Deploy to GitHub Pages' workflow for deployment status" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Configuration:**" >> $GITHUB_STEP_SUMMARY
+          echo "- Repository: ${{ github.repository }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Branch: main" >> $GITHUB_STEP_SUMMARY
+          echo "- Source: GitHub Actions" >> $GITHUB_STEP_SUMMARY
