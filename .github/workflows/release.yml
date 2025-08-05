@@ -5,8 +5,13 @@ on:
     tags:
       - 'v*'
 
+permissions:
+  contents: write
+  packages: write
+
 env:
   PNPM_VERSION: 9.15.3
+  NODE_VERSION: '23.6.0'
 
 jobs:
   create-release:
@@ -21,7 +26,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '18'
+          node-version: ${{ env.NODE_VERSION }}
 
       - name: Install pnpm
         uses: pnpm/action-setup@v4
@@ -34,6 +39,9 @@ jobs:
       - name: Build all projects
         run: pnpm exec nx run-many -t build --all --parallel
 
+      - name: Run tests
+        run: pnpm exec nx run-many -t test --all --parallel
+
       - name: Generate changelog
         id: changelog
         run: |
@@ -42,10 +50,14 @@ jobs:
           echo "tag_name=$TAG_NAME" >> $GITHUB_OUTPUT
 
           # Generate changelog between last two tags
-          PREVIOUS_TAG=$(git describe --tags --abbrev=0 HEAD^)
+          PREVIOUS_TAG=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || echo "")
           echo "## Changes in $TAG_NAME" > CHANGELOG.md
           echo "" >> CHANGELOG.md
-          git log --pretty=format:"- %s (%h)" $PREVIOUS_TAG..HEAD >> CHANGELOG.md
+          if [ -n "$PREVIOUS_TAG" ]; then
+            git log --pretty=format:"- %s (%h)" $PREVIOUS_TAG..HEAD >> CHANGELOG.md
+          else
+            git log --pretty=format:"- %s (%h)" >> CHANGELOG.md
+          fi
 
       - name: Create Release
         uses: actions/create-release@v1
@@ -61,6 +73,8 @@ jobs:
   build-and-push-release:
     runs-on: ubuntu-latest
     needs: create-release
+    outputs:
+      version: ${{ steps.version.outputs.version }}
 
     steps:
       - name: Checkout
@@ -89,8 +103,9 @@ jobs:
           tags: |
             ghcr.io/${{ github.repository }}/web-app:${{ steps.version.outputs.version }}
             ghcr.io/${{ github.repository }}/web-app:latest
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          cache-from: type=gha,scope=web-app
+          cache-to: type=gha,mode=max,scope=web-app
+          platforms: linux/amd64
 
       - name: Build and push Fastify API
         uses: docker/build-push-action@v5
@@ -101,5 +116,170 @@ jobs:
           tags: |
             ghcr.io/${{ github.repository }}/fastify-api:${{ steps.version.outputs.version }}
             ghcr.io/${{ github.repository }}/fastify-api:latest
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          cache-from: type=gha,scope=fastify-api
+          cache-to: type=gha,mode=max,scope=fastify-api
+          platforms: linux/amd64
+
+  deploy-production:
+    runs-on: ubuntu-latest
+    needs: build-and-push-release
+    environment: production
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Deploy to Production
+        run: |
+          echo "🚀 Deploying version ${{ needs.build-and-push-release.outputs.version }} to production..."
+
+          # Create deployment directory
+          mkdir -p deployment
+
+          # Generate production docker-compose.yml with versioned images
+          cat > deployment/docker-compose.prod.yml << EOF
+          services:
+            web-app:
+              image: ghcr.io/${{ github.repository }}/web-app:${{ needs.build-and-push-release.outputs.version }}
+              ports:
+                - "80:3000"
+              depends_on:
+                - fastify-api
+              environment:
+                - NODE_ENV=production
+                - API_URL=http://fastify-api:3333
+              restart: unless-stopped
+              healthcheck:
+                test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000"]
+                interval: 30s
+                timeout: 10s
+                retries: 3
+                start_period: 40s
+
+            fastify-api:
+              image: ghcr.io/${{ github.repository }}/fastify-api:${{ needs.build-and-push-release.outputs.version }}
+              ports:
+                - "3333:3333"
+              depends_on:
+                postgres:
+                  condition: service_healthy
+                redis:
+                  condition: service_healthy
+              environment:
+                - NODE_ENV=production
+                - DATABASE_URL=postgresql://enterprise:\$\${POSTGRES_PASSWORD}@postgres:5432/enterprise_db
+                - REDIS_URL=redis://redis:6379
+                - JWT_SECRET=\$\${JWT_SECRET}
+                - PORT=3333
+              restart: unless-stopped
+              healthcheck:
+                test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3333/health"]
+                interval: 30s
+                timeout: 10s
+                retries: 3
+                start_period: 40s
+
+            postgres:
+              image: postgres:16.2
+              ports:
+                - "5432:5432"
+              environment:
+                POSTGRES_DB: enterprise_db
+                POSTGRES_USER: enterprise
+                POSTGRES_PASSWORD: \$\${POSTGRES_PASSWORD}
+                POSTGRES_INITDB_ARGS: '--auth-host=scram-sha-256 --auth-local=scram-sha-256'
+              volumes:
+                - postgres_data:/var/lib/postgresql/data
+              restart: unless-stopped
+              healthcheck:
+                test: ["CMD-SHELL", "pg_isready -U enterprise -d enterprise_db"]
+                interval: 10s
+                timeout: 5s
+                retries: 5
+
+            redis:
+              image: redis:7-alpine
+              ports:
+                - "6379:6379"
+              volumes:
+                - redis_data:/data
+              restart: unless-stopped
+              healthcheck:
+                test: ["CMD", "redis-cli", "ping"]
+                interval: 10s
+                timeout: 5s
+                retries: 5
+
+          volumes:
+            postgres_data:
+            redis_data:
+          EOF
+
+      - name: Create deployment script
+        run: |
+          cat > deployment/deploy.sh << 'EOF'
+          #!/bin/bash
+          set -e
+
+          echo "🔧 Setting up production deployment..."
+
+          # Create .env file for production
+          cat > .env << ENVEOF
+          POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD || 'enterprise_secure_password_change_me' }}
+          JWT_SECRET=${{ secrets.JWT_SECRET || 'your-super-secret-jwt-key-change-in-production' }}
+          ENVEOF
+
+          echo "📦 Pulling latest images..."
+          docker-compose -f docker-compose.prod.yml pull
+
+          echo "🛑 Stopping existing services..."
+          docker-compose -f docker-compose.prod.yml down --remove-orphans
+
+          echo "🗑️  Cleaning up unused images..."
+          docker image prune -f
+
+          echo "🚀 Starting services..."
+          docker-compose -f docker-compose.prod.yml up -d
+
+          echo "⏳ Waiting for services to be healthy..."
+          timeout 300 bash -c '
+            while ! docker-compose -f docker-compose.prod.yml ps | grep -q "healthy"; do
+              echo "Waiting for services to be healthy..."
+              sleep 10
+            done
+          '
+
+          echo "✅ Deployment completed successfully!"
+          echo "🌐 Web App: http://localhost"
+          echo "🔌 API: http://localhost:3333"
+
+          # Show service status
+          docker-compose -f docker-compose.prod.yml ps
+          EOF
+
+          chmod +x deployment/deploy.sh
+
+      - name: Upload deployment artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: deployment-${{ needs.build-and-push-release.outputs.version }}
+          path: deployment/
+          retention-days: 30
+
+      - name: Deployment Summary
+        run: |
+          echo "## 🚀 Deployment Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Version:** ${{ needs.build-and-push-release.outputs.version }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Images Built:**" >> $GITHUB_STEP_SUMMARY
+          echo "- \`ghcr.io/${{ github.repository }}/web-app:${{ needs.build-and-push-release.outputs.version }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "- \`ghcr.io/${{ github.repository }}/fastify-api:${{ needs.build-and-push-release.outputs.version }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Deployment Files:**" >> $GITHUB_STEP_SUMMARY
+          echo "- Production docker-compose.yml generated" >> $GITHUB_STEP_SUMMARY
+          echo "- Deployment script created" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Next Steps:**" >> $GITHUB_STEP_SUMMARY
+          echo "1. Download the deployment artifacts" >> $GITHUB_STEP_SUMMARY
+          echo "2. Copy files to your production server" >> $GITHUB_STEP_SUMMARY
+          echo "3. Run \`./deploy.sh\` on your server" >> $GITHUB_STEP_SUMMARY

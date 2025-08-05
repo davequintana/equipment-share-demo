@@ -27,10 +27,10 @@ services:
         condition: service_started
     environment:
       - NODE_ENV=production
-      - DATABASE_URL=postgresql://enterprise:password@postgres:5432/enterprise_db
-      - REDIS_URL=redis://redis:6379
-      - JWT_SECRET=your-super-secret-jwt-key-change-in-production
-      - KAFKA_BROKERS=kafka:9092
+      - DATABASE_URL=postgresql://enterprise:${POSTGRES_PASSWORD:-REPLACE_ME_WITH_SECURE_DB_PASSWORD}@postgres:5432/enterprise_db
+      - REDIS_URL=redis://:${REDIS_PASSWORD:-REPLACE_ME_WITH_SECURE_REDIS_PASSWORD}@redis:6379
+      - JWT_SECRET=${JWT_SECRET:-REPLACE_ME_WITH_SECURE_JWT_SECRET}
+      - KAFKA_BROKERS=kafka:29092
     restart: unless-stopped
 
   # PostgreSQL Database - Enterprise Configuration
@@ -41,7 +41,7 @@ services:
     environment:
       POSTGRES_DB: enterprise_db
       POSTGRES_USER: enterprise
-      POSTGRES_PASSWORD: enterprise_secure_password
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-REPLACE_ME_WITH_SECURE_DB_PASSWORD}
       # Enterprise-level configuration with SCRAM authentication
       POSTGRES_INITDB_ARGS: '--auth-host=scram-sha-256 --auth-local=scram-sha-256'
     volumes:
@@ -88,13 +88,16 @@ services:
     image: redis:7-alpine
     ports:
       - "6379:6379"
+    command: redis-server --requirepass ${REDIS_PASSWORD:-REPLACE_ME_WITH_SECURE_REDIS_PASSWORD} --appendonly yes
+    environment:
+      - REDIS_PASSWORD=${REDIS_PASSWORD:-REPLACE_ME_WITH_SECURE_REDIS_PASSWORD}
     volumes:
       - redis_data:/data
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
+      test: ["CMD", "redis-cli", "--no-auth-warning", "-a", "${REDIS_PASSWORD:-REPLACE_ME_WITH_SECURE_REDIS_PASSWORD}", "ping"]
       interval: 10s
       timeout: 5s
-      retries: 3
+      retries: 5
     restart: unless-stopped
     networks:
       - app-network
@@ -114,13 +117,13 @@ services:
     depends_on:
       - zookeeper
     ports:
-      - "9092:9092"
+      - "9093:9092"
       - "9101:9101"
     environment:
       KAFKA_BROKER_ID: 1
       KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
       KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
-      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:29092,PLAINTEXT_HOST://localhost:9092
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:29092,PLAINTEXT_HOST://localhost:9093
       KAFKA_METRIC_REPORTERS: io.confluent.metrics.reporter.ConfluentMetricsReporter
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
       KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0

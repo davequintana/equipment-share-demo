@@ -1,10 +1,11 @@
 /// <reference types='vitest' />
+import { resolve } from 'path';
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import { vanillaExtractPlugin } from '@vanilla-extract/vite-plugin';
 
 export default defineConfig(({ mode }) => ({
-  root: '.',
+  root: __dirname,
   cacheDir: '../../node_modules/.vite/apps/web-app',
   publicDir: 'public',
 
@@ -37,7 +38,9 @@ export default defineConfig(({ mode }) => ({
   },
 
   build: {
-    outDir: '../../dist/apps/web-app',
+    // Let NX handle outDir via outputPath, but ensure paths are correct
+    outDir: process.env.NX_TASK_TARGET_PROJECT ? '../../dist/apps/web-app' : 'dist',
+    emptyOutDir: true,
     reportCompressedSize: true,
     copyPublicDir: true,
     commonjsOptions: {
@@ -45,8 +48,8 @@ export default defineConfig(({ mode }) => ({
     },
     rollupOptions: {
       input: {
-        client: 'apps/web-app/src/client/main.tsx',
-        server: 'apps/web-app/src/server/entry.tsx',
+        client: resolve(__dirname, 'src/client/main.tsx'),
+        server: resolve(__dirname, 'src/server/entry.tsx'),
       },
       output: {
         entryFileNames: '[name].js',

@@ -36,6 +36,14 @@ export default [
       '**/*.tsx',
       '**/*.cts',
       '**/*.mts',
+    ],
+    rules: {
+      '@typescript-eslint/no-explicit-any': 'warn',
+      '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_' }],
+    },
+  },
+  {
+    files: [
       '**/*.js',
       '**/*.jsx',
       '**/*.cjs',

@@ -11,7 +11,8 @@
       "outputs": ["{options.outputPath}"],
       "defaultConfiguration": "production",
       "options": {
-        "outputPath": "dist/apps/web-app"
+        "outputPath": "dist/apps/web-app",
+        "configFile": "apps/web-app/vite.config.ts"
       },
       "configurations": {
         "development": {

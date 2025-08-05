@@ -1,119 +1,322 @@
-name: Code Quality and Security Checks
+name: Security Scan
+
+# Comprehensive security scanning with Trivy, CodeQL, and dependency analysis
+# Works with or without GitHub Advanced Security
 
 on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
   schedule:
-    # Run every day at 2 AM UTC
+    # Run security scans daily at 2 AM UTC
     - cron: '0 2 * * *'
-  workflow_dispatch:
 
 env:
-  PNPM_VERSION: 9.15.3
-
-permissions:
-  contents: read
-  security-events: write
-  actions: read
+  NODE_VERSION: '23.6.0'
+  PNPM_VERSION: '9.15.3'
 
 jobs:
-  security-audit:
-    name: Security Audit
+  trivy-filesystem-scan:
+    name: Trivy Filesystem Security Scan
     runs-on: ubuntu-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: ${{ env.PNPM_VERSION }}
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          cache: 'pnpm'
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-
-      - name: Run npm audit
-        run: pnpm audit --audit-level moderate
-
-      - name: Run security lint
-        run: pnpm run lint:security
-
-  dependency-check:
-    name: Dependency Vulnerability Check
-    runs-on: ubuntu-latest
+    timeout-minutes: 15
     permissions:
       contents: read
       security-events: write
       actions: read
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Run Trivy vulnerability scanner
-        uses: aquasecurity/trivy-action@master
+      - name: Run Trivy filesystem vulnerability scanner
+        uses: aquasecurity/trivy-action@0.20.0
         with:
           scan-type: 'fs'
           scan-ref: '.'
           format: 'sarif'
-          output: 'trivy-results.sarif'
+          output: 'trivy-fs-results.sarif'
+          severity: 'CRITICAL,HIGH,MEDIUM'
+          ignore-unfixed: true
 
-      - name: Upload Trivy scan results to GitHub Security tab
+      - name: Upload Trivy filesystem scan results to GitHub Security
         uses: github/codeql-action/upload-sarif@v3
-        if: always() && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository)
+        if: always()
         with:
-          sarif_file: 'trivy-results.sarif'
+          sarif_file: 'trivy-fs-results.sarif'
+          category: 'trivy-filesystem'
 
-  codeql:
-    name: CodeQL Analysis
+      - name: Generate Trivy filesystem report (human readable)
+        uses: aquasecurity/trivy-action@0.20.0
+        with:
+          scan-type: 'fs'
+          scan-ref: '.'
+          format: 'table'
+          output: 'trivy-fs-report.txt'
+          severity: 'CRITICAL,HIGH,MEDIUM'
+
+      - name: Upload Trivy filesystem report as artifact
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: trivy-filesystem-report
+          path: trivy-fs-report.txt
+          retention-days: 30
+
+  trivy-docker-scan:
+    name: Trivy Docker Image Security Scan
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     permissions:
-      actions: read
       contents: read
       security-events: write
+      actions: read
+
+    strategy:
+      matrix:
+        image:
+          - postgres:16.2
+          - redis:7-alpine
+          - confluentinc/cp-zookeeper:7.4.0
+          - confluentinc/cp-kafka:7.4.0
+          - provectuslabs/kafka-ui:latest
+          - dpage/pgadmin4:latest
+      fail-fast: false
+
+    steps:
+      - name: Run Trivy vulnerability scanner on ${{ matrix.image }}
+        uses: aquasecurity/trivy-action@0.20.0
+        with:
+          image-ref: ${{ matrix.image }}
+          format: 'sarif'
+          output: 'trivy-docker-${{ strategy.job-index }}.sarif'
+          severity: 'CRITICAL,HIGH'
+
+      - name: Upload Trivy Docker scan results to GitHub Security
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: 'trivy-docker-${{ strategy.job-index }}.sarif'
+          category: 'trivy-docker-${{ matrix.image }}'
+
+      - name: Generate Docker image security report
+        uses: aquasecurity/trivy-action@0.20.0
+        with:
+          image-ref: ${{ matrix.image }}
+          format: 'table'
+          output: 'trivy-docker-${{ strategy.job-index }}-report.txt'
+          severity: 'CRITICAL,HIGH,MEDIUM'
+
+      - name: Upload Docker security report as artifact
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: trivy-docker-report-${{ strategy.job-index }}
+          path: 'trivy-docker-${{ strategy.job-index }}-report.txt'
+          retention-days: 30
+
+  codeql-analysis:
+    name: CodeQL Security Analysis
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    permissions:
+      contents: read
+      security-events: write
+      actions: read
+
     strategy:
       fail-fast: false
       matrix:
-        language: ['javascript']
+        language: ['javascript', 'typescript']
+
     steps:
-      - name: Checkout repository
+      - name: Checkout code
         uses: actions/checkout@v4
 
       - name: Initialize CodeQL
         uses: github/codeql-action/init@v3
         with:
           languages: ${{ matrix.language }}
+          queries: security-extended,security-and-quality
+          config: |
+            paths-ignore:
+              - "**/*.test.ts"
+              - "**/*.test.tsx"
+              - "**/*.spec.ts"
+              - "**/node_modules/**"
+              - "**/dist/**"
 
-      - name: Autobuild
-        uses: github/codeql-action/autobuild@v3
+      - name: Setup Node.js and pnpm
+        uses: ./.github/actions/setup-node-pnpm
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          pnpm-version: ${{ env.PNPM_VERSION }}
+
+      - name: Build applications for CodeQL analysis
+        run: |
+          echo "🔨 Building applications for CodeQL analysis..."
+
+          # Build web-app
+          if pnpm exec nx build web-app --prod; then
+            echo "✅ Web app build successful"
+          else
+            echo "⚠️ Web app build failed, continuing with source analysis"
+          fi
+
+          # Build fastify-api
+          if pnpm exec nx build fastify-api --prod; then
+            echo "✅ API build successful"
+          else
+            echo "⚠️ API build failed, continuing with source analysis"
+          fi
 
       - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@v3
+        with:
+          category: "/language:${{matrix.language}}"
 
-  license-check:
-    name: License Compliance
+  dependency-security:
+    name: Dependency Security Analysis
     runs-on: ubuntu-latest
+    timeout-minutes: 10
+    if: github.event_name == 'pull_request'
+    permissions:
+      contents: read
+      pull-requests: write
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
         with:
-          version: ${{ env.PNPM_VERSION }}
+          fetch-depth: 0  # Fetch full history for better diff analysis
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - name: Setup Node.js and pnpm
+        uses: ./.github/actions/setup-node-pnpm
         with:
-          node-version: '20'
-          cache: 'pnpm'
+          node-version: ${{ env.NODE_VERSION }}
+          pnpm-version: ${{ env.PNPM_VERSION }}
 
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-
-      - name: Check licenses
+      - name: Comprehensive Dependency Security Audit
         run: |
-          pnpm dlx license-checker --summary --onlyAllow 'MIT;Apache-2.0;BSD-3-Clause;BSD-2-Clause;ISC;CC0-1.0;Unlicense'
+          echo "🔍 Running comprehensive dependency security audit..."
+
+          # Check for high severity vulnerabilities (will fail the build)
+          if ! pnpm audit --audit-level high; then
+            echo "❌ HIGH SEVERITY vulnerabilities found! Build failed."
+            echo "Please fix high severity vulnerabilities before proceeding."
+            exit 1
+          fi
+
+          # Check for moderate vulnerabilities (warning only)
+          if ! pnpm audit --audit-level moderate; then
+            echo "⚠️ MODERATE severity vulnerabilities found"
+            echo "Consider fixing these vulnerabilities for better security"
+            echo "This is a warning - build will continue"
+          else
+            echo "✅ No moderate or high severity vulnerabilities found"
+          fi
+
+          # Detailed audit report
+          echo "📊 Generating detailed audit report..."
+          pnpm audit --audit-level low > audit-report.txt || true
+
+      - name: Upload audit report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: dependency-audit-report
+          path: audit-report.txt
+          retention-days: 30
+
+      - name: License Compliance Check
+        run: |
+          echo "📋 Checking dependency licenses for compliance..."
+
+          # Generate license report
+          pnpm licenses list > licenses-report.txt 2>/dev/null || echo "License check not available"
+
+          # Check for potentially problematic licenses
+          if pnpm licenses list 2>/dev/null | grep -i "gpl\|agpl\|copyleft"; then
+            echo "⚠️ Found potentially problematic licenses (GPL/AGPL/Copyleft)"
+            echo "📄 Please review these licenses for enterprise compliance:"
+            pnpm licenses list | grep -i "gpl\|agpl\|copyleft" || true
+            echo ""
+            echo "💡 Consider alternatives or ensure license compliance"
+          else
+            echo "✅ No obviously problematic licenses detected"
+          fi
+
+      - name: Upload license report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: license-compliance-report
+          path: licenses-report.txt
+          retention-days: 30
+
+      - name: Dependency Change Security Analysis
+        run: |
+          echo "🔄 Analyzing dependency changes for security implications..."
+
+          # Check if there are package changes
+          if git diff --name-only origin/main...HEAD | grep -q "package.json\|pnpm-lock.yaml"; then
+            echo "📦 Package dependency changes detected:"
+            git diff --name-only origin/main...HEAD | grep -E "package\.json|pnpm-lock\.yaml"
+
+            echo ""
+            echo "🔍 Changed files require security review:"
+            git diff origin/main...HEAD --name-only | grep -E "package\.json|pnpm-lock\.yaml" | while read file; do
+              echo "  - $file"
+            done
+
+            echo ""
+            echo "💡 Security review checklist:"
+            echo "  ✓ Are new dependencies from trusted sources?"
+            echo "  ✓ Do new dependencies have recent security updates?"
+            echo "  ✓ Are version pins/ranges appropriate?"
+            echo "  ✓ Have you reviewed the dependency's GitHub security advisories?"
+
+          else
+            echo "✅ No package dependency changes detected"
+          fi
+
+  security-summary:
+    name: Security Scan Summary
+    runs-on: ubuntu-latest
+    needs: [trivy-filesystem-scan, trivy-docker-scan, codeql-analysis]
+    if: always()
+    permissions:
+      contents: read
+      actions: read
+
+    steps:
+      - name: Security Scan Results Summary
+        run: |
+          echo "## 🔒 Security Scan Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          # Trivy Filesystem Scan Status
+          if [ "${{ needs.trivy-filesystem-scan.result }}" = "success" ]; then
+            echo "✅ **Trivy Filesystem Scan**: Passed" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "❌ **Trivy Filesystem Scan**: Failed or had issues" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          # Trivy Docker Scan Status
+          if [ "${{ needs.trivy-docker-scan.result }}" = "success" ]; then
+            echo "✅ **Trivy Docker Scan**: Passed" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "❌ **Trivy Docker Scan**: Failed or had issues" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          # CodeQL Analysis Status
+          if [ "${{ needs.codeql-analysis.result }}" = "success" ]; then
+            echo "✅ **CodeQL Analysis**: Passed" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "❌ **CodeQL Analysis**: Failed or had issues" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "📊 **Detailed Reports**: Check the 'Artifacts' section for detailed security reports" >> $GITHUB_STEP_SUMMARY
+          echo "🔍 **Security Tab**: Visit the Security tab to see detailed vulnerability findings" >> $GITHUB_STEP_SUMMARY

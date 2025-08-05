@@ -21,8 +21,11 @@ metadata:
   namespace: enterprise-app
 type: Opaque
 data:
-  JWT_SECRET: eW91ci1zdXBlci1zZWNyZXQtand0LWtleS1jaGFuZ2UtaW4tcHJvZHVjdGlvbg== # base64 encoded
-  POSTGRES_PASSWORD: cGFzc3dvcmQ= # base64 encoded "password"
+  # Note: These are placeholder values - replace with actual base64-encoded secrets in production
+  # Generate JWT_SECRET: openssl rand -hex 64 | base64
+  # Generate POSTGRES_PASSWORD: echo "your-secure-password" | base64
+  JWT_SECRET: "REPLACE_WITH_BASE64_ENCODED_JWT_SECRET"
+  POSTGRES_PASSWORD: "REPLACE_WITH_BASE64_ENCODED_PASSWORD"
 ---
 # Frontend Deployment
 apiVersion: apps/v1
