@@ -8,7 +8,7 @@ services:
     profiles:
       - production
 
-  # PostgreSQL Database - Development settings
+  # PostgreSQL Database - Development settings (simplified)
   postgres:
     image: postgres:16-alpine
     ports:
@@ -16,8 +16,7 @@ services:
     environment:
       - POSTGRES_DB=enterprise_db
       - POSTGRES_USER=enterprise
-      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-equipment-Share-P@ssword}
-      - POSTGRES_HOST_AUTH_METHOD=trust
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
@@ -34,13 +33,22 @@ services:
       - "6379:6379"
     volumes:
       - redis_data:/data
-    command: redis-server --appendonly yes
+    command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD:-devpassword}
+    environment:
+      - REDIS_PASSWORD=${REDIS_PASSWORD:-devpassword}
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
+      test: ["CMD", "redis-cli", "--no-auth-warning", "ping"]
       interval: 10s
       timeout: 5s
       retries: 5
     restart: unless-stopped
+    # Add resource limits for development
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+        reservations:
+          memory: 128M
 
   # Override fastify-api to not start automatically in development
   fastify-api:
@@ -63,3 +71,16 @@ services:
   pgadmin:
     profiles:
       - tools
+
+# Development volumes
+volumes:
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local
+
+# Development network
+networks:
+  default:
+    name: enterprise-dev-network
+    driver: bridge

@@ -1,5 +1,8 @@
 name: Security Scan
 
+# Note: Some features require GitHub Advanced Security to be enabled
+# for private repositories. See: https://docs.github.com/en/get-started/learning-about-github/about-github-advanced-security
+
 on:
   push:
     branches: [main, develop]
@@ -75,7 +78,7 @@ jobs:
         with:
           category: "/language:${{matrix.language}}"
 
-  dependency-review:
+  dependency-security:
     runs-on: ubuntu-latest
     if: github.event_name == 'pull_request'
     permissions:
@@ -86,8 +89,49 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Dependency Review
-        uses: actions/dependency-review-action@v4
+      - name: Setup Node.js and pnpm
+        uses: ./.github/actions/setup-node-pnpm
         with:
-          fail-on-severity: moderate
-          fail-on-scopes: runtime
+          node-version: '23.6.0'
+          pnpm-version: '9.15.3'
+
+      - name: Dependency Security Audit
+        run: |
+          echo "🔍 Running dependency security audit..."
+
+          # Run pnpm audit for security vulnerabilities
+          pnpm audit --audit-level moderate || {
+            echo "⚠️ Security vulnerabilities found in dependencies"
+            echo "Please review and fix the vulnerabilities above"
+            exit 1
+          }
+
+          echo "✅ No moderate or high severity vulnerabilities found"
+
+      - name: License Check
+        run: |
+          echo "📋 Checking dependency licenses..."
+
+          # Check for problematic licenses
+          if pnpm licenses list | grep -i "gpl\|agpl"; then
+            echo "⚠️ Found GPL/AGPL licensed dependencies"
+            echo "Please review licenses for compliance"
+            pnpm licenses list | grep -i "gpl\|agpl"
+          else
+            echo "✅ No problematic licenses detected"
+          fi
+
+      # Alternative dependency review for repositories without GitHub Advanced Security
+      - name: Dependency Change Analysis
+        run: |
+          echo "🔄 Analyzing dependency changes..."
+
+          # Compare package.json changes if available
+          if git diff --name-only origin/main...HEAD | grep -q "package.json\|pnpm-lock.yaml"; then
+            echo "📦 Package changes detected:"
+            git diff --name-only origin/main...HEAD | grep -E "package\.json|pnpm-lock\.yaml"
+
+            echo "🔍 Review these changes carefully for security implications"
+          else
+            echo "✅ No package dependency changes detected"
+          fi
