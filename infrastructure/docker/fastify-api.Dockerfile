@@ -1,5 +1,5 @@
 # Multi-stage Dockerfile for Fastify API
-FROM node:23-alpine AS base
+FROM node:24-alpine AS base
 
 # Install pnpm globally
 RUN npm install -g pnpm@9.15.3
@@ -27,7 +27,7 @@ COPY --from=deps /app/node_modules ./node_modules
 RUN npx nx build fastify-api --prod
 
 # Production stage
-FROM node:23-alpine AS runner
+FROM node:24-alpine AS runner
 WORKDIR /app
 
 # Set production environment
