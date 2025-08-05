@@ -205,6 +205,9 @@ async function createServer() {
         }
 
         // Load the server-side render function
+        if (!vite) {
+          throw new Error('Vite server is not available for SSR module loading');
+        }
         render = (await vite.ssrLoadModule('/src/server/entry.tsx')).render;
       }
 
