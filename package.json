@@ -31,6 +31,8 @@
     "test:db-config": "vitest run infrastructure/postgres/config.test.ts",
     "validate:db-config": "node scripts/validate-db-config.mjs",
     "test:coverage": "nx run-many --target=test --all --coverage",
+    "sonar": "sonar-scanner",
+    "sonar:coverage": "pnpm run test:coverage && sonar-scanner",
     "e2e": "nx e2e e2e",
     "e2e:headless": "nx e2e e2e",
     "dev": "nx run-many --target=serve --projects=web-app,fastify-api --parallel",

@@ -1,5 +1,10 @@
 # Enterprise NX Monorepo
 
+[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=davequintana_equipment-share-demo&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=davequintana_equipment-share-demo)
+[![Coverage](https://sonarcloud.io/api/project_badges/measure?project=davequintana_equipment-share-demo&metric=coverage)](https://sonarcloud.io/summary/new_code?id=davequintana_equipment-share-demo)
+[![Maintainability Rating](https://sonarcloud.io/api/project_badges/measure?project=davequintana_equipment-share-demo&metric=sqale_rating)](https://sonarcloud.io/summary/new_code?id=davequintana_equipment-share-demo)
+[![Security Rating](https://sonarcloud.io/api/project_badges/measure?project=davequintana_equipment-share-demo&metric=security_rating)](https://sonarcloud.io/summary/new_code?id=davequintana_equipment-share-demo)
+
 A comprehensive, enterprise-level NX monorepo featuring modern technologies for full-stack development with React 19, TypeScript, Fastify API, PostgreSQL, Redis, and Kafka.
 
 ## 🌐 Live Demo

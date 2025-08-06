@@ -19,6 +19,7 @@
    - ✅ Unit and integration tests 
    - ✅ Build for web-app and fastify-api
    - ✅ **E2E tests with 6 workers** (`PLAYWRIGHT_WORKERS: 6`)
+   - ✅ **SonarCloud code analysis** with coverage integration
    - ✅ Security scanning with dependency audit
    - ✅ Docker builds for deployments
 
@@ -50,20 +51,24 @@
 1. **Add GitHub Secrets**:
    - `POSTGRES_PASSWORD`: For test databases
    - `JWT_SECRET`: For test token generation
+   - `SONAR_TOKEN`: SonarCloud authentication token
 
 2. **Test the Pipeline**:
+
    ```bash
    git push origin fix/tag-and-deploy
    ```
 
 3. **Create Release**:
+
    ```bash
    git tag v1.0.0 && git push origin v1.0.0
    ```
 
 ### ✅ **Verification Complete**
+
 - GitHub Actions workflow syntax: ✅ Valid
-- Secret management: ✅ Secure 
+- Secret management: ✅ Secure
 - E2E testing: ✅ 6 workers configured
 - Docker builds: ✅ Optimized
 - Security scanning: ✅ Enabled
