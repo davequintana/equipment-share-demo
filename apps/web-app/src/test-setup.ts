@@ -17,10 +17,10 @@ if (typeof window !== 'undefined') {
     body?: string;
     icon?: string;
     close = vi.fn();
-    onclick: ((this: Notification, ev: Event) => any) | null = null;
-    onshow: ((this: Notification, ev: Event) => any) | null = null;
-    onerror: ((this: Notification, ev: Event) => any) | null = null;
-    onclose: ((this: Notification, ev: Event) => any) | null = null;
+    onclick: ((this: Notification, ev: Event) => void) | null = null;
+    onshow: ((this: Notification, ev: Event) => void) | null = null;
+    onerror: ((this: Notification, ev: Event) => void) | null = null;
+    onclose: ((this: Notification, ev: Event) => void) | null = null;
 
     constructor(title: string, options?: NotificationOptions) {
       this.title = title;

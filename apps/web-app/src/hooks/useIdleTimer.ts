@@ -29,6 +29,7 @@ export const useIdleTimer = ({
 }: UseIdleTimerOptions) => {
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
   const warningTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const countdownRef = useRef<NodeJS.Timeout | null>(null);
   const onIdleRef = useRef(onIdle);
   const onWarningRef = useRef(onWarning);
   const enabledRef = useRef(enabled);
@@ -57,6 +58,10 @@ export const useIdleTimer = ({
       clearTimeout(warningTimeoutRef.current);
       warningTimeoutRef.current = null;
     }
+    if (countdownRef.current) {
+      clearInterval(countdownRef.current);
+      countdownRef.current = null;
+    }
     setIsWarning(false);
     setTimeRemaining(0);
   }, []);
@@ -70,20 +75,33 @@ export const useIdleTimer = ({
 
     onWarningRef.current(Math.ceil(warningDuration / 1000));
 
+    // Clear any existing countdown
+    if (countdownRef.current) {
+      clearInterval(countdownRef.current);
+    }
+
     // Update countdown every second during warning
-    const countdown = setInterval(() => {
+    countdownRef.current = setInterval(() => {
       setTimeRemaining(prev => {
         const newTime = prev - 1;
         if (newTime <= 0) {
-          clearInterval(countdown);
+          if (countdownRef.current) {
+            clearInterval(countdownRef.current);
+            countdownRef.current = null;
+          }
           return 0;
         }
         return newTime;
       });
     }, 1000);
 
-    // Clean up countdown when component unmounts or timers reset
-    setTimeout(() => clearInterval(countdown), warningDuration);
+    // Automatically clean up countdown after warning duration
+    setTimeout(() => {
+      if (countdownRef.current) {
+        clearInterval(countdownRef.current);
+        countdownRef.current = null;
+      }
+    }, warningDuration);
   }, [warningTime]);
 
   const resetTimer = useCallback(() => {
