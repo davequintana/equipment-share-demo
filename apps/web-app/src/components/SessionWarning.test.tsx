@@ -61,18 +61,38 @@ describe('SessionWarning', () => {
     render(<SessionWarning {...defaultProps} />);
 
     const stayLoggedInButton = screen.getByText('Stay Logged In');
+
+    // Verify button is enabled and accessible before interaction
+    expect(stayLoggedInButton).toBeEnabled();
+    expect(stayLoggedInButton).toHaveAttribute('type', 'button');
+    expect(stayLoggedInButton).toBeVisible();
+
     fireEvent.click(stayLoggedInButton);
 
     expect(mockOnExtendSession).toHaveBeenCalledTimes(1);
+
+    // Verify the button maintains its state after click
+    expect(stayLoggedInButton).toBeInTheDocument();
+    expect(stayLoggedInButton).toBeEnabled();
   });
 
   it('should call onLogout when "Logout Now" is clicked', () => {
     render(<SessionWarning {...defaultProps} />);
 
     const logoutButton = screen.getByText('Logout Now');
+
+    // Verify button properties before interaction
+    expect(logoutButton).toBeEnabled();
+    expect(logoutButton).toHaveAttribute('type', 'button');
+    expect(logoutButton).toBeVisible();
+
     fireEvent.click(logoutButton);
 
     expect(mockOnLogout).toHaveBeenCalledTimes(1);
+
+    // Verify button state persists after click
+    expect(logoutButton).toBeInTheDocument();
+    expect(logoutButton).toBeEnabled();
   });
 
   it('should update countdown automatically', () => {
