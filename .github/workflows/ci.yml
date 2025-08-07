@@ -559,14 +559,22 @@ jobs:
           echo "Running auth middleware tests..."
           npx vitest run apps/fastify-api/src/middleware/auth.test.ts --config apps/fastify-api/vite.config.test.ts --coverage --reporter=verbose
 
+          # Run frontend auth context tests with coverage
+          echo "Running frontend AuthContext tests..."
+          pnpm exec nx test web-app --coverage --reporter=verbose
+
+          # Consolidate coverage files
+          echo "Consolidating coverage files..."
+          find . -name "lcov.info" -type f | xargs cat > coverage/lcov.info || echo "Creating empty lcov.info"
+
           # Verify coverage file
           if [ -f "coverage/lcov.info" ]; then
             echo "✅ Found coverage/lcov.info"
             echo "Size: $(wc -c < coverage/lcov.info) bytes"
-            if grep -q "auth.ts" coverage/lcov.info; then
-              echo "✅ auth.ts coverage found"
+            if grep -q "auth.ts\|AuthContext.tsx" coverage/lcov.info; then
+              echo "✅ Auth-related coverage found"
             else
-              echo "❌ auth.ts not in coverage"
+              echo "❌ Auth-related files not in coverage"
             fi
           else
             echo "❌ No coverage/lcov.info found"
