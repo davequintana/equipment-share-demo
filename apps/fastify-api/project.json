@@ -17,7 +17,7 @@
         "main": "apps/fastify-api/src/main.ts",
         "tsConfig": "apps/fastify-api/tsconfig.app.json",
         "assets": ["apps/fastify-api/src/assets"],
-        "external": ["@aws-sdk/*"],
+        "external": ["@aws-sdk/*", "secrets"],
         "esbuildOptions": {
           "sourcemap": true,
           "outExtension": {
