@@ -92,6 +92,29 @@ jobs:
           JWT_SECRET: test-secret-key
           NODE_ENV: test
 
+      - name: Generate consolidated coverage
+        run: |
+          echo "Generating consolidated coverage for SonarCloud..."
+          mkdir -p coverage
+          
+          # Run coverage specifically for auth middleware to ensure LCOV generation
+          cd apps/fastify-api
+          npx vitest run --config vite.config.test.ts --coverage --reporter=silent
+          cd ../..
+          
+          # Copy the generated LCOV file to the root coverage directory
+          if [ -f "coverage/lcov.info" ]; then
+            echo "Found consolidated LCOV file"
+            ls -la coverage/lcov.info
+          elif [ -f "apps/fastify-api/coverage/lcov.info" ]; then
+            echo "Copying LCOV from fastify-api..."
+            cp apps/fastify-api/coverage/lcov.info coverage/lcov.info
+            ls -la coverage/lcov.info
+          else
+            echo "No LCOV file found, searching all locations:"
+            find . -name "lcov.info" 2>/dev/null | head -10
+          fi
+
       - name: Check coverage reports
         run: |
           echo "Checking for coverage reports..."
