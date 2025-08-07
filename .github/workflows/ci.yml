@@ -343,39 +343,35 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
           pnpm-version: ${{ env.PNPM_VERSION }}
 
-      - name: Download build artifacts
+      - name: Download web-app build artifacts
         uses: actions/download-artifact@v4
         continue-on-error: true
         with:
-          pattern: build-*
-          merge-multiple: true
-          path: downloaded-artifacts/
+          name: build-web-app
+          path: dist/apps/web-app
+
+      - name: Download fastify-api build artifacts
+        uses: actions/download-artifact@v4
+        continue-on-error: true
+        with:
+          name: build-fastify-api
+          path: dist/apps/fastify-api
 
       - name: Verify and setup build artifacts
         run: |
-          echo "=== Downloaded build artifacts ==="
-          ls -la downloaded-artifacts/ || echo "No downloaded-artifacts directory found"
-
-          # Create dist/apps directory structure
-          mkdir -p dist/apps
-
-          # Move downloaded artifacts to correct locations
-          if [ -d "downloaded-artifacts" ]; then
-            echo "Moving artifacts to dist/apps/..."
-            find downloaded-artifacts -name "*" -type d -exec basename {} \; | while read dir; do
-              if [ -d "downloaded-artifacts/$dir" ]; then
-                echo "Moving $dir to dist/apps/$dir"
-                mv "downloaded-artifacts/$dir" "dist/apps/$dir"
-              fi
-            done
-          fi
-
-          echo "=== Final dist/apps structure ==="
+          echo "=== Checking downloaded build artifacts ==="
+          echo "dist/apps structure:"
           ls -la dist/apps/ || echo "No dist/apps directory"
 
+          echo "web-app contents:"
+          ls -la dist/apps/web-app/ || echo "No web-app build"
+
+          echo "fastify-api contents:"
+          ls -la dist/apps/fastify-api/ || echo "No fastify-api build"
+
           # Check if both required builds exist
-          if [ ! -d "dist/apps/fastify-api" ] || [ ! -d "dist/apps/web-app" ]; then
-            echo "⚠️  Missing build artifacts - building locally for E2E tests"
+          if [ ! -d "dist/apps/fastify-api" ] || [ ! -f "dist/apps/fastify-api/main.js" ] || [ ! -d "dist/apps/web-app" ]; then
+            echo "⚠️  Missing or incomplete build artifacts - building locally for E2E tests"
             pnpm exec nx build web-app --prod
             pnpm exec nx build fastify-api --prod
             echo "✅ Local builds completed"
