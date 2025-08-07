@@ -84,7 +84,9 @@ describe('SessionWarning', () => {
     // The component uses setInterval which is mocked,
     // so we just verify the display logic works
     expect(screen.getByText('Session Expiring Soon')).toBeInTheDocument();
-  });  it('should handle time updates when props change', () => {
+  });
+
+  it('should handle time updates when props change', () => {
     const { rerender } = render(<SessionWarning {...defaultProps} timeRemaining={120} />);
 
     expect(screen.getByText(/2:00/)).toBeInTheDocument();

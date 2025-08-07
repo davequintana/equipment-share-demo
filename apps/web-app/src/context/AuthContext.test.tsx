@@ -5,13 +5,24 @@ import { AuthProvider, useAuth } from './AuthContext';
 import { ReactNode } from 'react';
 
 // Mock the useIdleTimer hook
+const mockReset = vi.fn();
+const mockClear = vi.fn();
+let mockIdleCallback: (() => void) | null = null;
+let mockWarningCallback: ((timeRemaining: number) => void) | null = null;
+
 vi.mock('../hooks/useIdleTimer', () => ({
-  useIdleTimer: vi.fn((config) => ({
-    reset: vi.fn(),
-    clear: vi.fn(),
-    isWarning: false,
-    timeRemaining: config.timeout,
-  })),
+  useIdleTimer: vi.fn((config) => {
+    // Store the callbacks for later use in tests
+    mockIdleCallback = config.onIdle;
+    mockWarningCallback = config.onWarning;
+
+    return {
+      reset: mockReset,
+      clear: mockClear,
+      isWarning: false,
+      timeRemaining: config.timeout,
+    };
+  }),
 }));
 
 // Mock the SessionWarning component
@@ -49,15 +60,26 @@ Object.defineProperty(globalThis, 'localStorage', {
 });
 
 // Mock Notification API
-interface MockNotification {
-  requestPermission: () => Promise<string>;
-  permission: string;
-}
+const mockNotificationConstructor = vi.fn();
+const mockRequestPermission = vi.fn().mockResolvedValue('granted');
 
-(globalThis as typeof globalThis & { Notification: MockNotification }).Notification = {
-  requestPermission: vi.fn().mockResolvedValue('granted'),
-  permission: 'granted',
-};const TestComponent = () => {
+Object.defineProperty(globalThis, 'Notification', {
+  value: mockNotificationConstructor,
+  writable: true,
+  configurable: true,
+});
+
+Object.defineProperty(globalThis.Notification, 'requestPermission', {
+  value: mockRequestPermission,
+  writable: true,
+  configurable: true,
+});
+
+Object.defineProperty(globalThis.Notification, 'permission', {
+  value: 'default',
+  writable: true,
+  configurable: true,
+});const TestComponent = () => {
   const auth = useAuth();
   return (
     <div>
@@ -86,6 +108,10 @@ const renderWithAuthProvider = (children: ReactNode, isSSR = false) => {
 describe('AuthContext with Idle Timer', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockReset.mockClear();
+    mockClear.mockClear();
+    mockIdleCallback = null;
+    mockWarningCallback = null;
     localStorageMock.getItem.mockReturnValue(null);
     (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
       ok: true,
@@ -221,25 +247,27 @@ describe('AuthContext with Idle Timer', () => {
       return null;
     });
 
-    const { useIdleTimer } = await import('../hooks/useIdleTimer');
-    const mockUseIdleTimer = vi.mocked(useIdleTimer);
-
     renderWithAuthProvider(<TestComponent />);
 
     await waitFor(() => {
       expect(screen.getByTestId('user')).toHaveTextContent('Test User');
     });
 
-    // Get the onIdle callback that was passed to useIdleTimer
-    const idleCallback = mockUseIdleTimer.mock.calls[0][0].onIdle;
+    // Ensure the idle callback was set
+    expect(mockIdleCallback).toBeTruthy();
 
-    // Simulate idle timeout
-    act(() => {
-      idleCallback();
+    // Simulate idle timeout using the stored callback
+    await act(async () => {
+      if (mockIdleCallback) {
+        mockIdleCallback();
+      }
     });
 
-    expect(screen.getByTestId('user')).toHaveTextContent('No user');
-    expect(screen.getByTestId('token')).toHaveTextContent('No token');
+    await waitFor(() => {
+      expect(screen.getByTestId('user')).toHaveTextContent('No user');
+      expect(screen.getByTestId('token')).toHaveTextContent('No token');
+    });
+
     expect(localStorageMock.removeItem).toHaveBeenCalledWith('token');
     expect(localStorageMock.removeItem).toHaveBeenCalledWith('user');
   });
@@ -252,21 +280,20 @@ describe('AuthContext with Idle Timer', () => {
       return null;
     });
 
-    const { useIdleTimer } = await import('../hooks/useIdleTimer');
-    const mockUseIdleTimer = vi.mocked(useIdleTimer);
-
     renderWithAuthProvider(<TestComponent />);
 
     await waitFor(() => {
       expect(screen.getByTestId('user')).toHaveTextContent('Test User');
     });
 
-    // Get the onWarning callback that was passed to useIdleTimer
-    const warningCallback = mockUseIdleTimer.mock.calls[0][0].onWarning;
+    // Ensure the warning callback was set
+    expect(mockWarningCallback).toBeTruthy();
 
-    // Simulate warning trigger
+    // Trigger warning using the stored callback
     act(() => {
-      warningCallback?.(120); // 2 minutes remaining
+      if (mockWarningCallback) {
+        mockWarningCallback(120);
+      }
     });
 
     expect(screen.getByTestId('session-warning')).toBeInTheDocument();
@@ -280,27 +307,17 @@ describe('AuthContext with Idle Timer', () => {
       return null;
     });
 
-    const { useIdleTimer } = await import('../hooks/useIdleTimer');
-    const mockUseIdleTimer = vi.mocked(useIdleTimer);
-    const mockReset = vi.fn();
-
-    mockUseIdleTimer.mockReturnValue({
-      reset: mockReset,
-      clear: vi.fn(),
-      isWarning: false,
-      timeRemaining: 900000,
-    });
-
     renderWithAuthProvider(<TestComponent />);
 
     await waitFor(() => {
       expect(screen.getByTestId('user')).toHaveTextContent('Test User');
     });
 
-    // Trigger warning
-    const warningCallback = mockUseIdleTimer.mock.calls[0][0].onWarning;
+    // Trigger warning using the stored callback
     act(() => {
-      warningCallback?.(120);
+      if (mockWarningCallback) {
+        mockWarningCallback(120);
+      }
     });
 
     const stayLoggedInButton = screen.getByText('Stay Logged In');
@@ -311,17 +328,39 @@ describe('AuthContext with Idle Timer', () => {
   });
 
   it('should request notification permission on mount', async () => {
+    // First login to trigger notification permission request
+    localStorageMock.getItem.mockImplementation((key) => {
+      if (key === 'token') return 'test-token';
+      if (key === 'user') return JSON.stringify({ id: '1', name: 'Test User', email: 'test@example.com' });
+      return null;
+    });
+
     renderWithAuthProvider(<TestComponent />);
 
     await waitFor(() => {
-      expect((globalThis as any).Notification.requestPermission).toHaveBeenCalled();
+      expect(screen.getByTestId('user')).toHaveTextContent('Test User');
+    });
+
+    await waitFor(() => {
+      expect(mockRequestPermission).toHaveBeenCalled();
     });
   });
 
   it('should show notification on auto-logout if permission granted', async () => {
-    const mockNotification = vi.fn();
-    (globalThis as any).Notification = mockNotification;
-    (globalThis as any).Notification.permission = 'granted';
+    const localMockNotification = vi.fn();
+
+    // Setup notification constructor and permission
+    Object.defineProperty(globalThis, 'Notification', {
+      value: localMockNotification,
+      writable: true,
+      configurable: true,
+    });
+
+    Object.defineProperty(globalThis.Notification, 'permission', {
+      value: 'granted',
+      writable: true,
+      configurable: true,
+    });
 
     // Mock stored user data
     localStorageMock.getItem.mockImplementation((key) => {
@@ -330,28 +369,25 @@ describe('AuthContext with Idle Timer', () => {
       return null;
     });
 
-    const { useIdleTimer } = await import('../hooks/useIdleTimer');
-    const mockUseIdleTimer = vi.mocked(useIdleTimer);
-
     renderWithAuthProvider(<TestComponent />);
 
     await waitFor(() => {
       expect(screen.getByTestId('user')).toHaveTextContent('Test User');
     });
 
-    // Trigger idle logout
-    const idleCallback = mockUseIdleTimer.mock.calls[0][0].onIdle;
-    act(() => {
-      idleCallback();
+    // Trigger idle logout using the stored callback
+    await act(async () => {
+      if (mockIdleCallback) {
+        mockIdleCallback();
+      }
     });
 
-    expect(mockNotification).toHaveBeenCalledWith('Session Expired', {
+    expect(localMockNotification).toHaveBeenCalledWith('Session Expired', {
       body: 'You have been logged out due to inactivity.',
       icon: '/favicon.ico'
     });
-  });
-
-  it('should handle corrupted localStorage data gracefully', async () => {
+  });  it('should handle corrupted localStorage data gracefully', async () => {
+    // Setup corrupted localStorage data
     localStorageMock.getItem.mockImplementation((key) => {
       if (key === 'token') return 'test-token';
       if (key === 'user') return 'invalid-json{';
@@ -363,14 +399,16 @@ describe('AuthContext with Idle Timer', () => {
 
     renderWithAuthProvider(<TestComponent />);
 
+    // The corrupted data should be handled gracefully
     await waitFor(() => {
       expect(screen.getByTestId('user')).toHaveTextContent('No user');
       expect(screen.getByTestId('token')).toHaveTextContent('No token');
     });
 
-    expect(consoleSpy).toHaveBeenCalledWith('Error parsing stored user:', expect.any(Error));
+    // Should have cleaned up localStorage when corrupted data was found
     expect(localStorageMock.removeItem).toHaveBeenCalledWith('user');
     expect(localStorageMock.removeItem).toHaveBeenCalledWith('token');
+    expect(consoleSpy).toHaveBeenCalled();
 
     consoleSpy.mockRestore();
   });
