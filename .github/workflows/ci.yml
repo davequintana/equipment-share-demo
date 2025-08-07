@@ -398,6 +398,11 @@ jobs:
             echo "Contents of dist/apps/fastify-api/:"
             ls -la dist/apps/fastify-api/
 
+            echo "=== Building secrets workspace dependency ==="
+            pnpm exec nx build secrets
+            echo "✅ Secrets package built"
+            ls -la libs/secrets/dist/ || echo "No secrets dist found"
+
             echo "Setting up workspace dependencies for fastify-api..."
             chmod +x scripts/deploy-fastify-api.sh
             ./scripts/deploy-fastify-api.sh
