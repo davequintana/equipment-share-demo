@@ -371,6 +371,17 @@ jobs:
           # Install Playwright with dependencies
           pnpm exec playwright install --with-deps chromium
 
+      - name: Setup fastify-api deployment
+        run: |
+          if [ -d "dist/apps/fastify-api" ]; then
+            echo "Setting up workspace dependencies for fastify-api..."
+            chmod +x scripts/deploy-fastify-api.sh
+            ./scripts/deploy-fastify-api.sh
+            echo "✅ Workspace dependencies deployed successfully"
+          else
+            echo "⚠️  fastify-api build not found, skipping deployment setup"
+          fi
+
       - name: Debug environment
         run: |
           echo "Node version: $(node --version)"
