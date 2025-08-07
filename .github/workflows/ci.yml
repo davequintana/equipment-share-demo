@@ -601,6 +601,36 @@ jobs:
             echo "❌ Auth middleware coverage not found!"
           fi
 
+      - name: Final verification before SonarCloud
+        run: |
+          echo "=== Final pre-SonarCloud verification ==="
+          echo "Current working directory: $(pwd)"
+          echo "Current user: $(whoami)"
+          echo "Operating system: $(uname -a)"
+
+          # Show directory structure
+          echo "=== Root directory listing ==="
+          ls -la
+
+          echo "=== Coverage directory listing ==="
+          ls -la coverage/ || echo "❌ No coverage directory"
+
+          # Check specific file
+          if [ -f "coverage/lcov.info" ]; then
+            echo "✅ coverage/lcov.info EXISTS"
+            echo "File size: $(stat -c%s coverage/lcov.info 2>/dev/null || stat -f%z coverage/lcov.info) bytes"
+            echo "File permissions: $(ls -la coverage/lcov.info)"
+            echo "File content preview (first 5 lines):"
+            head -5 coverage/lcov.info
+            echo "Auth middleware check:"
+            grep -n "auth.ts" coverage/lcov.info || echo "❌ auth.ts not found in LCOV"
+          else
+            echo "❌ FATAL: coverage/lcov.info does NOT exist"
+            echo "Searching for any lcov.info files:"
+            find . -name "lcov.info" -type f 2>/dev/null || echo "No lcov.info files found anywhere"
+            exit 1
+          fi
+
       - name: SonarCloud Scan
         uses: SonarSource/sonarqube-scan-action@v5.0.0
         env:
