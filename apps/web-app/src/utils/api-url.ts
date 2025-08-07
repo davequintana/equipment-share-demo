@@ -11,7 +11,7 @@ export function getApiUrl(): string {
     return '';
   } else {
     // Server-side: use direct API URL for SSR
-    return process.env['VITE_API_URL'] || 'http://localhost:3333';
+    return process.env['VITE_API_URL'] || 'http://localhost:3334';
   }
 }
 

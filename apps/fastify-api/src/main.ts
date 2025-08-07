@@ -6,7 +6,7 @@ import fastifySwagger from '@fastify/swagger';
 import fastifySwaggerUi from '@fastify/swagger-ui';
 import bcrypt from 'bcryptjs';
 import dotenv from 'dotenv';
-import { EnterpriseSecretsManager } from 'secrets';
+import { EnterpriseSecretsManager } from './enterprise-secrets-manager.js';
 
 // Database credentials interface
 interface DatabaseCredentials {
@@ -34,6 +34,33 @@ import {
 
 // Load environment variables (fallback for development)
 dotenv.config();
+
+// Validate critical environment variables for security
+function validateEnvironment() {
+  const environment = process.env['NODE_ENV'] || 'development';
+  const hasJwtSecret = !!process.env['JWT_SECRET'];
+
+  console.log(`🔧 Environment: ${environment}`);
+  console.log(`🔑 JWT_SECRET configured: ${hasJwtSecret ? '✅ Yes' : '❌ No'}`);
+
+  if (!hasJwtSecret) {
+    console.warn('⚠️  JWT_SECRET not found in environment variables');
+    if (environment === 'production') {
+      console.error('🚨 CRITICAL: JWT_SECRET must be set in production!');
+      process.exit(1);
+    }
+  }
+
+  // Security warnings
+  if (environment !== 'production' && environment !== 'development' && environment !== 'test') {
+    console.warn(`⚠️  Unknown environment: ${environment}`);
+  }
+
+  return { environment, hasJwtSecret };
+}
+
+// Validate environment on startup
+validateEnvironment();
 
 // Initialize secrets management
 const secretsManager = new EnterpriseSecretsManager();
@@ -108,6 +135,15 @@ async function createApp() {
         ? 'password' // Plain text for CI/test environments
         : '$2a$10$9v8ezzQoCjPvTpLB8FvGq.KxsetvZ/rT4dFLBJ1z4Q7d..tEEgK32', // bcrypt hash for dev/prod
       name: 'Admin User',
+      createdAt: new Date('2024-01-01T00:00:00Z').toISOString(),
+    },
+    {
+      id: '2',
+      email: 'demo@example.com',
+      password: process.env['CI'] === 'true' || process.env['NODE_ENV'] === 'test'
+        ? 'password' // Plain text for CI/test environments
+        : '$2a$10$9v8ezzQoCjPvTpLB8FvGq.KxsetvZ/rT4dFLBJ1z4Q7d..tEEgK32', // bcrypt hash for 'password'
+      name: 'Demo User',
       createdAt: new Date('2024-01-01T00:00:00Z').toISOString(),
     },
   ];
@@ -730,10 +766,19 @@ const start = async () => {
     const { fastify } = await createApp();
 
     fastify.log.info('Starting Fastify server...');
-    fastify.log.info('Port: 3334, Host: 0.0.0.0');
 
-    await fastify.listen({ port: 3334, host: '0.0.0.0' });
-    console.log('🚀 Fastify API server ready at http://localhost:3334');
+    // Security: Use localhost for development, allow all interfaces only in production
+    const host = process.env['NODE_ENV'] === 'production' ? '0.0.0.0' : '127.0.0.1';
+    const port = 3334;
+
+    fastify.log.info(`Port: ${port}, Host: ${host} (Environment: ${process.env['NODE_ENV'] || 'development'})`);
+
+    await fastify.listen({ port, host });
+    console.log(`🚀 Fastify API server ready at http://localhost:${port}`);
+
+    if (host === '127.0.0.1') {
+      console.log('🔒 Server bound to localhost only for security (development mode)');
+    }
 
     // Test basic functionality after startup
     fastify.log.info('Server started successfully, running post-startup tests...');

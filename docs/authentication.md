@@ -6,17 +6,45 @@ The application implements enterprise-grade JWT-based authentication with compre
 
 ## Authentication Features
 
-- **JWT tokens** with 24-hour expiration
+- **JWT tokens** with 15-minute expiration (configurable)
 - **bcrypt password hashing** with salt rounds for security
 - **Rate limiting** (5 login attempts per 15 minutes per IP)
 - **Password complexity validation** (uppercase, lowercase, numbers required)
 - **Email format validation** with comprehensive regex
 - **Secure CORS configuration** for cross-origin requests
 - **Input sanitization** and validation for all endpoints
+- **Environment-based security** (localhost binding in development)
+- **Secure JWT secret management** with environment variables
+- **ReDoS protection** in all regex patterns
+
+## Security Configuration
+
+### Environment Variables
+
+The application requires proper environment configuration for security:
+
+```bash
+# Copy .env.example to .env and configure:
+NODE_ENV=development
+JWT_SECRET=your-very-long-and-random-jwt-secret-here
+VITE_API_URL=http://localhost:3334
+```
+
+### Host Binding Security
+
+- **Development**: Server binds to `127.0.0.1` (localhost only)
+- **Production**: Server binds to `0.0.0.0` (all interfaces)
+- **Automatic detection** based on `NODE_ENV`
+
+### JWT Secret Requirements
+
+- **Development**: Long random string (minimum 64 characters recommended)
+- **Production**: Cryptographically secure secret from AWS Secrets Manager
+- **Generation**: Use `openssl rand -base64 64` for secure secrets
 
 ## API Endpoints
 
-### Fastify API (Port 3333)
+### Fastify API (Port 3334)
 
 #### Authentication Endpoints
 
