@@ -427,6 +427,15 @@ jobs:
           ls -la dist/apps/ || echo "No dist directory"
           echo "Contents of dist/apps/fastify-api/:"
           ls -la dist/apps/fastify-api/ || echo "No fastify-api build"
+          echo "Checking fastify-api deployment readiness:"
+          if [ -f "dist/apps/fastify-api/main.js" ] && [ -f "dist/apps/fastify-api/package.json" ]; then
+            echo "✅ Fastify API is ready for E2E tests"
+            echo "package.json content:"
+            cat dist/apps/fastify-api/package.json
+          else
+            echo "❌ Fastify API deployment incomplete"
+            exit 1
+          fi
 
       - name: Run E2E tests
         run: pnpm exec nx e2e e2e --verbose
