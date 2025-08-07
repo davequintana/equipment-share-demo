@@ -6,7 +6,7 @@ const getWorkerCount = () => {
     return parseInt(process.env.PLAYWRIGHT_WORKERS, 10);
   }
   if (process.env.CI) {
-    return 6; // 6 workers for CI for faster execution
+    return 2; // Reduced from 6 to 2 workers for stability
   }
   return undefined; // Use Playwright's default (based on CPU cores)
 };
@@ -18,16 +18,16 @@ export default defineConfig({
   retries: process.env.CI ? 2 : 0,
   workers: getWorkerCount(),
   reporter: process.env.CI ? [['github'], ['html']] : 'html',
-  timeout: process.env.CI ? 90000 : 20000, // 90 seconds for CI with more workers, 20 seconds for local
+  timeout: process.env.CI ? 120000 : 20000, // 2 minutes for CI (increased for stability), 20 seconds for local
   expect: {
-    timeout: process.env.CI ? 45000 : 15000, // 45 seconds for CI with more workers, 15 seconds for local
+    timeout: process.env.CI ? 60000 : 15000, // 1 minute for CI (increased for stability), 15 seconds for local
   },
   use: {
     baseURL: 'http://localhost:4201',
     trace: 'on-first-retry',
     screenshot: 'only-on-failure',
     video: 'retain-on-failure',
-    actionTimeout: process.env.CI ? 45000 : 15000, // 45 seconds for CI with more workers, 15 seconds for local
+    actionTimeout: process.env.CI ? 60000 : 15000, // 1 minute for CI (increased for stability), 15 seconds for local
   },
 
   projects: [

@@ -431,7 +431,7 @@ jobs:
           JWT_SECRET: test-secret-key
           NODE_ENV: test
           CI: true
-          PLAYWRIGHT_WORKERS: 6
+          PLAYWRIGHT_WORKERS: 2
 
       - name: Upload E2E test results
         uses: actions/upload-artifact@v4
