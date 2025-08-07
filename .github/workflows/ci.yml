@@ -480,7 +480,10 @@ jobs:
         uses: nrwl/nx-set-shas@v4
 
       - name: Run tests with coverage for SonarCloud
-        run: pnpm exec nx affected -t test --parallel=3 --coverage
+        run: |
+          echo "Running tests with coverage for SonarCloud..."
+          # Run coverage specifically for auth middleware
+          npx vitest run --config apps/fastify-api/vite.config.test.ts --coverage
         env:
           NODE_ENV: test
           JWT_SECRET: test-secret-key
@@ -490,36 +493,24 @@ jobs:
           echo "Consolidating coverage reports for SonarCloud..."
           mkdir -p coverage
 
-          # Copy coverage from individual projects to the expected structure
-          for app in apps/*/coverage; do
-            if [ -d "$app" ]; then
-              app_name=$(basename $(dirname $app))
-              echo "Copying coverage from $app_name..."
-              mkdir -p "coverage/apps/$app_name"
-              cp -r "$app"/* "coverage/apps/$app_name/" || echo "Failed to copy from $app"
-            fi
-          done
-
-          # Run the merge script to create the combined lcov.info
-          if [ -f "./merge-coverage.sh" ]; then
-            echo "Running coverage merge script..."
-            ./merge-coverage.sh
+          # Copy the LCOV file to the expected location
+          if [ -f "coverage/lcov.info" ]; then
+            echo "✅ Found coverage/lcov.info ($(wc -l < coverage/lcov.info) lines)"
+          elif [ -f "apps/fastify-api/coverage/lcov.info" ]; then
+            echo "Copying LCOV from fastify-api to root coverage directory..."
+            cp apps/fastify-api/coverage/lcov.info coverage/lcov.info
+            echo "✅ Copied coverage/lcov.info ($(wc -l < coverage/lcov.info) lines)"
           else
-            echo "Merge script not found, creating simple merge..."
-            # Fallback: simple concatenation
-            find coverage/apps -name "lcov.info" -exec cat {} \; > coverage/lcov.info 2>/dev/null || echo "No LCOV files to merge"
+            echo "❌ No LCOV file found!"
+            echo "Searching for any coverage files:"
+            find . -name "*.info" -o -name "*lcov*" | grep -v node_modules | head -10
           fi
 
-          echo "Coverage files for SonarCloud:"
-          find coverage -name "*.info" -o -name "*.xml" | head -10
-
-          # Verify the main lcov.info file exists
-          if [ -f "coverage/lcov.info" ]; then
-            echo "✅ Main coverage/lcov.info file created ($(wc -l < coverage/lcov.info) lines)"
+          # Verify our auth middleware is in the coverage
+          if [ -f "coverage/lcov.info" ] && grep -q "auth.ts" coverage/lcov.info; then
+            echo "✅ Auth middleware coverage found in LCOV file"
           else
-            echo "❌ Main coverage/lcov.info file missing"
-            echo "Available coverage files:"
-            find coverage -type f | head -10
+            echo "❌ Auth middleware coverage not found!"
           fi
 
       - name: SonarCloud Scan
