@@ -1,7 +1,13 @@
 import { FastifyRequest, FastifyReply } from 'fastify';
 import { JwtPayload } from '../types';
 
-// Authentication middleware for protected routes
+/**
+ * Authentication middleware for protected routes
+ * Verifies JWT tokens and validates user information
+ * @param request - Fastify request object
+ * @param reply - Fastify reply object
+ * @param done - Callback function to signal completion
+ */
 export const authenticateUser = (request: FastifyRequest, reply: FastifyReply, done: (err?: Error) => void): void => {
   request.jwtVerify()
     .then(() => {
@@ -12,6 +18,7 @@ export const authenticateUser = (request: FastifyRequest, reply: FastifyReply, d
           error: 'Invalid token payload',
           code: 'INVALID_TOKEN'
         });
+        done(new Error('Invalid token payload'));
         return;
       }
 
@@ -27,6 +34,7 @@ export const authenticateUser = (request: FastifyRequest, reply: FastifyReply, d
           error: 'Token expired',
           code: 'TOKEN_EXPIRED'
         });
+        done(new Error('Token expired'));
         return;
       }
 
@@ -35,6 +43,7 @@ export const authenticateUser = (request: FastifyRequest, reply: FastifyReply, d
           error: 'Authorization token required',
           code: 'TOKEN_REQUIRED'
         });
+        done(new Error('Authorization token required'));
         return;
       }
 
@@ -42,10 +51,16 @@ export const authenticateUser = (request: FastifyRequest, reply: FastifyReply, d
         error: 'Unauthorized',
         code: 'UNAUTHORIZED'
       });
+      done(new Error('Unauthorized'));
     });
 };
 
-// Input validation helpers
+/**
+ * Validates email format using ReDoS-safe regex pattern
+ * Implements comprehensive email validation with security considerations
+ * @param email - Email address to validate
+ * @returns True if email is valid, false otherwise
+ */
 export function validateEmail(email: string): boolean {
   if (email.length > 254) return false;
 
@@ -91,6 +106,11 @@ export function validateEmail(email: string): boolean {
   return true;
 }
 
+/**
+ * Validates password strength requirements
+ * @param password - Password to validate
+ * @returns Object containing validation result and error messages
+ */
 export const validatePassword = (password: string): { valid: boolean; errors: string[] } => {
   const errors: string[] = [];
 
@@ -116,15 +136,47 @@ export const validatePassword = (password: string): { valid: boolean; errors: st
   };
 };
 
+/**
+ * Validates user name format and length
+ * @param name - Name to validate
+ * @returns True if name is valid, false otherwise
+ */
 export const validateName = (name: string): boolean => {
   // Trim whitespace and check if the trimmed name meets requirements
   const trimmedName = name.trim();
   return Boolean(trimmedName && trimmedName.length >= 2 && trimmedName.length <= 50 && trimmedName === name);
 };
 
+/**
+ * Rate limiting implementation with automatic cleanup
+ * Prevents brute force attacks by limiting login attempts per IP
+ */
 // Rate limiting helper (basic implementation)
 const loginAttempts = new Map<string, { count: number; lastAttempt: number }>();
+const RATE_LIMIT_WINDOW = 15 * 60 * 1000; // 15 minutes
+const MAX_ATTEMPTS = 5;
 
+// Cleanup old entries periodically to prevent memory leaks
+setInterval(() => {
+  const now = Date.now();
+  const expiredIps: string[] = [];
+
+  for (const [ip, attempts] of loginAttempts.entries()) {
+    if (now - attempts.lastAttempt > RATE_LIMIT_WINDOW) {
+      expiredIps.push(ip);
+    }
+  }
+
+  for (const ip of expiredIps) {
+    loginAttempts.delete(ip);
+  }
+}, RATE_LIMIT_WINDOW); // Run cleanup every 15 minutes
+
+/**
+ * Checks if an IP address has exceeded rate limit
+ * @param ip - Client IP address
+ * @returns True if request is allowed, false if rate limited
+ */
 export const checkRateLimit = (ip: string): boolean => {
   const now = Date.now();
   const userAttempts = loginAttempts.get(ip);
@@ -134,14 +186,14 @@ export const checkRateLimit = (ip: string): boolean => {
     return true;
   }
 
-  // Reset after 15 minutes
-  if (now - userAttempts.lastAttempt > 15 * 60 * 1000) {
+  // Reset after window expires
+  if (now - userAttempts.lastAttempt > RATE_LIMIT_WINDOW) {
     loginAttempts.set(ip, { count: 1, lastAttempt: now });
     return true;
   }
 
-  // Allow max 5 attempts per 15 minutes
-  if (userAttempts.count >= 5) {
+  // Check if exceeded max attempts
+  if (userAttempts.count >= MAX_ATTEMPTS) {
     return false;
   }
 
@@ -150,6 +202,10 @@ export const checkRateLimit = (ip: string): boolean => {
   return true;
 };
 
+/**
+ * Resets rate limit for an IP address after successful login
+ * @param ip - Client IP address to reset
+ */
 export const resetRateLimit = (ip: string): void => {
   loginAttempts.delete(ip);
 };

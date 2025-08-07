@@ -306,28 +306,70 @@ fastify.post('/api/auth/login', {
     },
   },
 }, async (request, reply) => {
+  // Login helper functions to reduce complexity
+  const validateLoginInput = (email: string, clientIp: string): { isValid: boolean; error?: { code: number; body: { error: string; code: string } } } => {
+    // Rate limiting
+    if (!checkRateLimit(clientIp)) {
+      fastify.log.warn(`Rate limited login attempt from IP: ${clientIp}`);
+      return {
+        isValid: false,
+        error: {
+          code: 429,
+          body: {
+            error: 'Too many login attempts. Please try again later.',
+            code: 'RATE_LIMITED'
+          }
+        }
+      };
+    }
+
+    // Input validation
+    if (!validateEmail(email)) {
+      fastify.log.warn(`Invalid email format: ${email}`);
+      return {
+        isValid: false,
+        error: {
+          code: 400,
+          body: {
+            error: 'Invalid email format',
+            code: 'INVALID_EMAIL'
+          }
+        }
+      };
+    }
+
+    return { isValid: true };
+  };
+
+  const validateUserPassword = async (password: string, user: User): Promise<boolean> => {
+    if (process.env['CI'] === 'true' || process.env['NODE_ENV'] === 'test') {
+      // For CI/test: simple string comparison
+      fastify.log.info('Using CI/test authentication mode');
+      return password === user.password;
+    } else {
+      // For dev/prod: bcrypt comparison
+      try {
+        const result = await bcrypt.compare(password, user.password);
+        fastify.log.info(`bcrypt.compare completed, result: ${result}`);
+        return result;
+      } catch (bcryptError) {
+        fastify.log.error('bcrypt.compare failed:', bcryptError);
+        const errorMessage = bcryptError instanceof Error ? bcryptError.message : 'Unknown bcrypt error';
+        throw new Error(`Password validation failed: ${errorMessage}`);
+      }
+    }
+  };
+
   try {
     const { email, password } = request.body as LoginRequest;
     const clientIp = request.ip;
 
     fastify.log.info(`Login attempt for email: ${email} from IP: ${clientIp}`);
 
-    // Rate limiting
-    if (!checkRateLimit(clientIp)) {
-      fastify.log.warn(`Rate limited login attempt from IP: ${clientIp}`);
-      return reply.code(429).send({
-        error: 'Too many login attempts. Please try again later.',
-        code: 'RATE_LIMITED'
-      });
-    }
-
-    // Input validation
-    if (!validateEmail(email)) {
-      fastify.log.warn(`Invalid email format: ${email}`);
-      return reply.code(400).send({
-        error: 'Invalid email format',
-        code: 'INVALID_EMAIL'
-      });
+    // Validate input and rate limiting
+    const inputValidation = validateLoginInput(email, clientIp);
+    if (!inputValidation.isValid && inputValidation.error) {
+      return reply.code(inputValidation.error.code).send(inputValidation.error.body);
     }
 
     // Find user
@@ -342,24 +384,8 @@ fastify.post('/api/auth/login', {
 
     fastify.log.info(`User found for email: ${email}, proceeding with password check`);
 
-    // Check password with environment-appropriate method
-    let isValidPassword = false;
-
-    if (process.env['CI'] === 'true' || process.env['NODE_ENV'] === 'test') {
-      // For CI/test: simple string comparison
-      fastify.log.info('Using CI/test authentication mode');
-      isValidPassword = (password === user.password);
-    } else {
-      // For dev/prod: bcrypt comparison
-      try {
-        isValidPassword = await bcrypt.compare(password, user.password);
-        fastify.log.info(`bcrypt.compare completed, result: ${isValidPassword}`);
-      } catch (bcryptError) {
-        fastify.log.error('bcrypt.compare failed:', bcryptError);
-        const errorMessage = bcryptError instanceof Error ? bcryptError.message : 'Unknown bcrypt error';
-        throw new Error(`Password validation failed: ${errorMessage}`);
-      }
-    }
+    // Check password using helper function
+    const isValidPassword = await validateUserPassword(password, user);
 
     if (!isValidPassword) {
       fastify.log.warn(`Invalid password for user: ${email}`);
