@@ -97,13 +97,11 @@ jobs:
           echo "🚀 Generating consolidated coverage for SonarCloud..."
           mkdir -p coverage
 
-          # Run all tests with coverage to ensure comprehensive LCOV generation
-          echo "Running all web-app tests with coverage..."
-          pnpm exec nx test web-app --coverage --reporter=verbose
+          # Use coverage from the test step that already ran
+          echo "Using coverage from affected test run..."
 
-          # Skip auth middleware tests to avoid database connection issues in test job
-          # (SonarCloud job will handle backend coverage if needed)
-          echo "Skipping auth middleware tests in test job to prevent stalling..."
+          # Skip duplicate test runs to avoid timeout issues
+          echo "Skipping duplicate test execution to prevent stalling..."
 
           # Find all LCOV files and consolidate them
           echo "Consolidating coverage files..."
