@@ -129,7 +129,7 @@ jobs:
             echo "AuthContext occurrences: $(grep -c "AuthContext" coverage/lcov.info || echo "0")"
             echo "SessionWarning occurrences: $(grep -c "SessionWarning" coverage/lcov.info || echo "0")"
             echo "auth.ts occurrences: $(grep -c "auth.ts" coverage/lcov.info || echo "0")"
-            
+
             # Show preview of coverage file
             echo "LCOV file preview (first 20 lines):"
             head -20 coverage/lcov.info
@@ -600,11 +600,11 @@ jobs:
             head -20 coverage/lcov.info || echo "No preview available"
           else
             echo "⚡ Generating fresh coverage for SonarCloud..."
-            
+
             # Run auth tests with coverage to ensure we have data
             echo "Running AuthContext tests with coverage..."
             pnpm exec nx test web-app --testPathPattern="AuthContext.test.tsx" --coverage --reporter=verbose || echo "Test failed, continuing..."
-            
+
             # Run SessionWarning tests as well
             echo "Running SessionWarning tests with coverage..."
             pnpm exec nx test web-app --testPathPattern="SessionWarning.test.tsx" --coverage --reporter=verbose || echo "Test failed, continuing..."
