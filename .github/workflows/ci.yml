@@ -92,26 +92,45 @@ jobs:
           JWT_SECRET: test-secret-key
           NODE_ENV: test
 
-      - name: Generate consolidated coverage
+      - name: Generate consolidated coverage for SonarCloud
         run: |
-          echo "Generating consolidated coverage for SonarCloud..."
+          echo "🚀 Generating consolidated coverage for SonarCloud..."
           mkdir -p coverage
 
-          # Run coverage specifically for auth middleware to ensure LCOV generation
-          npx vitest run --config apps/fastify-api/vite.config.test.ts --coverage
+          # Run auth middleware tests specifically with coverage to ensure LCOV generation
+          echo "Running auth middleware tests with coverage..."
+          npx vitest run apps/fastify-api/src/middleware/auth.test.ts --config apps/fastify-api/vite.config.test.ts --coverage --reporter=verbose
 
-          # Copy the generated LCOV file to the root coverage directory
+          # Verify LCOV file was generated
+          echo "Checking for LCOV files..."
           if [ -f "coverage/lcov.info" ]; then
-            echo "Found consolidated LCOV file"
+            echo "✅ Found consolidated LCOV file at coverage/lcov.info"
             ls -la coverage/lcov.info
+            echo "File size: $(wc -c < coverage/lcov.info) bytes"
+            echo "Line count: $(wc -l < coverage/lcov.info) lines"
+
+            # Verify auth.ts is included
+            if grep -q "auth.ts" coverage/lcov.info; then
+              echo "✅ auth.ts found in coverage file"
+              echo "auth.ts occurrences: $(grep -c "auth.ts" coverage/lcov.info)"
+            else
+              echo "❌ auth.ts NOT found in coverage file"
+              echo "LCOV file preview:"
+              head -20 coverage/lcov.info
+            fi
           elif [ -f "apps/fastify-api/coverage/lcov.info" ]; then
-            echo "Copying LCOV from fastify-api..."
+            echo "✅ Found LCOV in fastify-api, copying to root..."
             cp apps/fastify-api/coverage/lcov.info coverage/lcov.info
             ls -la coverage/lcov.info
+            echo "File size: $(wc -c < coverage/lcov.info) bytes"
           else
-            echo "No LCOV file found, searching all locations:"
-            find . -name "lcov.info" 2>/dev/null | head -10
+            echo "❌ No LCOV file found, searching all locations:"
+            find . -name "lcov.info" -type f 2>/dev/null | head -10 || echo "No LCOV files found anywhere"
+            echo "Coverage directories found:"
+            find . -name "coverage" -type d 2>/dev/null | head -10 || echo "No coverage directories found"
           fi
+
+          echo "✅ Coverage generation completed"
 
       - name: Check coverage reports
         run: |
@@ -457,6 +476,7 @@ jobs:
   sonarcloud:
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    needs: [test]  # Wait for test job to complete and generate coverage
     if: github.actor != 'dependabot[bot]'
     permissions:
       contents: read
@@ -478,44 +498,34 @@ jobs:
       - name: Derive appropriate SHAs for base and head
         uses: nrwl/nx-set-shas@v4
 
-      - name: Debug workflow execution
-        run: |
-          echo "🔍 SonarCloud job is running!"
-          echo "Current time: $(date)"
-          echo "Working directory: $(pwd)"
-          echo "User: $(whoami)"
-          echo "Environment: $(env | head -10)"
-
-      - name: Simple test step
-        run: |
-          echo "This is a simple test step"
-          echo "If you see this, the step is working"
-          pwd
-          ls -la
-
       - name: Generate coverage for SonarCloud
         run: |
-          echo "🚀 COVERAGE GENERATION STARTED - THIS SHOULD APPEAR IN LOGS"
+          echo "� Generating fresh coverage for SonarCloud..."
 
-          # Immediate verification this step is running
-          echo "=== VERIFYING STEP EXECUTION ==="
-          date
-          pwd
-          whoami
-
-          # Install dependencies with detailed logging
-          echo "=== INSTALLING DEPENDENCIES ==="
+          # Install dependencies
           pnpm install --frozen-lockfile
 
-          # Simple vitest execution test
-          echo "=== TESTING VITEST EXECUTION ==="
-          npx vitest --version
+          # Clean and create coverage directory
+          rm -rf coverage
+          mkdir -p coverage
 
-          # Run a single test to verify execution
-          echo "=== RUNNING AUTH TESTS ==="
-          npx vitest run apps/fastify-api/src/middleware/auth.test.ts --reporter=verbose
+          # Run auth middleware tests with coverage
+          echo "Running auth middleware tests..."
+          npx vitest run apps/fastify-api/src/middleware/auth.test.ts --config apps/fastify-api/vite.config.test.ts --coverage --reporter=verbose
 
-          echo "🏁 COVERAGE GENERATION STEP COMPLETED"
+          # Verify coverage file
+          if [ -f "coverage/lcov.info" ]; then
+            echo "✅ Found coverage/lcov.info"
+            echo "Size: $(wc -c < coverage/lcov.info) bytes"
+            if grep -q "auth.ts" coverage/lcov.info; then
+              echo "✅ auth.ts coverage found"
+            else
+              echo "❌ auth.ts not in coverage"
+            fi
+          else
+            echo "❌ No coverage/lcov.info found"
+            find . -name "lcov.info" -type f 2>/dev/null || echo "No LCOV files found"
+          fi
         env:
           NODE_ENV: test
           JWT_SECRET: test-secret-key
