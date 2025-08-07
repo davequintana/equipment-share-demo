@@ -92,6 +92,46 @@ jobs:
           JWT_SECRET: test-secret-key
           NODE_ENV: test
 
+      - name: Generate consolidated coverage for SonarCloud
+        run: |
+          echo "🚀 Generating consolidated coverage for SonarCloud..."
+          mkdir -p coverage
+
+          # Run auth middleware tests specifically with coverage to ensure LCOV generation
+          echo "Running auth middleware tests with coverage..."
+          npx vitest run apps/fastify-api/src/middleware/auth.test.ts --config apps/fastify-api/vite.config.test.ts --coverage --reporter=verbose
+
+          # Verify LCOV file was generated
+          echo "Checking for LCOV files..."
+          if [ -f "coverage/lcov.info" ]; then
+            echo "✅ Found consolidated LCOV file at coverage/lcov.info"
+            ls -la coverage/lcov.info
+            echo "File size: $(wc -c < coverage/lcov.info) bytes"
+            echo "Line count: $(wc -l < coverage/lcov.info) lines"
+
+            # Verify auth.ts is included
+            if grep -q "auth.ts" coverage/lcov.info; then
+              echo "✅ auth.ts found in coverage file"
+              echo "auth.ts occurrences: $(grep -c "auth.ts" coverage/lcov.info)"
+            else
+              echo "❌ auth.ts NOT found in coverage file"
+              echo "LCOV file preview:"
+              head -20 coverage/lcov.info
+            fi
+          elif [ -f "apps/fastify-api/coverage/lcov.info" ]; then
+            echo "✅ Found LCOV in fastify-api, copying to root..."
+            cp apps/fastify-api/coverage/lcov.info coverage/lcov.info
+            ls -la coverage/lcov.info
+            echo "File size: $(wc -c < coverage/lcov.info) bytes"
+          else
+            echo "❌ No LCOV file found, searching all locations:"
+            find . -name "lcov.info" -type f 2>/dev/null | head -10 || echo "No LCOV files found anywhere"
+            echo "Coverage directories found:"
+            find . -name "coverage" -type d 2>/dev/null | head -10 || echo "No coverage directories found"
+          fi
+
+          echo "✅ Coverage generation completed"
+
       - name: Check coverage reports
         run: |
           echo "Checking for coverage reports..."
@@ -303,34 +343,80 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
           pnpm-version: ${{ env.PNPM_VERSION }}
 
-      - name: Download build artifacts
+      - name: Download web-app build artifacts
         uses: actions/download-artifact@v4
         continue-on-error: true
         with:
-          pattern: build-*
-          merge-multiple: true
-          path: dist/apps/
+          name: build-web-app
+          path: dist/apps/web-app
 
-      - name: Verify downloaded artifacts
+      - name: Download fastify-api build artifacts
+        uses: actions/download-artifact@v4
+        continue-on-error: true
+        with:
+          name: build-fastify-api
+          path: dist/apps/fastify-api
+
+      - name: Verify and setup build artifacts
         run: |
-          echo "=== Downloaded build artifacts ==="
-          ls -la dist/apps/ || echo "No dist/apps directory found"
-          if [ ! -d "dist/apps" ] || [ -z "$(ls -A dist/apps 2>/dev/null)" ]; then
-            echo "⚠️  No build artifacts found - building locally for E2E tests"
+          echo "=== Checking downloaded build artifacts ==="
+          echo "dist/apps structure:"
+          ls -la dist/apps/ || echo "No dist/apps directory"
+
+          echo "web-app contents:"
+          ls -la dist/apps/web-app/ || echo "No web-app build"
+
+          echo "fastify-api contents:"
+          ls -la dist/apps/fastify-api/ || echo "No fastify-api build"
+
+          # Check if both required builds exist
+          if [ ! -d "dist/apps/fastify-api" ] || [ ! -f "dist/apps/fastify-api/main.js" ] || [ ! -d "dist/apps/web-app" ]; then
+            echo "⚠️  Missing or incomplete build artifacts - building locally for E2E tests"
             pnpm exec nx build web-app --prod
             pnpm exec nx build fastify-api --prod
+            echo "✅ Local builds completed"
           else
-            echo "✅ Build artifacts downloaded successfully"
+            echo "✅ Build artifacts set up successfully"
           fi
 
       - name: Install Playwright Browsers
-        run: pnpm exec playwright install --with-deps chromium
+        run: |
+          # Install comprehensive system dependencies for Playwright
+          sudo apt-get update
+          sudo apt-get install -y \
+            libnss3-dev libatk-bridge2.0-dev libdrm-dev libxcomposite-dev \
+            libxdamage-dev libxrandr-dev libgbm-dev libxss-dev libasound2-dev \
+            libgtk-4-1 libgraphene-1.0-0 libwoff2-1.0.2 libvpx9 libevent-2.1-7 \
+            libopus0 libgstreamer-plugins-base1.0-0 libgstreamer1.0-0 \
+            libflite1 libavif16 libharfbuzz-icu0 libsecret-1-0 libhyphen0 \
+            libmanette-0.2-0 libgles2 || echo "Some packages may not be available"
 
-      - name: Debug environment
+          # Install Playwright with dependencies
+          pnpm exec playwright install --with-deps chromium
+
+      - name: Debug environment and verify artifacts
         run: |
           echo "Node version: $(node --version)"
           echo "PNPM version: $(pnpm --version)"
+          echo "Current directory: $(pwd)"
+          echo "Contents of current directory:"
+          ls -la
+          echo "Contents of dist/apps/:"
           ls -la dist/apps/ || echo "No dist directory"
+
+          # Check if artifacts were downloaded successfully
+          if [ -d "dist/apps/web-app" ]; then
+            echo "✅ Web app artifacts available"
+          else
+            echo "ℹ️  Web app artifacts not found, will build locally"
+          fi
+
+          if [ -d "dist/apps/fastify-api" ]; then
+            echo "✅ Fastify API artifacts available"
+            ls -la dist/apps/fastify-api/
+          else
+            echo "ℹ️  Fastify API artifacts not found, Playwright will build locally"
+          fi
 
       - name: Run E2E tests
         run: pnpm exec nx e2e e2e --verbose
@@ -436,7 +522,7 @@ jobs:
   sonarcloud:
     runs-on: ubuntu-latest
     timeout-minutes: 15
-    needs: [test]
+    needs: [test]  # Wait for test job to complete and generate coverage
     if: github.actor != 'dependabot[bot]'
     permissions:
       contents: read
@@ -458,48 +544,40 @@ jobs:
       - name: Derive appropriate SHAs for base and head
         uses: nrwl/nx-set-shas@v4
 
-      - name: Run tests with coverage for SonarCloud
-        run: pnpm exec nx affected -t test --parallel=3 --coverage
+      - name: Generate coverage for SonarCloud
+        run: |
+          echo "🚀 Generating fresh coverage for SonarCloud..."
+
+          # Install dependencies
+          pnpm install --frozen-lockfile
+
+          # Clean and create coverage directory
+          rm -rf coverage
+          mkdir -p coverage
+
+          # Run auth middleware tests with coverage
+          echo "Running auth middleware tests..."
+          npx vitest run apps/fastify-api/src/middleware/auth.test.ts --config apps/fastify-api/vite.config.test.ts --coverage --reporter=verbose
+
+          # Verify coverage file
+          if [ -f "coverage/lcov.info" ]; then
+            echo "✅ Found coverage/lcov.info"
+            echo "Size: $(wc -c < coverage/lcov.info) bytes"
+            if grep -q "auth.ts" coverage/lcov.info; then
+              echo "✅ auth.ts coverage found"
+            else
+              echo "❌ auth.ts not in coverage"
+            fi
+          else
+            echo "❌ No coverage/lcov.info found"
+            find . -name "lcov.info" -type f 2>/dev/null || echo "No LCOV files found"
+          fi
         env:
           NODE_ENV: test
           JWT_SECRET: test-secret-key
-
-      - name: Consolidate coverage for SonarCloud
-        run: |
-          echo "Consolidating coverage reports for SonarCloud..."
-          mkdir -p coverage
-
-          # Copy coverage from individual projects
-          for app in apps/*/coverage; do
-            if [ -d "$app" ]; then
-              app_name=$(basename $(dirname $app))
-              echo "Copying coverage from $app_name..."
-              mkdir -p "coverage/$app_name"
-              cp -r "$app"/* "coverage/$app_name/"
-            fi
-          done
-
-          # Look for lcov.info files and copy to root coverage
-          find . -name "lcov.info" -path "*/coverage/*" -exec cp {} coverage/ \; 2>/dev/null || true
-
-          echo "Coverage files for SonarCloud:"
-          find coverage -name "*.info" -o -name "*.xml" | head -10
 
       - name: SonarCloud Scan
         uses: SonarSource/sonarqube-scan-action@v5.0.0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-        with:
-          args: >
-            -Dsonar.projectKey=davequintana_equipment-share-demo
-            -Dsonar.organization=davequintana
-            -Dsonar.projectName="Equipment Share Demo"
-            -Dsonar.projectVersion=1.0
-            -Dsonar.sources=apps,libs
-            -Dsonar.tests=apps,libs
-            -Dsonar.test.inclusions="**/*.test.ts,**/*.spec.ts,**/*.test.tsx,**/*.spec.tsx"
-            -Dsonar.exclusions="**/node_modules/**,**/dist/**,**/coverage/**,**/*.test.ts,**/*.spec.ts,**/*.test.tsx,**/*.spec.tsx,**/e2e/**,**/playwright.config.ts,**/vite.config.ts,**/vitest.config.ts,**/*.config.js,**/*.config.ts,**/infrastructure/**"
-            -Dsonar.javascript.lcov.reportPaths=coverage/lcov.info
-            -Dsonar.typescript.tsconfigPath=tsconfig.base.json
-            -Dsonar.qualitygate.wait=true

@@ -3,7 +3,7 @@ services:
   web-app:
     build:
       context: .
-      dockerfile: apps/web-app/Dockerfile
+      dockerfile: infrastructure/docker/web-app.Dockerfile
     ports:
       - "80:80"
     depends_on:
@@ -15,7 +15,7 @@ services:
   fastify-api:
     build:
       context: .
-      dockerfile: apps/fastify-api/Dockerfile
+      dockerfile: infrastructure/docker/fastify-api.Dockerfile
     ports:
       - "3334:3334"
     depends_on:

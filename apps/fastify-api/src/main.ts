@@ -6,15 +6,23 @@ import fastifySwagger from '@fastify/swagger';
 import fastifySwaggerUi from '@fastify/swagger-ui';
 import bcrypt from 'bcryptjs';
 import dotenv from 'dotenv';
-import { EnterpriseSecretsManager, type DatabaseCredentials } from './enterprise-secrets-manager.js';
-import {
+import { EnterpriseSecretsManager } from 'secrets';
+
+// Database credentials interface
+interface DatabaseCredentials {
+  host: string;
+  port: number;
+  database: string;
+  username: string;
+  password: string;
+}import {
   User,
   JwtPayload,
   LoginRequest,
   RegisterRequest,
   ProfileUpdateRequest,
   EventRequest
-} from './types.js';
+} from './types';
 import {
   authenticateUser,
   validateEmail,
@@ -22,7 +30,7 @@ import {
   validateName,
   checkRateLimit,
   resetRateLimit
-} from './middleware/auth.js';
+} from './middleware/auth';
 
 // Load environment variables (fallback for development)
 dotenv.config();

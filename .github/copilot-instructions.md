@@ -53,6 +53,13 @@ This is an enterprise-level NX monorepo featuring:
 - E2E tests with Playwright
 - Component testing with Storybook
 
+#### Code Quality & Security Analysis
+- **SonarCloud**: Integrated code quality and security analysis
+- **Quality Gate**: Must pass before merging (enforced in CI)
+- **Coverage**: Minimum thresholds enforced via SonarCloud
+- **Security Hotspots**: All security issues must be resolved
+- **ReDoS Testing**: Required for all regex patterns (see Security Guidelines)
+
 #### Infrastructure
 - Docker for containerization
 - Kubernetes for orchestration
@@ -67,6 +74,55 @@ This is an enterprise-level NX monorepo featuring:
 - Use HTTPS in production
 - Validate all user inputs
 - Implement rate limiting
+
+### Regular Expression Security (ReDoS Prevention)
+
+**Critical: All regex patterns must be ReDoS-safe to prevent Denial of Service attacks**
+
+#### ❌ **Avoid These Dangerous Patterns:**
+- Nested quantifiers: `(a+)+`, `(a*)*`, `(a+)*`
+- Alternation with overlapping: `(a|a)*`, `(.*|.+)`
+- Exponential backtracking: `[^\s@]+@[^\s@]+` (vulnerable to catastrophic backtracking)
+
+#### ✅ **Use These Safe Patterns:**
+- **Email Validation** (ReDoS-safe):
+  ```typescript
+  const emailRegex = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/;
+  // Always add length limits: if (input.length > 254) return false;
+  ```
+
+- **URL Validation** (ReDoS-safe):
+  ```typescript
+  const urlRegex = /^https?:\/\/[a-zA-Z0-9.-]+(?:\.[a-zA-Z]{2,})+(?:\/[^\s]*)?$/;
+  // Limit length: if (input.length > 2048) return false;
+  ```
+
+#### **Mandatory ReDoS Testing:**
+For every regex pattern, include this test:
+```typescript
+it('should handle potential ReDoS attack patterns safely', () => {
+  const maliciousPatterns = [
+    'malicious-pattern-here',
+    'another-attack-vector',
+  ];
+  
+  const startTime = Date.now();
+  maliciousPatterns.forEach(pattern => {
+    yourValidationFunction(pattern);
+  });
+  const endTime = Date.now();
+  
+  // Must complete under 100ms even with attack patterns
+  expect(endTime - startTime).toBeLessThan(100);
+});
+```
+
+#### **Regex Best Practices:**
+1. **Use specific character classes** instead of broad negated classes
+2. **Add length limits** before regex validation
+3. **Prefer bounded quantifiers** `{0,61}` over unbounded `+` or `*`
+4. **Test with malicious inputs** that could cause exponential backtracking
+5. **Consider using libraries** like `validator.js` for common patterns
 
 ## Performance Guidelines
 

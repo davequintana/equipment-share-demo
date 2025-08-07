@@ -23,21 +23,18 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - name: Setup Node.js and pnpm
+        uses: ./.github/actions/setup-node-pnpm
         with:
           node-version: ${{ env.NODE_VERSION }}
-
-      - name: Install pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: ${{ env.PNPM_VERSION }}
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+          pnpm-version: ${{ env.PNPM_VERSION }}
 
       - name: Build all projects
-        run: pnpm exec nx run-many -t build --all --parallel
+        run: |
+          # Build all projects including workspace dependencies
+          pnpm exec nx run-many -t build --all --parallel
+          # Ensure secrets package is built for deployment
+          pnpm exec nx build secrets
 
       - name: Run tests
         run: pnpm exec nx run-many -t test --all --parallel
