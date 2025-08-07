@@ -359,7 +359,9 @@ fastify.post('/api/auth/login', {
         const errorMessage = bcryptError instanceof Error ? bcryptError.message : 'Unknown bcrypt error';
         throw new Error(`Password validation failed: ${errorMessage}`);
       }
-    }    if (!isValidPassword) {
+    }
+
+    if (!isValidPassword) {
       fastify.log.warn(`Invalid password for user: ${email}`);
       return reply.code(401).send({
         error: 'Invalid credentials',

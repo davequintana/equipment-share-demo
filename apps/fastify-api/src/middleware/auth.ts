@@ -2,43 +2,47 @@ import { FastifyRequest, FastifyReply } from 'fastify';
 import { JwtPayload } from '../types';
 
 // Authentication middleware for protected routes
-export const authenticateUser = async (request: FastifyRequest, reply: FastifyReply) => {
-  try {
-    await request.jwtVerify();
+export const authenticateUser = (request: FastifyRequest, reply: FastifyReply, done: (err?: Error) => void): void => {
+  request.jwtVerify()
+    .then(() => {
+      // Additional validation - ensure user still exists
+      const user = request.user as JwtPayload;
+      if (!user?.id || !user?.email) {
+        reply.code(401).send({
+          error: 'Invalid token payload',
+          code: 'INVALID_TOKEN'
+        });
+        return;
+      }
 
-    // Additional validation - ensure user still exists
-    const user = request.user as JwtPayload;
-    if (!user || !user.id || !user.email) {
-      return reply.code(401).send({
-        error: 'Invalid token payload',
-        code: 'INVALID_TOKEN'
+      // Success - continue to the route handler
+      done();
+    })
+    .catch((error) => {
+      // More specific error handling
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+
+      if (errorMessage.includes('jwt expired')) {
+        reply.code(401).send({
+          error: 'Token expired',
+          code: 'TOKEN_EXPIRED'
+        });
+        return;
+      }
+
+      if (errorMessage.includes('jwt must be provided')) {
+        reply.code(401).send({
+          error: 'Authorization token required',
+          code: 'TOKEN_REQUIRED'
+        });
+        return;
+      }
+
+      reply.code(401).send({
+        error: 'Unauthorized',
+        code: 'UNAUTHORIZED'
       });
-    }
-
-    return true;
-  } catch (error) {
-    // More specific error handling
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-
-    if (errorMessage.includes('jwt expired')) {
-      return reply.code(401).send({
-        error: 'Token expired',
-        code: 'TOKEN_EXPIRED'
-      });
-    }
-
-    if (errorMessage.includes('jwt must be provided')) {
-      return reply.code(401).send({
-        error: 'Authorization token required',
-        code: 'TOKEN_REQUIRED'
-      });
-    }
-
-    return reply.code(401).send({
-      error: 'Unauthorized',
-      code: 'UNAUTHORIZED'
     });
-  }
 };
 
 // Input validation helpers
