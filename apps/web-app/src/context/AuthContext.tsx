@@ -1,7 +1,9 @@
-import React, { createContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useState, useEffect, ReactNode, useMemo, useCallback } from 'react';
 import 'isomorphic-fetch'; // For SSR compatibility
 import { isLocalOnlyMode } from '../utils/api-url';
 import { localAuth } from '../utils/local-auth';
+import { useIdleTimer } from '../hooks/useIdleTimer';
+import { SessionWarning } from '../components/SessionWarning';
 
 interface User {
   id: string;
@@ -42,6 +44,56 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children, isSSR = fa
   const [user, setUser] = useState<User | null>(null);
   const [token, setToken] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [showSessionWarning, setShowSessionWarning] = useState(false);
+
+  // Auto-logout after 15 minutes of idle time
+  const IDLE_TIMEOUT = 15 * 60 * 1000; // 15 minutes in milliseconds
+  const WARNING_TIME = 2 * 60 * 1000; // Show warning 2 minutes before logout
+
+  const handleIdleLogout = useCallback(() => {
+    if (user && token) {
+      console.log('Auto-logout due to inactivity');
+      // We'll call logout function defined below
+      setUser(null);
+      setToken(null);
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+      }
+      setShowSessionWarning(false);
+
+      // Show notification to user if possible
+      if (typeof window !== 'undefined' && 'Notification' in window) {
+        if (Notification.permission === 'granted') {
+          new Notification('Session Expired', {
+            body: 'You have been logged out due to inactivity.',
+            icon: '/favicon.ico'
+          });
+        }
+      }
+    }
+  }, [user, token]);
+
+  const handleSessionWarning = useCallback((timeRemaining: number) => {
+    setShowSessionWarning(true);
+  }, []);
+
+  // Initialize idle timer - only when user is logged in and not in SSR
+  const idleTimer = useIdleTimer({
+    timeout: IDLE_TIMEOUT,
+    onIdle: handleIdleLogout,
+    onWarning: handleSessionWarning,
+    warningTime: WARNING_TIME,
+    enabled: !isSSR && !!user && !!token, // Only enable when user is authenticated
+  });
+
+  const handleExtendSession = useCallback(() => {
+    setShowSessionWarning(false);
+    // Reset the idle timer by triggering activity
+    if (idleTimer) {
+      idleTimer.reset();
+    }
+  }, [idleTimer]);
 
   useEffect(() => {
     // Only run on client side
@@ -59,10 +111,15 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children, isSSR = fa
           localStorage.removeItem('token');
         }
       }
+
+      // Request notification permission for idle timeout notifications
+      if ('Notification' in window && Notification.permission === 'default') {
+        Notification.requestPermission().catch(console.error);
+      }
     }
   }, []);
 
-  const login = async (email: string, password: string) => {
+  const login = useCallback(async (email: string, password: string) => {
     setLoading(true);
     try {
       // Use local auth for GitHub Pages, API for development
@@ -106,9 +163,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children, isSSR = fa
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
-  const register = async (email: string, password: string, name: string) => {
+  const register = useCallback(async (email: string, password: string, name: string) => {
     setLoading(true);
     try {
       // Use local auth for GitHub Pages, API for development
@@ -152,9 +209,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children, isSSR = fa
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
-  const logout = () => {
+  const logout = useCallback(() => {
     setUser(null);
     setToken(null);
 
@@ -163,11 +220,37 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children, isSSR = fa
       localStorage.removeItem('token');
       localStorage.removeItem('user');
     }
-  };
+  }, []);
+
+  // Memoize the context value to prevent unnecessary re-renders
+  const contextValue = useMemo(() => ({
+    user,
+    token,
+    login,
+    register,
+    logout,
+    loading
+  }), [user, token, login, register, logout, loading]);
 
   return (
-    <AuthContext.Provider value={{ user, token, login, register, logout, loading }}>
+    <AuthContext.Provider value={contextValue}>
       {children}
+      {idleTimer && (
+        <SessionWarning
+          show={showSessionWarning}
+          timeRemaining={idleTimer.timeRemaining || 0}
+          onExtendSession={handleExtendSession}
+          onLogout={handleIdleLogout}
+        />
+      )}
     </AuthContext.Provider>
   );
+};
+
+export const useAuth = () => {
+  const context = React.useContext(AuthContext);
+  if (!context) {
+    throw new Error('useAuth must be used within an AuthProvider');
+  }
+  return context;
 };

@@ -14,7 +14,7 @@ interface StoredAuth {
 }
 
 const AUTH_KEY = 'equipment-share-auth';
-const TOKEN_EXPIRY = 24 * 60 * 60 * 1000; // 24 hours
+const TOKEN_EXPIRY = 15 * 60 * 1000; // 15 minutes to match backend JWT expiry
 
 // Simple client-side storage for demo users
 const demoUsers = new Map<string, { password: string; user: User }>();

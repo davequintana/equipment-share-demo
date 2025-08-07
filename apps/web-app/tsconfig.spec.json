@@ -1,7 +1,8 @@
 {
   "compilerOptions": {
     "outDir": "../../dist/out-tsc",
-    "types": ["vitest/globals", "vitest/importMeta", "vite/client", "node", "vitest"]
+    "types": ["vitest/globals", "vitest/importMeta", "vite/client", "node", "vitest"],
+    "lib": ["dom", "dom.iterable", "es2022"]
   },
   "include": [
     "vite.config.ts",
