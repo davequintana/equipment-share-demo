@@ -92,7 +92,7 @@ export default defineConfig({
     },
     {
       command: process.env.CI
-        ? 'bash -c "if [ ! -d dist/apps/fastify-api ]; then echo \\"❌ fastify-api directory not found\\"; exit 1; fi && cd dist/apps/fastify-api && ls -la && npm start"'
+        ? 'bash -c "echo \\"Checking fastify-api deployment...\\" && if [ ! -d dist/apps/fastify-api ]; then echo \\"Building fastify-api locally...\\" && pnpm exec nx build fastify-api --prod && pnpm exec nx build secrets && chmod +x scripts/deploy-fastify-api.sh && ./scripts/deploy-fastify-api.sh; fi && cd dist/apps/fastify-api && npm start"'
         : 'NODE_OPTIONS="--no-deprecation --max-old-space-size=2048" pnpm run serve:fastify-api',
       port: 3334,
       reuseExistingServer: !process.env.CI,

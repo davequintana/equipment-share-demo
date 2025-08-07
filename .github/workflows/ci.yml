@@ -387,50 +387,7 @@ jobs:
           # Install Playwright with dependencies
           pnpm exec playwright install --with-deps chromium
 
-      - name: Setup fastify-api deployment
-        run: |
-          echo "=== Checking for fastify-api build ==="
-          echo "Looking for dist/apps/fastify-api directory..."
-          ls -la dist/apps/ || echo "No dist/apps directory"
-
-          if [ -d "dist/apps/fastify-api" ]; then
-            echo "✅ fastify-api build found!"
-            echo "Contents of dist/apps/fastify-api/:"
-            ls -la dist/apps/fastify-api/
-
-            echo "=== Building secrets workspace dependency ==="
-            pnpm exec nx build secrets
-            echo "✅ Secrets package built"
-            ls -la libs/secrets/dist/ || echo "No secrets dist found"
-
-            echo "Setting up workspace dependencies for fastify-api..."
-            chmod +x scripts/deploy-fastify-api.sh
-            ./scripts/deploy-fastify-api.sh
-
-            echo "After deployment setup:"
-            ls -la dist/apps/fastify-api/
-            echo "✅ Workspace dependencies deployed successfully"
-          else
-            echo "❌ fastify-api build not found, building locally for E2E tests"
-            echo "Building fastify-api and secrets packages..."
-            pnpm exec nx build fastify-api --prod
-            pnpm exec nx build secrets
-            echo "Setting up workspace dependencies..."
-            chmod +x scripts/deploy-fastify-api.sh
-            ./scripts/deploy-fastify-api.sh
-            echo "✅ Local build and deployment completed"
-          fi
-
-          # Final verification that everything is ready
-          echo "=== Final verification ==="
-          if [ ! -d "dist/apps/fastify-api" ] || [ ! -f "dist/apps/fastify-api/main.js" ]; then
-            echo "❌ Critical: fastify-api deployment failed"
-            ls -la dist/apps/ || echo "No dist/apps directory"
-            exit 1
-          fi
-          echo "✅ Fastify API deployment verified and ready"
-
-      - name: Debug environment
+      - name: Debug environment and verify artifacts
         run: |
           echo "Node version: $(node --version)"
           echo "PNPM version: $(pnpm --version)"
@@ -439,16 +396,19 @@ jobs:
           ls -la
           echo "Contents of dist/apps/:"
           ls -la dist/apps/ || echo "No dist directory"
-          echo "Contents of dist/apps/fastify-api/:"
-          ls -la dist/apps/fastify-api/ || echo "No fastify-api build"
-          echo "Checking fastify-api deployment readiness:"
-          if [ -f "dist/apps/fastify-api/main.js" ] && [ -f "dist/apps/fastify-api/package.json" ]; then
-            echo "✅ Fastify API is ready for E2E tests"
-            echo "package.json content:"
-            cat dist/apps/fastify-api/package.json
+
+          # Check if artifacts were downloaded successfully
+          if [ -d "dist/apps/web-app" ]; then
+            echo "✅ Web app artifacts available"
           else
-            echo "❌ Fastify API deployment incomplete"
-            exit 1
+            echo "ℹ️  Web app artifacts not found, will build locally"
+          fi
+
+          if [ -d "dist/apps/fastify-api" ]; then
+            echo "✅ Fastify API artifacts available"
+            ls -la dist/apps/fastify-api/
+          else
+            echo "ℹ️  Fastify API artifacts not found, Playwright will build locally"
           fi
 
       - name: Run E2E tests
