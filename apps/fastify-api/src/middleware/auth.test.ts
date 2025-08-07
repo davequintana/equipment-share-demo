@@ -1,7 +1,166 @@
-import { describe, it, expect } from 'vitest';
-import { validateEmail, validatePassword } from './auth';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { FastifyRequest, FastifyReply } from 'fastify';
+import { JwtPayload } from '../types.js';
+import {
+  validateEmail,
+  validatePassword,
+  validateName,
+  checkRateLimit,
+  resetRateLimit,
+  authenticateUser
+} from './auth';
 
-describe('Auth Validation', () => {
+// Extended FastifyRequest interface for JWT
+interface FastifyRequestWithJWT extends FastifyRequest {
+  jwtVerify(): Promise<void>;
+  user?: JwtPayload | null;
+}
+
+// Mock Fastify request and reply objects
+const createMockRequest = (overrides = {}): FastifyRequestWithJWT => ({
+  jwtVerify: vi.fn(),
+  user: undefined,
+  ...overrides,
+} as unknown as FastifyRequestWithJWT);
+
+const createMockReply = (): FastifyReply => {
+  const reply = {
+    code: vi.fn().mockReturnThis(),
+    send: vi.fn().mockReturnThis(),
+  };
+  return reply as unknown as FastifyReply;
+};
+
+describe('Auth Middleware', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  describe('authenticateUser', () => {
+    it('should successfully authenticate valid user', async () => {
+      const mockRequest = createMockRequest({
+        jwtVerify: vi.fn().mockResolvedValue(undefined),
+        user: { id: 'user123', email: 'test@example.com' }
+      });
+      const mockReply = createMockReply();
+
+      const result = await authenticateUser(mockRequest, mockReply);
+
+      expect(result).toBe(true);
+      expect(mockRequest.jwtVerify).toHaveBeenCalledOnce();
+      expect(mockReply.code).not.toHaveBeenCalled();
+      expect(mockReply.send).not.toHaveBeenCalled();
+    });
+
+    it('should reject user with invalid token payload - missing id', async () => {
+      const mockRequest = createMockRequest({
+        jwtVerify: vi.fn().mockResolvedValue(undefined),
+        user: { email: 'test@example.com' } // missing id
+      });
+      const mockReply = createMockReply();
+
+      await authenticateUser(mockRequest, mockReply);
+
+      expect(mockReply.code).toHaveBeenCalledWith(401);
+      expect(mockReply.send).toHaveBeenCalledWith({
+        error: 'Invalid token payload',
+        code: 'INVALID_TOKEN'
+      });
+    });
+
+    it('should reject user with invalid token payload - missing email', async () => {
+      const mockRequest = createMockRequest({
+        jwtVerify: vi.fn().mockResolvedValue(undefined),
+        user: { id: 'user123' } // missing email
+      });
+      const mockReply = createMockReply();
+
+      await authenticateUser(mockRequest, mockReply);
+
+      expect(mockReply.code).toHaveBeenCalledWith(401);
+      expect(mockReply.send).toHaveBeenCalledWith({
+        error: 'Invalid token payload',
+        code: 'INVALID_TOKEN'
+      });
+    });
+
+    it('should reject user with no user object', async () => {
+      const mockRequest = createMockRequest({
+        jwtVerify: vi.fn().mockResolvedValue(undefined),
+        user: null
+      });
+      const mockReply = createMockReply();
+
+      await authenticateUser(mockRequest, mockReply);
+
+      expect(mockReply.code).toHaveBeenCalledWith(401);
+      expect(mockReply.send).toHaveBeenCalledWith({
+        error: 'Invalid token payload',
+        code: 'INVALID_TOKEN'
+      });
+    });
+
+    it('should handle expired token error', async () => {
+      const mockRequest = createMockRequest({
+        jwtVerify: vi.fn().mockRejectedValue(new Error('jwt expired'))
+      });
+      const mockReply = createMockReply();
+
+      await authenticateUser(mockRequest, mockReply);
+
+      expect(mockReply.code).toHaveBeenCalledWith(401);
+      expect(mockReply.send).toHaveBeenCalledWith({
+        error: 'Token expired',
+        code: 'TOKEN_EXPIRED'
+      });
+    });
+
+    it('should handle missing token error', async () => {
+      const mockRequest = createMockRequest({
+        jwtVerify: vi.fn().mockRejectedValue(new Error('jwt must be provided'))
+      });
+      const mockReply = createMockReply();
+
+      await authenticateUser(mockRequest, mockReply);
+
+      expect(mockReply.code).toHaveBeenCalledWith(401);
+      expect(mockReply.send).toHaveBeenCalledWith({
+        error: 'Authorization token required',
+        code: 'TOKEN_REQUIRED'
+      });
+    });
+
+    it('should handle generic authentication errors', async () => {
+      const mockRequest = createMockRequest({
+        jwtVerify: vi.fn().mockRejectedValue(new Error('invalid signature'))
+      });
+      const mockReply = createMockReply();
+
+      await authenticateUser(mockRequest, mockReply);
+
+      expect(mockReply.code).toHaveBeenCalledWith(401);
+      expect(mockReply.send).toHaveBeenCalledWith({
+        error: 'Unauthorized',
+        code: 'UNAUTHORIZED'
+      });
+    });
+
+    it('should handle non-Error exceptions', async () => {
+      const mockRequest = createMockRequest({
+        jwtVerify: vi.fn().mockRejectedValue('string error')
+      });
+      const mockReply = createMockReply();
+
+      await authenticateUser(mockRequest, mockReply);
+
+      expect(mockReply.code).toHaveBeenCalledWith(401);
+      expect(mockReply.send).toHaveBeenCalledWith({
+        error: 'Unauthorized',
+        code: 'UNAUTHORIZED'
+      });
+    });
+  });
+
   describe('validateEmail', () => {
     it('should validate correct email addresses', () => {
       const validEmails = [
@@ -10,6 +169,9 @@ describe('Auth Validation', () => {
         'user+tag@example.org',
         'test123@sub.domain.com',
         'a@b.co',
+        'user.email+tag+sorting@example.com',
+        'test.email.with+symbol@example.co.uk',
+        'firstname-lastname@domain.com',
       ];
 
       validEmails.forEach(email => {
@@ -29,6 +191,11 @@ describe('Auth Validation', () => {
         ' ',
         'user@domain.com ',
         ' user@domain.com',
+        'user@',
+        '@example.com',
+        'user@@example.com',
+        'user@.example.com',
+        'user@example.',
       ];
 
       invalidEmails.forEach(email => {
@@ -47,6 +214,8 @@ describe('Auth Validation', () => {
         '!@!.' + '!.'.repeat(100),
         'a@' + 'b'.repeat(1000) + '.com',
         'user@' + 'sub.'.repeat(100) + 'domain.com',
+        '@'.repeat(1000),
+        '.'.repeat(1000) + '@example.com',
       ];
 
       const startTime = Date.now();
@@ -75,6 +244,9 @@ describe('Auth Validation', () => {
         'StrongP@ssw0rd!',
         'MySecure123!',
         'Complex$Pass1',
+        'Abcdef1',
+        'Password123',
+        'MyP@ss1',
       ];
 
       strongPasswords.forEach(password => {
@@ -84,20 +256,194 @@ describe('Auth Validation', () => {
       });
     });
 
-    it('should reject weak passwords', () => {
-      const weakPasswords = [
-        'short',
-        'nouppercase123!',
-        'NOLOWERCASE123!',
-        'NoNumbers!',
-        'NoSpecialChars123',
+    it('should reject passwords that are too short', () => {
+      const shortPasswords = ['Ab1', 'Pass1', '12345'];
+
+      shortPasswords.forEach(password => {
+        const result = validatePassword(password);
+        expect(result.valid, `${password} should be invalid (too short)`).toBe(false);
+        expect(result.errors).toContain('Password must be at least 6 characters long');
+      });
+    });
+
+    it('should reject passwords without lowercase letters', () => {
+      const result = validatePassword('PASSWORD123');
+      expect(result.valid).toBe(false);
+      expect(result.errors).toContain('Password must contain at least one lowercase letter');
+    });
+
+    it('should reject passwords without uppercase letters', () => {
+      const result = validatePassword('password123');
+      expect(result.valid).toBe(false);
+      expect(result.errors).toContain('Password must contain at least one uppercase letter');
+    });
+
+    it('should reject passwords without numbers', () => {
+      const result = validatePassword('Password');
+      expect(result.valid).toBe(false);
+      expect(result.errors).toContain('Password must contain at least one number');
+    });
+
+    it('should accumulate multiple errors', () => {
+      const result = validatePassword('pass'); // short, no uppercase, no numbers
+      expect(result.valid).toBe(false);
+      expect(result.errors).toHaveLength(3);
+      expect(result.errors).toContain('Password must be at least 6 characters long');
+      expect(result.errors).toContain('Password must contain at least one uppercase letter');
+      expect(result.errors).toContain('Password must contain at least one number');
+    });
+
+    it('should handle empty password', () => {
+      const result = validatePassword('');
+      expect(result.valid).toBe(false);
+      expect(result.errors.length).toBeGreaterThan(0);
+    });
+  });
+
+  describe('validateName', () => {
+    it('should validate correct names', () => {
+      const validNames = [
+        'John',
+        'Mary Jane',
+        'Jean-Claude',
+        'José María',
+        'O\'Connor',
+        '李明',
+        'Mohammed Al-Rashid',
+        'A'.repeat(50), // max length
       ];
 
-      weakPasswords.forEach(password => {
-        const result = validatePassword(password);
-        expect(result.valid, `${password} should be invalid`).toBe(false);
-        expect(result.errors.length, `${password} should have error messages`).toBeGreaterThan(0);
+      validNames.forEach(name => {
+        expect(validateName(name), `${name} should be valid`).toBe(true);
       });
+    });
+
+    it('should reject invalid names', () => {
+      const invalidNames = [
+        '',           // empty
+        ' ',          // only whitespace
+        '  ',         // multiple whitespace
+        'A',          // too short
+        'A'.repeat(51), // too long
+        '   John   ', // should fail because of leading/trailing spaces
+      ];
+
+      invalidNames.forEach(name => {
+        expect(validateName(name), `"${name}" should be invalid`).toBe(false);
+      });
+    });
+
+    it('should handle names with exact length boundaries', () => {
+      expect(validateName('Jo')).toBe(true);  // min length (2)
+      expect(validateName('J')).toBe(false);   // below min length
+      expect(validateName('A'.repeat(50))).toBe(true);  // max length (50)
+      expect(validateName('A'.repeat(51))).toBe(false); // above max length
+    });
+  });
+
+  describe('checkRateLimit and resetRateLimit', () => {
+    beforeEach(() => {
+      // Reset any existing rate limit data
+      resetRateLimit('test-ip');
+      resetRateLimit('192.168.1.1');
+    });
+
+    afterEach(() => {
+      // Clean up after each test
+      resetRateLimit('test-ip');
+      resetRateLimit('192.168.1.1');
+    });
+
+    it('should allow first attempt', () => {
+      expect(checkRateLimit('test-ip')).toBe(true);
+    });
+
+    it('should allow up to 5 attempts', () => {
+      for (let i = 1; i <= 5; i++) {
+        expect(checkRateLimit('test-ip'), `Attempt ${i} should be allowed`).toBe(true);
+      }
+    });
+
+    it('should block 6th attempt within time window', () => {
+      // Make 5 attempts
+      for (let i = 1; i <= 5; i++) {
+        checkRateLimit('test-ip');
+      }
+
+      // 6th attempt should be blocked
+      expect(checkRateLimit('test-ip')).toBe(false);
+    });
+
+    it('should handle different IPs independently', () => {
+      // Make 5 attempts for first IP
+      for (let i = 1; i <= 5; i++) {
+        checkRateLimit('192.168.1.1');
+      }
+
+      // Second IP should still be allowed
+      expect(checkRateLimit('192.168.1.2')).toBe(true);
+    });
+
+    it('should reset rate limit for specific IP', () => {
+      // Make 5 attempts
+      for (let i = 1; i <= 5; i++) {
+        checkRateLimit('test-ip');
+      }
+
+      // Should be blocked
+      expect(checkRateLimit('test-ip')).toBe(false);
+
+      // Reset and try again
+      resetRateLimit('test-ip');
+      expect(checkRateLimit('test-ip')).toBe(true);
+    });
+
+    it('should reset after 15 minutes', () => {
+      // Mock Date.now to control time
+      const originalNow = Date.now;
+      let mockTime = 1000000000; // arbitrary start time
+
+      vi.spyOn(Date, 'now').mockImplementation(() => mockTime);
+
+      // Make 5 attempts
+      for (let i = 1; i <= 5; i++) {
+        checkRateLimit('test-ip');
+      }
+
+      // Should be blocked
+      expect(checkRateLimit('test-ip')).toBe(false);
+
+      // Fast forward 15 minutes + 1 second
+      mockTime += (15 * 60 * 1000) + 1000;
+
+      // Should be allowed again
+      expect(checkRateLimit('test-ip')).toBe(true);
+
+      // Restore original Date.now
+      Date.now = originalNow;
+    });
+
+    it('should not reset before 15 minutes', () => {
+      const originalNow = Date.now;
+      let mockTime = 1000000000;
+
+      vi.spyOn(Date, 'now').mockImplementation(() => mockTime);
+
+      // Make 5 attempts
+      for (let i = 1; i <= 5; i++) {
+        checkRateLimit('test-ip');
+      }
+
+      // Should be blocked
+      expect(checkRateLimit('test-ip')).toBe(false);
+
+      // Fast forward 14 minutes (not enough)
+      mockTime += 14 * 60 * 1000;
+
+      // Should still be blocked
+      expect(checkRateLimit('test-ip')).toBe(false);
+
+      Date.now = originalNow;
     });
   });
 });
