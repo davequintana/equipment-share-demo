@@ -457,7 +457,6 @@ jobs:
   sonarcloud:
     runs-on: ubuntu-latest
     timeout-minutes: 15
-    needs: [test]
     if: github.actor != 'dependabot[bot]'
     permissions:
       contents: read
@@ -481,68 +480,63 @@ jobs:
 
       - name: Generate coverage for SonarCloud
         run: |
-          set -e  # Exit on any error
-          echo "=== SonarCloud Coverage Generation ==="
-
-          # Basic environment check
+          set -e
+          echo "=== SonarCloud Coverage Generation Started ==="
           echo "Working directory: $(pwd)"
+          echo "Current user: $(whoami)"
+          echo "Node version: $(node --version)"
+          echo "PNPM version: $(pnpm --version)"
           echo "Available disk space: $(df -h . | tail -1)"
-
-          # Create and clean coverage directory
-          rm -rf coverage
-          mkdir -p coverage
 
           # Install dependencies
           echo "Installing dependencies..."
-          pnpm install --frozen-lockfile
+          pnpm install --frozen-lockfile || {
+            echo "❌ Failed to install dependencies"
+            exit 1
+          }
 
-          # Run tests with coverage using the working local configuration
+          # Clean coverage directory
+          echo "Cleaning coverage directory..."
+          rm -rf coverage
+          mkdir -p coverage
+
+          # Run auth middleware tests with coverage
           echo "Running auth middleware tests with coverage..."
-          npx vitest run apps/fastify-api/src/middleware/auth.test.ts --coverage --config apps/fastify-api/vite.config.test.ts
+          npx vitest run apps/fastify-api/src/middleware/auth.test.ts --coverage --config apps/fastify-api/vite.config.test.ts || {
+            echo "❌ Vitest execution failed"
+            echo "Checking if coverage was still generated..."
+            ls -la coverage/ 2>/dev/null || echo "No coverage directory"
+            exit 1
+          }
 
-          # The vitest config should output to ./coverage, let's verify
-          echo "Checking for generated coverage files..."
+          # Verify LCOV file exists and has content
+          echo "Verifying coverage file..."
           if [ -f "coverage/lcov.info" ]; then
-            echo "✅ Found coverage/lcov.info ($(wc -c < coverage/lcov.info) bytes)"
-          else
-            echo "❌ coverage/lcov.info not found, checking alt locations..."
-            find . -name "lcov.info" -type f 2>/dev/null | head -5
+            echo "✅ coverage/lcov.info exists"
+            echo "File size: $(wc -c < coverage/lcov.info) bytes"
+            echo "Line count: $(wc -l < coverage/lcov.info) lines"
 
-            # Try copying from alternative location
-            if [ -f "apps/fastify-api/coverage/lcov.info" ]; then
-              echo "Copying from apps/fastify-api/coverage/..."
-              cp apps/fastify-api/coverage/lcov.info coverage/lcov.info
+            # Check if auth.ts is in the coverage
+            if grep -q "auth.ts" coverage/lcov.info; then
+              echo "✅ auth.ts found in coverage ($(grep -c "auth.ts" coverage/lcov.info) occurrences)"
             else
-              echo "❌ FATAL: No LCOV file found anywhere"
+              echo "❌ auth.ts NOT found in coverage file"
+              echo "First 20 lines of LCOV file:"
+              head -20 coverage/lcov.info
               exit 1
             fi
-          fi
-
-          # Verify the file contains our auth middleware
-          if grep -q "auth.ts" coverage/lcov.info; then
-            echo "✅ Auth middleware found in coverage file"
           else
-            echo "❌ Auth middleware NOT found in coverage file"
-            echo "Coverage file contents (first 10 lines):"
-            head -10 coverage/lcov.info
+            echo "❌ coverage/lcov.info does not exist"
+            echo "Checking alternative locations..."
+            find . -name "lcov.info" -type f 2>/dev/null | head -10 || echo "No LCOV files found anywhere"
+            ls -la apps/fastify-api/coverage/ 2>/dev/null || echo "No apps/fastify-api/coverage/"
             exit 1
           fi
 
-          echo "✅ Coverage generation successful"
+          echo "✅ Coverage generation completed successfully"
         env:
           NODE_ENV: test
           JWT_SECRET: test-secret-key
-
-      - name: Final verification before SonarCloud
-        run: |
-          echo "=== Pre-SonarCloud Verification ==="
-          if [ -f "coverage/lcov.info" ]; then
-            echo "✅ coverage/lcov.info exists ($(wc -c < coverage/lcov.info) bytes)"
-            echo "✅ Auth middleware check: $(grep -c "auth.ts" coverage/lcov.info) entries"
-          else
-            echo "❌ FATAL: coverage/lcov.info missing"
-            exit 1
-          fi
 
       - name: SonarCloud Scan
         uses: SonarSource/sonarqube-scan-action@v5.0.0
