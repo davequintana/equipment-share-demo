@@ -500,7 +500,7 @@ jobs:
 
       - name: Generate coverage for SonarCloud
         run: |
-          echo "� Generating fresh coverage for SonarCloud..."
+          echo "🚀 Generating fresh coverage for SonarCloud..."
 
           # Install dependencies
           pnpm install --frozen-lockfile
