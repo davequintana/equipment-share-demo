@@ -481,7 +481,10 @@ jobs:
 
       - name: Generate coverage for SonarCloud
         run: |
-          echo "Creating LCOV coverage for SonarCloud..."
+          echo "=== Creating LCOV coverage for SonarCloud ==="
+          echo "Current working directory: $(pwd)"
+          echo "Node version: $(node --version)"
+          echo "PNPM version: $(pnpm --version)"
 
           # Create coverage directory
           mkdir -p coverage
@@ -489,23 +492,51 @@ jobs:
           # Install dependencies first
           pnpm install --frozen-lockfile
 
-          # Generate coverage using the exact same command that works locally
-          npx vitest run --config apps/fastify-api/vite.config.test.ts --coverage
+          # Clean any existing coverage
+          rm -rf coverage/* apps/fastify-api/coverage/*
 
-          # Ensure LCOV file is in the correct location for SonarCloud
+          # Generate coverage with explicit output to root coverage directory
+          echo "Running vitest with coverage..."
+          npx vitest run --config apps/fastify-api/vite.config.test.ts --coverage --reporter=verbose
+
+          echo "=== Post-test directory listing ==="
+          echo "Root coverage directory:"
+          ls -la coverage/ || echo "No root coverage directory"
+          echo "Apps fastify-api coverage directory:"
+          ls -la apps/fastify-api/coverage/ || echo "No apps/fastify-api/coverage directory"
+
+          # Find and copy LCOV file to ensure it's in the right place
+          echo "=== Searching for LCOV files ==="
+          find . -name "lcov.info" -type f | while read lcov_file; do
+            echo "Found LCOV file: $lcov_file"
+            echo "Size: $(wc -c < "$lcov_file") bytes"
+            echo "Lines: $(wc -l < "$lcov_file")"
+          done
+
+          # Ensure LCOV file is at root level for SonarCloud
           if [ -f "coverage/lcov.info" ]; then
-            echo "✅ LCOV file generated at root level ($(wc -l < coverage/lcov.info) lines)"
-            echo "Auth middleware present: $(grep -c 'auth.ts' coverage/lcov.info || echo '0') entries"
+            echo "✅ LCOV file already at root level"
+          elif [ -f "apps/fastify-api/coverage/lcov.info" ]; then
+            echo "Moving LCOV from apps/fastify-api to root..."
+            cp apps/fastify-api/coverage/lcov.info coverage/lcov.info
+            echo "✅ LCOV file moved to root"
           else
-            echo "❌ LCOV file not at root level, checking apps/fastify-api..."
+            echo "❌ No LCOV file found - forcing generation at root level"
+            # Force vitest to output to root coverage directory
+            cd apps/fastify-api && npx vitest run --config ../../apps/fastify-api/vite.config.test.ts --coverage && cd ../..
             if [ -f "apps/fastify-api/coverage/lcov.info" ]; then
-              echo "Found LCOV in apps/fastify-api, copying to root..."
               cp apps/fastify-api/coverage/lcov.info coverage/lcov.info
-              echo "✅ LCOV file copied ($(wc -l < coverage/lcov.info) lines)"
-            else
-              echo "❌ No LCOV file found anywhere!"
-              exit 1
             fi
+          fi
+
+          # Final verification
+          if [ -f "coverage/lcov.info" ]; then
+            echo "✅ Final LCOV file ready: $(wc -c < coverage/lcov.info) bytes, $(wc -l < coverage/lcov.info) lines"
+            echo "Auth middleware coverage check:"
+            grep "auth.ts" coverage/lcov.info | head -3 || echo "Auth middleware not found in coverage"
+          else
+            echo "❌ FATAL: No LCOV file available for SonarCloud"
+            exit 1
           fi
         env:
           NODE_ENV: test
