@@ -482,8 +482,31 @@ jobs:
       - name: Run tests with coverage for SonarCloud
         run: |
           echo "Running tests with coverage for SonarCloud..."
-          # Run coverage specifically for auth middleware
-          npx vitest run --config apps/fastify-api/vite.config.test.ts --coverage
+          echo "Working directory: $(pwd)"
+          echo "Node version: $(node --version)"
+          echo "NPM version: $(npm --version)"
+
+          # Check if config file exists
+          if [ -f "apps/fastify-api/vite.config.test.ts" ]; then
+            echo "✅ Found vite.config.test.ts"
+          else
+            echo "❌ vite.config.test.ts not found!"
+            ls -la apps/fastify-api/
+          fi
+
+          # Run coverage specifically for auth middleware with verbose output
+          echo "Running vitest with coverage..."
+          npx vitest run --config apps/fastify-api/vite.config.test.ts --coverage --reporter=verbose || {
+            echo "❌ Vitest failed with exit code $?"
+            echo "Checking for any generated files:"
+            find . -name "*coverage*" -type d | head -5
+            exit 1
+          }
+
+          echo "✅ Vitest completed successfully"
+          echo "Checking generated coverage files:"
+          find . -name "*coverage*" -type d | head -5
+          find . -name "*.info" | head -5
         env:
           NODE_ENV: test
           JWT_SECRET: test-secret-key
@@ -492,6 +515,15 @@ jobs:
         run: |
           echo "Consolidating coverage reports for SonarCloud..."
           mkdir -p coverage
+
+          echo "Current directory structure:"
+          ls -la
+
+          echo "Looking for coverage directories:"
+          find . -name "*coverage*" -type d | head -10
+
+          echo "Looking for LCOV files:"
+          find . -name "*.info" | head -10
 
           # Copy the LCOV file to the expected location
           if [ -f "coverage/lcov.info" ]; then
@@ -502,12 +534,25 @@ jobs:
             echo "✅ Copied coverage/lcov.info ($(wc -l < coverage/lcov.info) lines)"
           else
             echo "❌ No LCOV file found!"
-            echo "Searching for any coverage files:"
-            find . -name "*.info" -o -name "*lcov*" | grep -v node_modules | head -10
+            echo "Full directory listing of potential coverage locations:"
+            ls -la apps/fastify-api/ | grep -i coverage || echo "No coverage directory in fastify-api"
+            ls -la coverage/ 2>/dev/null || echo "No root coverage directory"
+            echo "All .info files in workspace:"
+            find . -name "*.info" | head -20
+            echo "All files with 'lcov' in name:"
+            find . -name "*lcov*" | head -20
           fi
 
           # Verify our auth middleware is in the coverage
           if [ -f "coverage/lcov.info" ] && grep -q "auth.ts" coverage/lcov.info; then
+            echo "✅ Auth middleware coverage found in LCOV file"
+          else
+            echo "❌ Auth middleware coverage not found!"
+            if [ -f "coverage/lcov.info" ]; then
+              echo "LCOV file content preview:"
+              head -20 coverage/lcov.info
+            fi
+          fi
             echo "✅ Auth middleware coverage found in LCOV file"
           else
             echo "❌ Auth middleware coverage not found!"
