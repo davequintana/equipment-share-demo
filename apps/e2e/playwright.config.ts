@@ -91,7 +91,9 @@ export default defineConfig({
       stderr: 'pipe',
     },
     {
-      command: process.env.CI ? 'cd dist/apps/fastify-api && ls -la && npm start' : 'NODE_OPTIONS="--no-deprecation --max-old-space-size=2048" pnpm run serve:fastify-api',
+      command: process.env.CI
+        ? 'bash -c "if [ ! -d dist/apps/fastify-api ]; then echo \\"❌ fastify-api directory not found\\"; exit 1; fi && cd dist/apps/fastify-api && ls -la && npm start"'
+        : 'NODE_OPTIONS="--no-deprecation --max-old-space-size=2048" pnpm run serve:fastify-api',
       port: 3334,
       reuseExistingServer: !process.env.CI,
       timeout: process.env.CI ? 300 * 1000 : 120 * 1000, // 5 minutes for CI with more workers, 2 minutes for local

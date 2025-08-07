@@ -411,10 +411,24 @@ jobs:
             ls -la dist/apps/fastify-api/
             echo "✅ Workspace dependencies deployed successfully"
           else
-            echo "❌ fastify-api build not found, skipping deployment setup"
-            echo "Available directories in dist/apps/:"
-            ls -la dist/apps/ || echo "No dist/apps directory exists"
+            echo "❌ fastify-api build not found, building locally for E2E tests"
+            echo "Building fastify-api and secrets packages..."
+            pnpm exec nx build fastify-api --prod
+            pnpm exec nx build secrets
+            echo "Setting up workspace dependencies..."
+            chmod +x scripts/deploy-fastify-api.sh
+            ./scripts/deploy-fastify-api.sh
+            echo "✅ Local build and deployment completed"
           fi
+
+          # Final verification that everything is ready
+          echo "=== Final verification ==="
+          if [ ! -d "dist/apps/fastify-api" ] || [ ! -f "dist/apps/fastify-api/main.js" ]; then
+            echo "❌ Critical: fastify-api deployment failed"
+            ls -la dist/apps/ || echo "No dist/apps directory"
+            exit 1
+          fi
+          echo "✅ Fastify API deployment verified and ready"
 
       - name: Debug environment
         run: |
