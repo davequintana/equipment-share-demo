@@ -68,6 +68,9 @@ export default defineConfig(({ mode }) => ({
     coverage: {
       reportsDirectory: '../../coverage/apps/web-app',
       provider: 'v8',
+      reporter: ['text', 'json', 'html', 'lcov'],
+      include: ['src/**/*.{ts,tsx}'],
+      exclude: ['src/**/*.{test,spec}.{ts,tsx}', 'src/test-setup.ts'],
     },
   },
 }));
