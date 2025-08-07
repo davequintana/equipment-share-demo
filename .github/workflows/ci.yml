@@ -96,12 +96,10 @@ jobs:
         run: |
           echo "Generating consolidated coverage for SonarCloud..."
           mkdir -p coverage
-          
+
           # Run coverage specifically for auth middleware to ensure LCOV generation
-          cd apps/fastify-api
-          npx vitest run --config vite.config.test.ts --coverage --reporter=silent
-          cd ../..
-          
+          npx vitest run --config apps/fastify-api/vite.config.test.ts --coverage
+
           # Copy the generated LCOV file to the root coverage directory
           if [ -f "coverage/lcov.info" ]; then
             echo "Found consolidated LCOV file"
