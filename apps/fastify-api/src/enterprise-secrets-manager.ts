@@ -116,6 +116,19 @@ export class EnterpriseSecretsManager {
     } catch (error) {
       // Fallback to environment variables for development
       if (this.environment === 'development' || this.environment === 'test') {
+        // First try to parse DATABASE_URL if available
+        if (process.env['DATABASE_URL']) {
+          const dbUrl = new URL(process.env['DATABASE_URL']);
+          return {
+            username: dbUrl.username || 'postgres',
+            password: dbUrl.password || 'password',
+            host: dbUrl.hostname || 'localhost',
+            port: parseInt(dbUrl.port || '5432'),
+            database: dbUrl.pathname.slice(1) || 'app_db' // Remove leading slash
+          };
+        }
+
+        // Fall back to individual environment variables
         return {
           username: process.env['DB_USERNAME'] || 'postgres',
           password: process.env['DB_PASSWORD'] || 'password',

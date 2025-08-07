@@ -340,7 +340,7 @@ fastify.post('/api/auth/login', {
     const token = fastify.jwt.sign({
       id: user.id,
       email: user.email
-    }, { expiresIn: '24h' });
+    }, { expiresIn: '15m' }); // 15 minutes to match idle timeout
 
     fastify.log.info(`JWT token generated successfully for user: ${email}`);
 
@@ -478,7 +478,7 @@ fastify.post('/api/auth/register', {
     const token = fastify.jwt.sign({
       id: newUser.id,
       email: newUser.email
-    }, { expiresIn: '24h' });
+    }, { expiresIn: '15m' }); // 15 minutes to match idle timeout
 
     return reply.code(201).send({
       token,

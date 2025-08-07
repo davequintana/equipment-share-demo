@@ -117,6 +117,128 @@ it('should handle potential ReDoS attack patterns safely', () => {
 });
 ```
 
+## Testing Guidelines
+
+### Comprehensive Test Structure
+Follow this testing structure for all new features:
+
+#### 1. **Basic Functionality Tests**
+- Test default values and initialization
+- Test core functionality with happy path scenarios
+- Test return values and state changes
+
+#### 2. **Error Handling Tests**
+- Test invalid inputs and edge cases
+- Test error boundaries and graceful failures
+- Test timeout scenarios and resource limits
+
+#### 3. **Integration Tests**
+- Test interaction with external dependencies (APIs, databases)
+- Test component integration and data flow
+- Test authentication and authorization flows
+
+#### 4. **Performance & Security Tests**
+- Always include ReDoS protection tests
+- Test with large datasets and edge values
+- Test timeout scenarios and resource exhaustion
+
+### React Hook Testing Patterns
+When testing custom React hooks, follow these patterns:
+
+```typescript
+import { renderHook, act } from '@testing-library/react';
+import { vi, beforeEach, afterEach, describe, it, expect } from 'vitest';
+
+// Use fake timers for time-based hooks
+vi.useFakeTimers();
+
+describe('useCustomHook', () => {
+  beforeEach(() => {
+    vi.clearAllTimers();
+    vi.clearAllMocks();
+  });
+
+  afterEach(() => {
+    vi.clearAllTimers();
+    // Clean up event listeners
+    document.removeEventListener = vi.fn();
+  });
+
+  it('should initialize with correct default values', () => {
+    const { result } = renderHook(() => useCustomHook());
+    expect(result.current.someValue).toBe(expectedValue);
+  });
+
+  it('should handle state changes correctly', () => {
+    const { result } = renderHook(() => useCustomHook());
+    
+    act(() => {
+      result.current.updateFunction();
+    });
+    
+    expect(result.current.newState).toBe(expectedNewValue);
+  });
+});
+```
+
+### Enterprise Service Testing Patterns
+For services with external dependencies (AWS, databases):
+
+```typescript
+import { vi, beforeEach, describe, it, expect } from 'vitest';
+
+// Mock external dependencies
+vi.mock('@aws-sdk/client-secrets-manager');
+vi.mock('@aws-sdk/client-ssm');
+
+describe('EnterpriseService', () => {
+  let service: EnterpriseService;
+  let mockSecretsManager: any;
+
+  beforeEach(() => {
+    mockSecretsManager = {
+      getSecretValue: vi.fn(),
+    };
+    service = new EnterpriseService();
+  });
+
+  describe('Core Functionality', () => {
+    it('should handle successful operations', async () => {
+      mockSecretsManager.getSecretValue.mockResolvedValue({
+        SecretString: JSON.stringify({ key: 'value' })
+      });
+
+      const result = await service.getSecret('test-secret');
+      expect(result).toEqual({ key: 'value' });
+    });
+  });
+
+  describe('Error Scenarios', () => {
+    it('should handle service errors gracefully', async () => {
+      mockSecretsManager.getSecretValue.mockRejectedValue(
+        new Error('Service unavailable')
+      );
+
+      await expect(service.getSecret('test-secret'))
+        .rejects.toThrow('Service unavailable');
+    });
+  });
+
+  describe('Security Tests', () => {
+    it('should validate inputs against ReDoS attacks', () => {
+      const maliciousInputs = ['((a+)+)+b', 'a'.repeat(10000)];
+      const startTime = Date.now();
+      
+      maliciousInputs.forEach(input => {
+        expect(() => service.validateInput(input)).not.toThrow();
+      });
+      
+      expect(Date.now() - startTime).toBeLessThan(100);
+    });
+  });
+});
+```
+
 #### **Regex Best Practices:**
 1. **Use specific character classes** instead of broad negated classes
 2. **Add length limits** before regex validation
