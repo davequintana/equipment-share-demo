@@ -42,18 +42,48 @@ export const authenticateUser = async (request: FastifyRequest, reply: FastifyRe
 };
 
 // Input validation helpers
-export const validateEmail = (email: string): boolean => {
-  // Use a more secure regex pattern that prevents ReDoS attacks
-  // This pattern avoids catastrophic backtracking by using possessive quantifiers approach
+export function validateEmail(email: string): boolean {
+  if (email.length > 254) return false;
+
   const emailRegex = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/;
 
-  // Additional length check to prevent long string attacks
-  if (email.length > 254) {
-    return false;
+  if (!emailRegex.test(email)) return false;
+
+  const parts = email.split('@');
+  if (parts.length !== 2) return false;
+
+  const [localPart, domainPart] = parts;
+
+  // Check for leading or trailing dots in local part
+  if (localPart.startsWith('.') || localPart.endsWith('.')) return false;
+
+  // Check for consecutive dots in local part
+  if (localPart.includes('..')) return false;
+
+  // Check for leading or trailing dots in domain part
+  if (domainPart.startsWith('.') || domainPart.endsWith('.')) return false;
+
+  // Check for consecutive dots in domain part
+  if (domainPart.includes('..')) return false;
+
+  // Reject IP addresses (domains that look like IPv4)
+  if (/^\d+\.\d+\.\d+\.\d+$/.test(domainPart)) return false;
+
+  // Domain must have at least one dot and a valid TLD
+  const domainParts = domainPart.split('.');
+  if (domainParts.length < 2) return false;
+
+  // Each domain part must be valid (no empty parts)
+  for (const part of domainParts) {
+    if (part.length === 0) return false;
   }
 
-  return emailRegex.test(email);
-};
+  // The last part (TLD) must be at least 1 character and only letters
+  const tld = domainParts[domainParts.length - 1];
+  if (tld.length < 1 || !/^[a-zA-Z]+$/.test(tld)) return false;
+
+  return true;
+}
 
 export const validatePassword = (password: string): { valid: boolean; errors: string[] } => {
   const errors: string[] = [];
@@ -81,7 +111,9 @@ export const validatePassword = (password: string): { valid: boolean; errors: st
 };
 
 export const validateName = (name: string): boolean => {
-  return Boolean(name && name.trim().length >= 2 && name.trim().length <= 50);
+  // Trim whitespace and check if the trimmed name meets requirements
+  const trimmedName = name.trim();
+  return Boolean(trimmedName && trimmedName.length >= 2 && trimmedName.length <= 50 && trimmedName === name);
 };
 
 // Rate limiting helper (basic implementation)
