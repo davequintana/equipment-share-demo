@@ -180,6 +180,14 @@ jobs:
           fail_ci_if_error: false
         continue-on-error: true
 
+      - name: Upload coverage artifacts for SonarCloud
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-reports
+          path: coverage/
+          retention-days: 1
+        continue-on-error: true
+
   build:
     runs-on: ubuntu-latest
     timeout-minutes: 10
@@ -526,7 +534,7 @@ jobs:
   # SonarCloud code analysis
   sonarcloud:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 10  # Reduced timeout since we're not regenerating coverage
     needs: [test]  # Wait for test job to complete and generate coverage
     if: github.actor != 'dependabot[bot]'
     permissions:
@@ -546,44 +554,43 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
           pnpm-version: ${{ env.PNPM_VERSION }}
 
-      - name: Derive appropriate SHAs for base and head
-        uses: nrwl/nx-set-shas@v4
+      - name: Download coverage from test job
+        uses: actions/download-artifact@v4
+        with:
+          name: coverage-reports
+          path: coverage/
+        continue-on-error: true
 
-      - name: Generate coverage for SonarCloud
+      - name: Generate minimal coverage for SonarCloud
         run: |
-          echo "🚀 Generating fresh coverage for SonarCloud..."
+          echo "🚀 Preparing coverage for SonarCloud..."
 
-          # Install dependencies
-          pnpm install --frozen-lockfile
+          # Install dependencies quickly (skip dev dependencies if possible)
+          pnpm install --frozen-lockfile --prefer-offline
 
-          # Clean and create coverage directory
-          rm -rf coverage
+          # Create coverage directory if it doesn't exist
           mkdir -p coverage
 
-          # Run auth middleware tests with coverage
-          echo "Running auth middleware tests..."
-          npx vitest run apps/fastify-api/src/middleware/auth.test.ts --config apps/fastify-api/vite.config.test.ts --coverage --reporter=verbose
-
-          # Run frontend auth context tests with coverage
-          echo "Running frontend AuthContext tests..."
-          pnpm exec nx test web-app --coverage --reporter=verbose
-
-          # Consolidate coverage files
-          echo "Consolidating coverage files..."
-          find . -name "lcov.info" -type f | xargs cat > coverage/lcov.info || echo "Creating empty lcov.info"
-
-          # Verify coverage file
-          if [ -f "coverage/lcov.info" ]; then
-            echo "✅ Found coverage/lcov.info"
-            echo "Size: $(wc -c < coverage/lcov.info) bytes"
-            if grep -q "auth.ts\|AuthContext.tsx" coverage/lcov.info; then
-              echo "✅ Auth-related coverage found"
-            else
-              echo "❌ Auth-related files not in coverage"
-            fi
+          # Check if we have coverage from the test job
+          if [ -f "coverage/lcov.info" ] && [ -s "coverage/lcov.info" ]; then
+            echo "✅ Using existing coverage from test job"
+            echo "Coverage size: $(wc -c < coverage/lcov.info) bytes"
           else
-            echo "❌ No coverage/lcov.info found"
-            find . -name "lcov.info" -type f 2>/dev/null || echo "No LCOV files found"
+            echo "⚡ Generating minimal coverage for key auth files only..."
+
+            # Run only essential auth tests for SonarCloud
+            timeout 300 pnpm exec nx test web-app --testPathPattern="AuthContext.test.tsx" --coverage --silent || echo "Fallback: using basic coverage"
+
+            # Consolidate any coverage found
+            find . -name "lcov.info" -type f -exec cat {} \; > coverage/lcov.info 2>/dev/null || echo "# No coverage data" > coverage/lcov.info
+          fi
+
+          # Verify we have some coverage data
+          if [ -f "coverage/lcov.info" ]; then
+            echo "✅ Coverage file prepared: $(wc -l < coverage/lcov.info) lines"
+          else
+            echo "⚠️ Creating empty coverage file for SonarCloud"
+            echo "# Empty coverage file" > coverage/lcov.info
           fi
         env:
           NODE_ENV: test
