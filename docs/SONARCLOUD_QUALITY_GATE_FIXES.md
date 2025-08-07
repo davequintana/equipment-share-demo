@@ -22,14 +22,16 @@ const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
 ```
 
 ### 2. Test Coverage Configuration ✅ FIXED
-**Issue**: Coverage reports not in LCOV format required by SonarCloud  
-**Fix**: Updated all Vite/Vitest configurations to generate LCOV reports
+**Issue**: Coverage reports not in LCOV format required by SonarCloud and multiple LCOV files not properly merged  
+**Fix**: Updated all Vite/Vitest configurations to generate LCOV reports and created merge script for combining coverage
 
 **Files Updated**:
 - `apps/web-app/vite.config.ts`
 - `apps/fastify-api/vite.config.test.ts`
 - `infrastructure/vitest.config.ts`
 - `sonar-project.properties`
+- `merge-coverage.sh` (new)
+- `.github/workflows/ci.yml`
 
 **Coverage Configuration**:
 ```typescript
@@ -39,6 +41,12 @@ coverage: {
   include: ['src/**/*.{ts,tsx}'],
   exclude: ['src/**/*.{test,spec}.{ts,tsx}', 'src/test-setup.ts'],
 }
+```
+
+**Coverage Merge Script**:
+```bash
+# merge-coverage.sh - Combines multiple LCOV files for SonarCloud
+cat coverage/apps/web-app/lcov.info coverage/apps/fastify-api/lcov.info > coverage/lcov.info
 ```
 
 ### 3. Comprehensive Test Suite ✅ ADDED
@@ -83,8 +91,9 @@ sonar.security.hotspots.wait=true
 **Added**:
 ```json
 {
-  "sonar:local": "sonar-scanner -Dsonar.host.url=https://sonarcloud.io -Dsonar.login=${SONAR_TOKEN}",
-  "test:coverage": "nx run-many --target=test --all --coverage"
+  "test:coverage": "nx run-many --target=test --all --coverage",
+  "coverage:merge": "./merge-coverage.sh",
+  "sonar:local": "sonar-scanner -Dsonar.host.url=https://sonarcloud.io -Dsonar.login=${SONAR_TOKEN}"
 }
 ```
 
@@ -128,4 +137,4 @@ sonar.security.hotspots.wait=true
 
 ---
 **Last Updated**: August 6, 2024  
-**Status**: Quality Gate improvements implemented, CI pipeline running
+**Status**: Coverage configuration optimized with LCOV merge, CI pipeline running with latest fixes

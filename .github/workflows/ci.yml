@@ -469,37 +469,40 @@ jobs:
           echo "Consolidating coverage reports for SonarCloud..."
           mkdir -p coverage
 
-          # Copy coverage from individual projects
+          # Copy coverage from individual projects to the expected structure
           for app in apps/*/coverage; do
             if [ -d "$app" ]; then
               app_name=$(basename $(dirname $app))
               echo "Copying coverage from $app_name..."
-              mkdir -p "coverage/$app_name"
-              cp -r "$app"/* "coverage/$app_name/"
+              mkdir -p "coverage/apps/$app_name"
+              cp -r "$app"/* "coverage/apps/$app_name/" || echo "Failed to copy from $app"
             fi
           done
 
-          # Merge LCOV files for SonarCloud
-          ./merge-coverage.sh
+          # Run the merge script to create the combined lcov.info
+          if [ -f "./merge-coverage.sh" ]; then
+            echo "Running coverage merge script..."
+            ./merge-coverage.sh
+          else
+            echo "Merge script not found, creating simple merge..."
+            # Fallback: simple concatenation
+            find coverage/apps -name "lcov.info" -exec cat {} \; > coverage/lcov.info 2>/dev/null || echo "No LCOV files to merge"
+          fi
 
           echo "Coverage files for SonarCloud:"
           find coverage -name "*.info" -o -name "*.xml" | head -10
+
+          # Verify the main lcov.info file exists
+          if [ -f "coverage/lcov.info" ]; then
+            echo "✅ Main coverage/lcov.info file created ($(wc -l < coverage/lcov.info) lines)"
+          else
+            echo "❌ Main coverage/lcov.info file missing"
+            echo "Available coverage files:"
+            find coverage -type f | head -10
+          fi
 
       - name: SonarCloud Scan
         uses: SonarSource/sonarqube-scan-action@v5.0.0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-        with:
-          args: >
-            -Dsonar.projectKey=davequintana_equipment-share-demo
-            -Dsonar.organization=davequintana
-            -Dsonar.projectName="Equipment Share Demo"
-            -Dsonar.projectVersion=1.0
-            -Dsonar.sources=apps,libs
-            -Dsonar.tests=apps,libs
-            -Dsonar.test.inclusions="**/*.test.ts,**/*.spec.ts,**/*.test.tsx,**/*.spec.tsx"
-            -Dsonar.exclusions="**/node_modules/**,**/dist/**,**/coverage/**,**/*.test.ts,**/*.spec.ts,**/*.test.tsx,**/*.spec.tsx,**/e2e/**,**/playwright.config.ts,**/vite.config.ts,**/vitest.config.ts,**/*.config.js,**/*.config.ts,**/infrastructure/**"
-            -Dsonar.javascript.lcov.reportPaths=coverage/lcov.info
-            -Dsonar.typescript.tsconfigPath=tsconfig.base.json
-            -Dsonar.qualitygate.wait=true
