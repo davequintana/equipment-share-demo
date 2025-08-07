@@ -445,5 +445,176 @@ describe('Auth Middleware', () => {
 
       Date.now = originalNow;
     });
+
+    it('should handle concurrent rate limit checks correctly', () => {
+      const ip = 'concurrent-test-ip';
+      
+      // Simulate concurrent requests
+      const results: boolean[] = [];
+      for (let i = 0; i < 10; i++) {
+        results.push(checkRateLimit(ip));
+      }
+      
+      // Should allow first 5, block the rest
+      const allowedCount = results.filter(result => result === true).length;
+      const blockedCount = results.filter(result => result === false).length;
+      
+      expect(allowedCount).toBe(5);
+      expect(blockedCount).toBe(5);
+    });
+
+    it('should maintain separate counters for different IPs', () => {
+      const ip1 = 'ip1';
+      const ip2 = 'ip2';
+      
+      // Max out ip1
+      for (let i = 0; i < 5; i++) {
+        checkRateLimit(ip1);
+      }
+      expect(checkRateLimit(ip1)).toBe(false);
+      
+      // ip2 should still work independently
+      expect(checkRateLimit(ip2)).toBe(true);
+      expect(checkRateLimit(ip2)).toBe(true);
+    });
+  });
+
+  // Additional edge case tests
+  describe('Edge Cases and Error Handling', () => {
+    describe('validateEmail edge cases', () => {
+      it('should handle special characters correctly', () => {
+        const specialCases = [
+          'user+tag@example.com',
+          'user.name@example.com',
+          'user_name@example.com',
+          'user-name@example.com',
+          'user123@example.com',
+          'a.b.c@example.com',
+        ];
+
+        specialCases.forEach(email => {
+          expect(validateEmail(email), `${email} should be valid`).toBe(true);
+        });
+      });
+
+      it('should reject emails with invalid special characters', () => {
+        const invalidCases = [
+          'user@exam..ple.com',
+          'user@@example.com',
+          '.user@example.com',
+          'user.@example.com',
+          'user@.example.com',
+          'user@example..com',
+        ];
+
+        invalidCases.forEach(email => {
+          expect(validateEmail(email), `${email} should be invalid`).toBe(false);
+        });
+      });
+    });
+
+    describe('validatePassword edge cases', () => {
+      it('should handle minimum requirements exactly', () => {
+        expect(validatePassword('Aa1bcd')).toEqual({
+          valid: true,
+          errors: []
+        });
+      });
+
+      it('should handle password with all types of characters', () => {
+        expect(validatePassword('MyPass123!@#')).toEqual({
+          valid: true,
+          errors: []
+        });
+      });
+
+      it('should provide specific error messages for each missing requirement', () => {
+        const result = validatePassword('abc'); // short, no uppercase, no numbers
+        expect(result.valid).toBe(false);
+        expect(result.errors).toContain('Password must be at least 6 characters long');
+        expect(result.errors).toContain('Password must contain at least one uppercase letter');
+        expect(result.errors).toContain('Password must contain at least one number');
+      });
+    });
+
+    describe('validateName edge cases', () => {
+      it('should handle names with various unicode characters', () => {
+        const unicodeNames = [
+          'José',
+          'François',
+          'Müller',
+          '李明',
+          'Наталья',
+          'محمد',
+        ];
+
+        unicodeNames.forEach(name => {
+          expect(validateName(name), `${name} should be valid`).toBe(true);
+        });
+      });
+
+      it('should handle names with hyphens and apostrophes', () => {
+        const names = [
+          'Mary-Jane',
+          "O'Connor",
+          'Jean-Claude',
+          "D'Angelo",
+        ];
+
+        names.forEach(name => {
+          expect(validateName(name), `${name} should be valid`).toBe(true);
+        });
+      });
+
+      it('should reject names with only whitespace variations', () => {
+        const invalidNames = [
+          '  ',
+          '\t',
+          '\n',
+          '   \t\n  ',
+        ];
+
+        invalidNames.forEach(name => {
+          expect(validateName(name), `"${name}" should be invalid`).toBe(false);
+        });
+      });
+    });
+
+    describe('authenticateUser edge cases', () => {
+      it('should handle user object with extra properties', async () => {
+        const mockRequest = createMockRequest({
+          jwtVerify: vi.fn().mockResolvedValue(undefined),
+          user: { 
+            id: 'user123', 
+            email: 'test@example.com',
+            extraProp: 'should not interfere',
+            iat: 1234567890,
+            exp: 1234567890
+          }
+        });
+        const mockReply = createMockReply();
+
+        const result = await authenticateUser(mockRequest, mockReply);
+
+        expect(result).toBe(true);
+        expect(mockReply.code).not.toHaveBeenCalled();
+      });
+
+      it('should handle empty string in user properties', async () => {
+        const mockRequest = createMockRequest({
+          jwtVerify: vi.fn().mockResolvedValue(undefined),
+          user: { id: '', email: 'test@example.com' } // empty id
+        });
+        const mockReply = createMockReply();
+
+        await authenticateUser(mockRequest, mockReply);
+
+        expect(mockReply.code).toHaveBeenCalledWith(401);
+        expect(mockReply.send).toHaveBeenCalledWith({
+          error: 'Invalid token payload',
+          code: 'INVALID_TOKEN'
+        });
+      });
+    });
   });
 });
