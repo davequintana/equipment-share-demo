@@ -133,7 +133,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children, isSSR = fa
         // Original API logic for development
         const apiUrl = typeof window !== 'undefined'
           ? '/api/auth/login'
-          : `${process.env['VITE_API_URL'] || 'http://localhost:3333'}/api/auth/login`;
+          : `${process.env['VITE_API_URL'] || 'http://localhost:3334'}/api/auth/login`;
 
         const response = await fetch(apiUrl, {
           method: 'POST',
@@ -179,7 +179,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children, isSSR = fa
         // Original API logic for development
         const apiUrl = typeof window !== 'undefined'
           ? '/api/auth/register'
-          : `${process.env['VITE_API_URL'] || 'http://localhost:3333'}/api/auth/register`;
+          : `${process.env['VITE_API_URL'] || 'http://localhost:3334'}/api/auth/register`;
 
         const response = await fetch(apiUrl, {
           method: 'POST',

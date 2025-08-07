@@ -6,7 +6,7 @@ import fastifySwagger from '@fastify/swagger';
 import fastifySwaggerUi from '@fastify/swagger-ui';
 import bcrypt from 'bcryptjs';
 import dotenv from 'dotenv';
-import { EnterpriseSecretsManager } from 'secrets';
+import { EnterpriseSecretsManager } from './enterprise-secrets-manager.js';
 
 // Database credentials interface
 interface DatabaseCredentials {
@@ -34,6 +34,33 @@ import {
 
 // Load environment variables (fallback for development)
 dotenv.config();
+
+// Validate critical environment variables for security
+function validateEnvironment() {
+  const environment = process.env['NODE_ENV'] || 'development';
+  const hasJwtSecret = !!process.env['JWT_SECRET'];
+
+  console.log(`🔧 Environment: ${environment}`);
+  console.log(`🔑 JWT_SECRET configured: ${hasJwtSecret ? '✅ Yes' : '❌ No'}`);
+
+  if (!hasJwtSecret) {
+    console.warn('⚠️  JWT_SECRET not found in environment variables');
+    if (environment === 'production') {
+      console.error('🚨 CRITICAL: JWT_SECRET must be set in production!');
+      process.exit(1);
+    }
+  }
+
+  // Security warnings
+  if (environment !== 'production' && environment !== 'development' && environment !== 'test') {
+    console.warn(`⚠️  Unknown environment: ${environment}`);
+  }
+
+  return { environment, hasJwtSecret };
+}
+
+// Validate environment on startup
+validateEnvironment();
 
 // Initialize secrets management
 const secretsManager = new EnterpriseSecretsManager();
@@ -108,6 +135,15 @@ async function createApp() {
         ? 'password' // Plain text for CI/test environments
         : '$2a$10$9v8ezzQoCjPvTpLB8FvGq.KxsetvZ/rT4dFLBJ1z4Q7d..tEEgK32', // bcrypt hash for dev/prod
       name: 'Admin User',
+      createdAt: new Date('2024-01-01T00:00:00Z').toISOString(),
+    },
+    {
+      id: '2',
+      email: 'demo@example.com',
+      password: process.env['CI'] === 'true' || process.env['NODE_ENV'] === 'test'
+        ? 'password' // Plain text for CI/test environments
+        : '$2a$10$9v8ezzQoCjPvTpLB8FvGq.KxsetvZ/rT4dFLBJ1z4Q7d..tEEgK32', // bcrypt hash for 'password'
+      name: 'Demo User',
       createdAt: new Date('2024-01-01T00:00:00Z').toISOString(),
     },
   ];
@@ -270,28 +306,70 @@ fastify.post('/api/auth/login', {
     },
   },
 }, async (request, reply) => {
+  // Login helper functions to reduce complexity
+  const validateLoginInput = (email: string, clientIp: string): { isValid: boolean; error?: { code: number; body: { error: string; code: string } } } => {
+    // Rate limiting
+    if (!checkRateLimit(clientIp)) {
+      fastify.log.warn(`Rate limited login attempt from IP: ${clientIp}`);
+      return {
+        isValid: false,
+        error: {
+          code: 429,
+          body: {
+            error: 'Too many login attempts. Please try again later.',
+            code: 'RATE_LIMITED'
+          }
+        }
+      };
+    }
+
+    // Input validation
+    if (!validateEmail(email)) {
+      fastify.log.warn(`Invalid email format: ${email}`);
+      return {
+        isValid: false,
+        error: {
+          code: 400,
+          body: {
+            error: 'Invalid email format',
+            code: 'INVALID_EMAIL'
+          }
+        }
+      };
+    }
+
+    return { isValid: true };
+  };
+
+  const validateUserPassword = async (password: string, user: User): Promise<boolean> => {
+    if (process.env['CI'] === 'true' || process.env['NODE_ENV'] === 'test') {
+      // For CI/test: simple string comparison
+      fastify.log.info('Using CI/test authentication mode');
+      return password === user.password;
+    } else {
+      // For dev/prod: bcrypt comparison
+      try {
+        const result = await bcrypt.compare(password, user.password);
+        fastify.log.info(`bcrypt.compare completed, result: ${result}`);
+        return result;
+      } catch (bcryptError) {
+        fastify.log.error('bcrypt.compare failed:', bcryptError);
+        const errorMessage = bcryptError instanceof Error ? bcryptError.message : 'Unknown bcrypt error';
+        throw new Error(`Password validation failed: ${errorMessage}`);
+      }
+    }
+  };
+
   try {
     const { email, password } = request.body as LoginRequest;
     const clientIp = request.ip;
 
     fastify.log.info(`Login attempt for email: ${email} from IP: ${clientIp}`);
 
-    // Rate limiting
-    if (!checkRateLimit(clientIp)) {
-      fastify.log.warn(`Rate limited login attempt from IP: ${clientIp}`);
-      return reply.code(429).send({
-        error: 'Too many login attempts. Please try again later.',
-        code: 'RATE_LIMITED'
-      });
-    }
-
-    // Input validation
-    if (!validateEmail(email)) {
-      fastify.log.warn(`Invalid email format: ${email}`);
-      return reply.code(400).send({
-        error: 'Invalid email format',
-        code: 'INVALID_EMAIL'
-      });
+    // Validate input and rate limiting
+    const inputValidation = validateLoginInput(email, clientIp);
+    if (!inputValidation.isValid && inputValidation.error) {
+      return reply.code(inputValidation.error.code).send(inputValidation.error.body);
     }
 
     // Find user
@@ -306,24 +384,10 @@ fastify.post('/api/auth/login', {
 
     fastify.log.info(`User found for email: ${email}, proceeding with password check`);
 
-    // Check password with environment-appropriate method
-    let isValidPassword = false;
+    // Check password using helper function
+    const isValidPassword = await validateUserPassword(password, user);
 
-    if (process.env['CI'] === 'true' || process.env['NODE_ENV'] === 'test') {
-      // For CI/test: simple string comparison
-      fastify.log.info('Using CI/test authentication mode');
-      isValidPassword = (password === user.password);
-    } else {
-      // For dev/prod: bcrypt comparison
-      try {
-        isValidPassword = await bcrypt.compare(password, user.password);
-        fastify.log.info(`bcrypt.compare completed, result: ${isValidPassword}`);
-      } catch (bcryptError) {
-        fastify.log.error('bcrypt.compare failed:', bcryptError);
-        const errorMessage = bcryptError instanceof Error ? bcryptError.message : 'Unknown bcrypt error';
-        throw new Error(`Password validation failed: ${errorMessage}`);
-      }
-    }    if (!isValidPassword) {
+    if (!isValidPassword) {
       fastify.log.warn(`Invalid password for user: ${email}`);
       return reply.code(401).send({
         error: 'Invalid credentials',
@@ -730,10 +794,19 @@ const start = async () => {
     const { fastify } = await createApp();
 
     fastify.log.info('Starting Fastify server...');
-    fastify.log.info('Port: 3334, Host: 0.0.0.0');
 
-    await fastify.listen({ port: 3334, host: '0.0.0.0' });
-    console.log('🚀 Fastify API server ready at http://localhost:3334');
+    // Security: Use localhost for development, allow all interfaces only in production
+    const host = process.env['NODE_ENV'] === 'production' ? '0.0.0.0' : '127.0.0.1';
+    const port = 3334;
+
+    fastify.log.info(`Port: ${port}, Host: ${host} (Environment: ${process.env['NODE_ENV'] || 'development'})`);
+
+    await fastify.listen({ port, host });
+    console.log(`🚀 Fastify API server ready at http://localhost:${port}`);
+
+    if (host === '127.0.0.1') {
+      console.log('🔒 Server bound to localhost only for security (development mode)');
+    }
 
     // Test basic functionality after startup
     fastify.log.info('Server started successfully, running post-startup tests...');
