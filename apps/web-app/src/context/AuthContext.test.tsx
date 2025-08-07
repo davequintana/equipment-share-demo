@@ -79,7 +79,9 @@ Object.defineProperty(globalThis.Notification, 'permission', {
   value: 'default',
   writable: true,
   configurable: true,
-});const TestComponent = () => {
+});
+
+const TestComponent = () => {
   const auth = useAuth();
   return (
     <div>
@@ -386,7 +388,9 @@ describe('AuthContext with Idle Timer', () => {
       body: 'You have been logged out due to inactivity.',
       icon: '/favicon.ico'
     });
-  });  it('should handle corrupted localStorage data gracefully', async () => {
+  });
+
+  it('should handle corrupted localStorage data gracefully', async () => {
     // Setup corrupted localStorage data
     localStorageMock.getItem.mockImplementation((key) => {
       if (key === 'token') return 'test-token';
