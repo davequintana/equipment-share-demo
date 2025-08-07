@@ -479,37 +479,49 @@ jobs:
       - name: Derive appropriate SHAs for base and head
         uses: nrwl/nx-set-shas@v4
 
-      - name: Run tests with coverage for SonarCloud
+      - name: Generate coverage for SonarCloud
         run: |
-          echo "Running tests with coverage for SonarCloud..."
-          echo "Working directory: $(pwd)"
-          echo "Node version: $(node --version)"
-          echo "NPM version: $(npm --version)"
+          echo "Creating LCOV coverage for SonarCloud..."
 
-          # Check if config file exists
-          if [ -f "apps/fastify-api/vite.config.test.ts" ]; then
-            echo "✅ Found vite.config.test.ts"
+          # Create coverage directory
+          mkdir -p coverage
+
+          # Install dependencies first
+          pnpm install --frozen-lockfile
+
+          # Generate coverage using the exact same command that works locally
+          npx vitest run --config apps/fastify-api/vite.config.test.ts --coverage
+
+          # Ensure LCOV file is in the correct location for SonarCloud
+          if [ -f "coverage/lcov.info" ]; then
+            echo "✅ LCOV file generated at root level ($(wc -l < coverage/lcov.info) lines)"
+            echo "Auth middleware present: $(grep -c 'auth.ts' coverage/lcov.info || echo '0') entries"
           else
-            echo "❌ vite.config.test.ts not found!"
-            ls -la apps/fastify-api/
+            echo "❌ LCOV file not at root level, checking apps/fastify-api..."
+            if [ -f "apps/fastify-api/coverage/lcov.info" ]; then
+              echo "Found LCOV in apps/fastify-api, copying to root..."
+              cp apps/fastify-api/coverage/lcov.info coverage/lcov.info
+              echo "✅ LCOV file copied ($(wc -l < coverage/lcov.info) lines)"
+            else
+              echo "❌ No LCOV file found anywhere!"
+              exit 1
+            fi
           fi
-
-          # Run coverage specifically for auth middleware with verbose output
-          echo "Running vitest with coverage..."
-          npx vitest run --config apps/fastify-api/vite.config.test.ts --coverage --reporter=verbose || {
-            echo "❌ Vitest failed with exit code $?"
-            echo "Checking for any generated files:"
-            find . -name "*coverage*" -type d | head -5
-            exit 1
-          }
-
-          echo "✅ Vitest completed successfully"
-          echo "Checking generated coverage files:"
-          find . -name "*coverage*" -type d | head -5
-          find . -name "*.info" | head -5
         env:
           NODE_ENV: test
           JWT_SECRET: test-secret-key
+
+      - name: Verify coverage for SonarCloud
+        run: |
+          if [ -f "coverage/lcov.info" ]; then
+            echo "✅ Final verification: coverage/lcov.info exists"
+            echo "File size: $(wc -c < coverage/lcov.info) bytes"
+            echo "Auth middleware coverage: $(grep 'auth.ts' coverage/lcov.info | head -1 || echo 'NOT FOUND')"
+          else
+            echo "❌ FATAL: coverage/lcov.info missing before SonarCloud scan"
+            ls -la coverage/ || echo "No coverage directory"
+            exit 1
+          fi
 
       - name: Consolidate coverage for SonarCloud
         run: |
