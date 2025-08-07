@@ -47,7 +47,6 @@ export function validateEmail(email: string): boolean {
 
   // ReDoS-safe email regex: Uses bounded quantifiers {0,61} and non-overlapping character classes
   // This pattern is specifically designed to prevent exponential backtracking attacks
-  // eslint-disable-next-line security/detect-unsafe-regex
   const emailRegex = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/;
 
   if (!emailRegex.test(email)) return false;

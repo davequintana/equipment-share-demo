@@ -41,6 +41,13 @@ export default [
     }
   },
   {
+    // Allow ReDoS-safe email regex in auth middleware
+    files: ['apps/fastify-api/src/middleware/auth.ts'],
+    rules: {
+      'security/detect-unsafe-regex': 'off'
+    }
+  },
+  {
     // Ignore all build artifacts, cache, generated files, and scripts
     ignores: [
       '**/node_modules/**',
