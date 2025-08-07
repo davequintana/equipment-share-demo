@@ -448,17 +448,17 @@ describe('Auth Middleware', () => {
 
     it('should handle concurrent rate limit checks correctly', () => {
       const ip = 'concurrent-test-ip';
-      
+
       // Simulate concurrent requests
       const results: boolean[] = [];
       for (let i = 0; i < 10; i++) {
         results.push(checkRateLimit(ip));
       }
-      
+
       // Should allow first 5, block the rest
       const allowedCount = results.filter(result => result === true).length;
       const blockedCount = results.filter(result => result === false).length;
-      
+
       expect(allowedCount).toBe(5);
       expect(blockedCount).toBe(5);
     });
@@ -466,13 +466,13 @@ describe('Auth Middleware', () => {
     it('should maintain separate counters for different IPs', () => {
       const ip1 = 'ip1';
       const ip2 = 'ip2';
-      
+
       // Max out ip1
       for (let i = 0; i < 5; i++) {
         checkRateLimit(ip1);
       }
       expect(checkRateLimit(ip1)).toBe(false);
-      
+
       // ip2 should still work independently
       expect(checkRateLimit(ip2)).toBe(true);
       expect(checkRateLimit(ip2)).toBe(true);
@@ -584,8 +584,8 @@ describe('Auth Middleware', () => {
       it('should handle user object with extra properties', async () => {
         const mockRequest = createMockRequest({
           jwtVerify: vi.fn().mockResolvedValue(undefined),
-          user: { 
-            id: 'user123', 
+          user: {
+            id: 'user123',
             email: 'test@example.com',
             extraProp: 'should not interfere',
             iat: 1234567890,
