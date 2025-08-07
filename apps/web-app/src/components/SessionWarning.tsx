@@ -61,6 +61,7 @@ export const SessionWarning: React.FC<SessionWarningProps> = ({
     >
       <dialog
         open
+        aria-modal="true"
         aria-labelledby="session-warning-title"
         style={{
           backgroundColor: 'white',
