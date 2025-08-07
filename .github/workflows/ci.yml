@@ -349,18 +349,38 @@ jobs:
         with:
           pattern: build-*
           merge-multiple: true
-          path: dist/apps/
+          path: downloaded-artifacts/
 
-      - name: Verify downloaded artifacts
+      - name: Verify and setup build artifacts
         run: |
           echo "=== Downloaded build artifacts ==="
-          ls -la dist/apps/ || echo "No dist/apps directory found"
-          if [ ! -d "dist/apps" ] || [ -z "$(ls -A dist/apps 2>/dev/null)" ]; then
-            echo "⚠️  No build artifacts found - building locally for E2E tests"
+          ls -la downloaded-artifacts/ || echo "No downloaded-artifacts directory found"
+
+          # Create dist/apps directory structure
+          mkdir -p dist/apps
+
+          # Move downloaded artifacts to correct locations
+          if [ -d "downloaded-artifacts" ]; then
+            echo "Moving artifacts to dist/apps/..."
+            find downloaded-artifacts -name "*" -type d -exec basename {} \; | while read dir; do
+              if [ -d "downloaded-artifacts/$dir" ]; then
+                echo "Moving $dir to dist/apps/$dir"
+                mv "downloaded-artifacts/$dir" "dist/apps/$dir"
+              fi
+            done
+          fi
+
+          echo "=== Final dist/apps structure ==="
+          ls -la dist/apps/ || echo "No dist/apps directory"
+
+          # Check if both required builds exist
+          if [ ! -d "dist/apps/fastify-api" ] || [ ! -d "dist/apps/web-app" ]; then
+            echo "⚠️  Missing build artifacts - building locally for E2E tests"
             pnpm exec nx build web-app --prod
             pnpm exec nx build fastify-api --prod
+            echo "✅ Local builds completed"
           else
-            echo "✅ Build artifacts downloaded successfully"
+            echo "✅ Build artifacts set up successfully"
           fi
 
       - name: Install Playwright Browsers
@@ -373,13 +393,26 @@ jobs:
 
       - name: Setup fastify-api deployment
         run: |
+          echo "=== Checking for fastify-api build ==="
+          echo "Looking for dist/apps/fastify-api directory..."
+          ls -la dist/apps/ || echo "No dist/apps directory"
+
           if [ -d "dist/apps/fastify-api" ]; then
+            echo "✅ fastify-api build found!"
+            echo "Contents of dist/apps/fastify-api/:"
+            ls -la dist/apps/fastify-api/
+
             echo "Setting up workspace dependencies for fastify-api..."
             chmod +x scripts/deploy-fastify-api.sh
             ./scripts/deploy-fastify-api.sh
+
+            echo "After deployment setup:"
+            ls -la dist/apps/fastify-api/
             echo "✅ Workspace dependencies deployed successfully"
           else
-            echo "⚠️  fastify-api build not found, skipping deployment setup"
+            echo "❌ fastify-api build not found, skipping deployment setup"
+            echo "Available directories in dist/apps/:"
+            ls -la dist/apps/ || echo "No dist/apps directory exists"
           fi
 
       - name: Debug environment
