@@ -8,7 +8,7 @@ import {
   checkRateLimit,
   resetRateLimit,
   authenticateUser
-} from './auth';
+} from './auth.js';
 
 // Extended FastifyRequest interface for JWT
 interface FastifyRequestWithJWT extends FastifyRequest {
