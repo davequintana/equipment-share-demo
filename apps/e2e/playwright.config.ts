@@ -92,7 +92,7 @@ export default defineConfig({
     },
     {
       command: process.env.CI
-        ? 'bash -c "echo \\"Checking fastify-api deployment...\\" && if [ ! -d dist/apps/fastify-api ]; then echo \\"Building fastify-api locally...\\" && pnpm exec nx build fastify-api --prod && pnpm exec nx build secrets && echo \\"Setting up workspace dependencies...\\" && mkdir -p dist/apps/fastify-api/node_modules && cp -r libs/secrets/dist dist/apps/fastify-api/node_modules/secrets && echo \\"Workspace dependencies deployed\\"; fi && cd dist/apps/fastify-api && npm start"'
+        ? 'bash -c "echo \\"Checking fastify-api deployment...\\" && if [ ! -d dist/apps/fastify-api ]; then echo \\"Building fastify-api locally...\\" && pnpm exec nx build fastify-api --prod && pnpm exec nx build secrets && echo \\"Checking build outputs:\\" && ls -la libs/secrets/ && ls -la dist/ && echo \\"Setting up workspace dependencies...\\" && mkdir -p dist/apps/fastify-api/node_modules && if [ -d libs/secrets/dist ]; then cp -r libs/secrets/dist dist/apps/fastify-api/node_modules/secrets; elif [ -d dist/libs/secrets ]; then cp -r dist/libs/secrets dist/apps/fastify-api/node_modules/secrets; else echo \\"Secrets dist not found, skipping\\"; fi && echo \\"Workspace dependencies deployed\\"; fi && cd dist/apps/fastify-api && npm start"'
         : 'NODE_OPTIONS="--no-deprecation --max-old-space-size=2048" pnpm run serve:fastify-api',
       port: 3334,
       reuseExistingServer: !process.env.CI,
