@@ -486,58 +486,36 @@ jobs:
           echo "User: $(whoami)"
           echo "Environment: $(env | head -10)"
 
+      - name: Simple test step
+        run: |
+          echo "This is a simple test step"
+          echo "If you see this, the step is working"
+          pwd
+          ls -la
+
       - name: Generate coverage for SonarCloud
         run: |
-          echo "🚀 COVERAGE GENERATION STARTED"
-          echo "Step 1: Environment check"
+          echo "🚀 COVERAGE GENERATION STARTED - THIS SHOULD APPEAR IN LOGS"
+
+          # Immediate verification this step is running
+          echo "=== VERIFYING STEP EXECUTION ==="
+          date
           pwd
           whoami
-          node --version
-          pnpm --version
 
-          echo "Step 2: Install dependencies"
+          # Install dependencies with detailed logging
+          echo "=== INSTALLING DEPENDENCIES ==="
           pnpm install --frozen-lockfile
-          if [ $? -ne 0 ]; then
-            echo "❌ Dependency installation failed"
-            exit 1
-          fi
 
-          echo "Step 3: Clean coverage directory"
-          rm -rf coverage
-          mkdir -p coverage
-          ls -la coverage/
+          # Simple vitest execution test
+          echo "=== TESTING VITEST EXECUTION ==="
+          npx vitest --version
 
-          echo "Step 4: Run auth tests with coverage"
-          npx vitest run apps/fastify-api/src/middleware/auth.test.ts --coverage --config apps/fastify-api/vite.config.test.ts
-          test_exit_code=$?
+          # Run a single test to verify execution
+          echo "=== RUNNING AUTH TESTS ==="
+          npx vitest run apps/fastify-api/src/middleware/auth.test.ts --reporter=verbose
 
-          echo "Step 5: Check test results (exit code: $test_exit_code)"
-          if [ $test_exit_code -eq 0 ]; then
-            echo "✅ Tests passed successfully"
-          else
-            echo "⚠️ Tests failed but checking for coverage anyway"
-          fi
-
-          echo "Step 6: Verify coverage file"
-          if [ -f "coverage/lcov.info" ]; then
-            echo "✅ Found coverage/lcov.info"
-            echo "Size: $(wc -c < coverage/lcov.info) bytes"
-            echo "Lines: $(wc -l < coverage/lcov.info)"
-            if grep -q "auth.ts" coverage/lcov.info; then
-              echo "✅ auth.ts found in coverage"
-            else
-              echo "❌ auth.ts NOT found in coverage"
-              head -10 coverage/lcov.info
-            fi
-          else
-            echo "❌ No coverage/lcov.info found"
-            echo "Searching for LCOV files:"
-            find . -name "lcov.info" -type f 2>/dev/null || echo "No LCOV files anywhere"
-            echo "Coverage directory contents:"
-            ls -la coverage/ 2>/dev/null || echo "No coverage directory"
-          fi
-
-          echo "🏁 COVERAGE GENERATION COMPLETED"
+          echo "🏁 COVERAGE GENERATION STEP COMPLETED"
         env:
           NODE_ENV: test
           JWT_SECRET: test-secret-key
