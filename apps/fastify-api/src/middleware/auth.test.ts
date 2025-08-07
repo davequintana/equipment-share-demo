@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { FastifyRequest, FastifyReply } from 'fastify';
-import { JwtPayload } from '../types.js';
+import { JwtPayload } from '../types';
 import {
   validateEmail,
   validatePassword,
@@ -8,7 +8,7 @@ import {
   checkRateLimit,
   resetRateLimit,
   authenticateUser
-} from './auth.js';
+} from './auth';
 
 // Extended FastifyRequest interface for JWT
 interface FastifyRequestWithJWT extends FastifyRequest {

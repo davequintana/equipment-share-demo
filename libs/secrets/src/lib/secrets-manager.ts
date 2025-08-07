@@ -1,7 +1,7 @@
 import { SecretsManagerClient, GetSecretValueCommand, CreateSecretCommand, UpdateSecretCommand } from '@aws-sdk/client-secrets-manager';
 import { SSMClient, GetParameterCommand, PutParameterCommand } from '@aws-sdk/client-ssm';
 
-interface DatabaseCredentials {
+export interface DatabaseCredentials {
   host: string;
   port: number;
   database: string;
@@ -15,7 +15,7 @@ export class EnterpriseSecretsManager {
   private environment: string;
   private region: string;
 
-  constructor(environment = process.env.NODE_ENV || 'development', region = 'us-east-1') {
+  constructor(environment = process.env['NODE_ENV'] || 'development', region = 'us-east-1') {
     this.environment = environment;
     this.region = region;
     
