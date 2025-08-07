@@ -59,9 +59,8 @@ export const SessionWarning: React.FC<SessionWarningProps> = ({
         zIndex: 1000,
       }}
     >
-      <div
-        role="dialog"
-        aria-modal="true"
+      <dialog
+        open
         aria-labelledby="session-warning-title"
         style={{
           backgroundColor: 'white',
@@ -71,6 +70,7 @@ export const SessionWarning: React.FC<SessionWarningProps> = ({
           maxWidth: '400px',
           width: '90%',
           textAlign: 'center',
+          border: 'none',
         }}
       >
         <h3 id="session-warning-title" style={{ marginTop: 0, color: '#dc3545' }}>
@@ -118,7 +118,7 @@ export const SessionWarning: React.FC<SessionWarningProps> = ({
             Logout Now
           </button>
         </div>
-      </div>
+      </dialog>
     </div>
   );
 };

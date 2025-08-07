@@ -140,25 +140,6 @@ describe('SessionWarning', () => {
     expect(logoutButton).toHaveAttribute('type', 'button');
   });
 
-  it('should close modal when clicking outside (if implemented)', () => {
-    render(<SessionWarning {...defaultProps} />);
-
-    const overlay = screen.getByRole('dialog').parentElement;
-    if (overlay) {
-      fireEvent.click(overlay);
-      // Note: This test assumes the component implements click-outside behavior
-      // If not implemented, this test can be removed or the feature can be added
-    }
-  });
-
-  it('should handle escape key press (if implemented)', () => {
-    render(<SessionWarning {...defaultProps} />);
-
-    fireEvent.keyDown(document, { key: 'Escape', code: 'Escape' });
-    // Note: This test assumes the component implements escape key behavior
-    // If not implemented, this test can be removed or the feature can be added
-  });
-
   it('should show warning icon', () => {
     render(<SessionWarning {...defaultProps} />);
 
