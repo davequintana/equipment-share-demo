@@ -46,12 +46,12 @@ export const validateEmail = (email: string): boolean => {
   // Use a more secure regex pattern that prevents ReDoS attacks
   // This pattern avoids catastrophic backtracking by using possessive quantifiers approach
   const emailRegex = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/;
-  
+
   // Additional length check to prevent long string attacks
   if (email.length > 254) {
     return false;
   }
-  
+
   return emailRegex.test(email);
 };
 

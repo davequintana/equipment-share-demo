@@ -50,14 +50,14 @@ describe('Auth Validation', () => {
       ];
 
       const startTime = Date.now();
-      
+
       maliciousPatterns.forEach(pattern => {
         validateEmail(pattern);
       });
-      
+
       const endTime = Date.now();
       const executionTime = endTime - startTime;
-      
+
       // Should complete quickly (under 100ms) even with malicious patterns
       expect(executionTime).toBeLessThan(100);
     });
