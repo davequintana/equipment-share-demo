@@ -31,6 +31,7 @@
     "test:db-config": "vitest run infrastructure/postgres/config.test.ts",
     "validate:db-config": "node scripts/validate-db-config.mjs",
     "test:coverage": "nx run-many --target=test --all --coverage",
+    "coverage:merge": "./merge-coverage.sh",
     "sonar": "sonar-scanner",
     "sonar:coverage": "pnpm run test:coverage && sonar-scanner",
     "sonar:local": "sonar-scanner -Dsonar.host.url=https://sonarcloud.io -Dsonar.login=${SONAR_TOKEN}",

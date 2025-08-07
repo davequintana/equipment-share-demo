@@ -479,8 +479,8 @@ jobs:
             fi
           done
 
-          # Look for lcov.info files and copy to root coverage
-          find . -name "lcov.info" -path "*/coverage/*" -exec cp {} coverage/ \; 2>/dev/null || true
+          # Merge LCOV files for SonarCloud
+          ./merge-coverage.sh
 
           echo "Coverage files for SonarCloud:"
           find coverage -name "*.info" -o -name "*.xml" | head -10
