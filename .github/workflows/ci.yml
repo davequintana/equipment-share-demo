@@ -422,6 +422,11 @@ jobs:
         run: pnpm exec nx e2e e2e --verbose
         env:
           DATABASE_URL: postgresql://postgres:postgres@localhost:5432/test_db
+          DB_USERNAME: postgres
+          DB_PASSWORD: postgres
+          DB_HOST: localhost
+          DB_PORT: 5432
+          DB_NAME: test_db
           REDIS_URL: redis://localhost:6379
           JWT_SECRET: test-secret-key
           NODE_ENV: test
