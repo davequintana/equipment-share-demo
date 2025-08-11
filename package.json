@@ -143,7 +143,7 @@
     "nx": "21.3.11",
     "pg": "^8.16.3",
     "prettier": "^3.6.2",
-    "testcontainers": "^11.5.0",
+    "testcontainers": "^11.5.1",
     "tslib": "^2.3.0",
     "typescript": "~5.8.2",
     "typescript-eslint": "^8.29.0",
