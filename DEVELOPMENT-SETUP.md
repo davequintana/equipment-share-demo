@@ -1,8 +1,16 @@
 # Development Environment Setup Guide
 
+## Prerequisites
+
+- **Node.js**: 23.6.0+ (Current LTS)
+- **pnpm**: 9.0.0+
+- **Docker**: Latest version with Docker Compose
+- **Git**: For version control
+
 ## Quick Start
 
 ### 1. Environment Variables
+
 ```bash
 # Generate secure environment variables
 ./scripts/setup-env.sh
@@ -12,34 +20,47 @@ cp .env.example .env
 # Edit .env with your values
 ```
 
-### 2. Start Development Databases
-```bash
-# Start only PostgreSQL and Redis for development
-docker-compose up -d postgres redis
+### 2. Install Dependencies
 
-# Verify services are running
-docker-compose ps
+```bash
+# Install all dependencies using pnpm
+pnpm install
 ```
 
-### 3. Optional Development Tools
+### 3. Development with Kafka (Recommended)
+
+```bash
+# Start all services including Kafka for behavior tracking
+pnpm run dev:kafka
+
+# This will:
+# 1. Start PostgreSQL, Redis, and Kafka via Docker
+# 2. Set up Kafka topics
+# 3. Start development servers (web-app + fastify-api)
+```
+
+### 4. Alternative: Minimal Development Setup
+
+```bash
+# Start only databases (without Kafka)
+docker-compose up -d postgres redis
+
+# Start frontend and backend separately
+pnpm run serve:web-app      # React app at localhost:4200
+pnpm run serve:fastify-api  # API at localhost:3334
+
+# Or start both together
+pnpm run dev
+```
+
+### 5. Optional Development Tools
+
 ```bash
 # Start PgAdmin for database management
 docker-compose --profile tools up -d pgadmin
 
-# Start Kafka for event streaming development
-docker-compose --profile kafka up -d zookeeper kafka kafka-ui
-```
-
-### 4. Application Development
-```bash
-# Start frontend (CSR)
-pnpm run serve:web-app
-
-# Start backend API
-pnpm run serve:fastify-api
-
-# Or start everything in development mode
-pnpm run dev
+# Start Kafka UI for monitoring (if not using dev:kafka)
+docker-compose --profile kafka up -d kafka-ui
 ```
 
 ## Docker Compose Profiles

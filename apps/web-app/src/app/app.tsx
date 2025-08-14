@@ -6,6 +6,7 @@ import { Dashboard } from '../components/Dashboard';
 import { LoginForm } from '../components/LoginForm';
 import { RegisterForm } from '../components/RegisterForm';
 import { ProfilePage } from '../components/ProfilePage';
+import { BehaviorTracker } from '../components/BehaviorTracker';
 import { isLocalOnlyMode } from '../utils/api-url';
 import * as styles from '../styles/theme.css';
 
@@ -54,11 +55,28 @@ function AppContent() {
     <div className={styles.container}>
       <DemoBanner />
       <Header />
+      {/* Enable comprehensive behavior tracking for authenticated users */}
+      {user && (
+        <BehaviorTracker
+          enableMouseTracking={true}
+          enableKeyboardTracking={false}
+          options={{
+            trackPageViews: true,
+            trackClicks: true,
+            trackMouseMovement: true,
+            trackScrolling: true,
+            throttleMs: 200,
+            batchSize: 15,
+            flushIntervalMs: 10000,
+          }}
+        />
+      )}
       <Routes>
         <Route
           path="/"
           element={
             user ? (
+              // Redirect logged-in users to dashboard
               <Dashboard />
             ) : authMode === 'login' ? (
               <div className={styles.main}>
@@ -125,6 +143,28 @@ function AppContent() {
                       Create Account
                     </button>
                   </div>
+                </div>
+              </div>
+            )
+          }
+        />
+        <Route
+          path="/dashboard"
+          element={
+            user ? (
+              <Dashboard />
+            ) : (
+              <div className={styles.main}>
+                <div className={styles.featureCard}>
+                  <h2>Access Denied</h2>
+                  <p>Please log in to view the dashboard.</p>
+                  <button
+                    onClick={() => setAuthMode('login')}
+                    className={styles.button}
+                    style={{ marginTop: '1rem' }}
+                  >
+                    Login
+                  </button>
                 </div>
               </div>
             )

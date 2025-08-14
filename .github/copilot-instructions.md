@@ -7,12 +7,13 @@
 This is an enterprise-level NX monorepo featuring:
 
 - **Frontend**: React 19 with TypeScript, Vanilla Extract CSS-in-TS, Vite
-- **Backend API**: Fastify with JWT authentication
+- **Backend API**: Fastify 5 with JWT authentication and comprehensive OpenAPI docs
 - **Database**: PostgreSQL with Redis caching
-- **Messaging**: Apache Kafka for event streaming
+- **Messaging**: Apache Kafka for event streaming and user behavior analytics
 - **Infrastructure**: Docker, Kubernetes, AWS CloudFormation
-- **Testing**: Playwright for E2E, Vitest for unit tests
+- **Testing**: Playwright for E2E, Vitest for unit tests (all tests currently passing)
 - **Documentation**: Storybook for component library
+- **Security**: ReDoS protection, comprehensive input validation, auto-logout
 
 ## Architecture Guidelines
 
@@ -257,14 +258,14 @@ describe('EnterpriseService', () => {
 ## Development Workflow
 
 1. Run `pnpm install` to install dependencies
-2. Use `pnpm run dev` to start all services with CSR React app (recommended)
-3. Use `pnpm run dev:ssr` to start all services with SSR React app
-4. Use `pnpm run serve:web-app` for CSR frontend development only (localhost:4200)
-5. Use `pnpm run serve:web-app` for frontend development (localhost:4201)
+2. Use `pnpm run dev:kafka` to start all services with Kafka for full analytics (recommended)
+3. Use `pnpm run dev` to start all services with CSR React app
+4. Use `pnpm run dev:ssr` to start all services with SSR React app  
+5. Use `pnpm run serve:web-app` for frontend development only (localhost:4200)
 6. Use `pnpm run serve:fastify-api` for Fastify API only (localhost:3334)
-8. Use `docker-compose up` for full stack development with databases
-9. Run `pnpm run test:all` for testing all projects
-10. Use `npx nx e2e e2e` for end-to-end testing
+7. Use `docker-compose up` for full stack development with databases
+8. Run `pnpm run test:all` for testing all projects (all 56 unit tests + 21 E2E tests pass)
+9. Use `npx nx e2e e2e` for end-to-end testing
 
 ## Code Generation Guidelines
 

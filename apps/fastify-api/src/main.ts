@@ -7,6 +7,7 @@ import fastifySwaggerUi from '@fastify/swagger-ui';
 import bcrypt from 'bcryptjs';
 import dotenv from 'dotenv';
 import { EnterpriseSecretsManager } from './enterprise-secrets-manager.js';
+import { kafkaUserActivityService } from './kafka-user-activity.js';
 
 // Database credentials interface
 interface DatabaseCredentials {
@@ -86,6 +87,14 @@ async function createApp() {
     // Fallback to environment variables for development
     jwtSecret = process.env['JWT_SECRET'] || 'fallback-secret-for-development';
     console.warn('⚠️  Using fallback secrets for development');
+  }
+
+  // Initialize Kafka User Activity Service
+  try {
+    await kafkaUserActivityService.initialize();
+  } catch (error) {
+    console.error('❌ Failed to initialize Kafka service:', error);
+    console.log('💡 Continuing without Kafka');
   }
 
   const fastify = Fastify({ logger: true });
@@ -407,6 +416,18 @@ fastify.post('/api/auth/login', {
     }, { expiresIn: '15m' }); // 15 minutes to match idle timeout
 
     fastify.log.info(`JWT token generated successfully for user: ${email}`);
+
+    // Track user login activity via Kafka
+    await kafkaUserActivityService.trackUserActivity(
+      user.id,
+      user.email,
+      'login',
+      {
+        userAgent: request.headers['user-agent'],
+        ip: clientIp,
+        sessionId: `session-${user.id}-${Date.now()}`,
+      }
+    );
 
     return {
       token,
@@ -782,6 +803,145 @@ fastify.post('/api/events', {
   }
 });
 
+// User activity tracking endpoint for frontend
+fastify.post('/api/user/activity', {
+  preHandler: authenticateUser,
+  schema: {
+    description: 'Track user activity for session management',
+    tags: ['User'],
+    summary: 'Track user activity to maintain session',
+    security: [{ bearerAuth: [] }],
+    body: {
+      type: 'object',
+      properties: {
+        action: { type: 'string', description: 'Action type (e.g., click, scroll, page-view)' },
+        page: { type: 'string', description: 'Current page or route' },
+        metadata: { type: 'object', description: 'Additional metadata' },
+      },
+    },
+    response: {
+      200: {
+        description: 'Activity tracked successfully',
+        type: 'object',
+        properties: {
+          success: { type: 'boolean', description: 'Tracking success status' },
+          sessionActive: { type: 'boolean', description: 'Whether session is still active' },
+        },
+      },
+      401: {
+        description: 'Unauthorized - Invalid or missing token',
+        type: 'object',
+        properties: {
+          error: { type: 'string' }
+        }
+      }
+    },
+  },
+}, async (request, reply) => {
+  try {
+    const user = request.user as JwtPayload;
+    const { action, page, metadata } = request.body as {
+      action?: string;
+      page?: string;
+      metadata?: Record<string, unknown>
+    };
+
+    if (!user) {
+      return reply.code(401).send({
+        error: 'User not authenticated',
+        code: 'UNAUTHORIZED'
+      });
+    }
+
+    // Track user activity with enhanced metadata
+    await kafkaUserActivityService.trackUserActivity(
+      user.id,
+      user.email,
+      action || 'activity',
+      {
+        userAgent: request.headers['user-agent'],
+        ip: request.ip,
+        sessionId: `session-${user.id}-${Date.now()}`,
+        page,
+        ...metadata, // Spread any additional metadata from frontend
+      }
+    );
+
+    // Check if user session is still active
+    const sessionActive = kafkaUserActivityService.isUserActive(user.id);
+
+    fastify.log.info(`Activity tracked for user ${user.id}: ${action || 'activity'} on ${page || 'unknown page'}`, {
+      metadata: metadata ? Object.keys(metadata).length : 0
+    });
+
+    return {
+      success: true,
+      sessionActive,
+    };
+  } catch (error) {
+    fastify.log.error('Activity tracking error:', error);
+    return reply.code(500).send({
+      error: 'Internal server error',
+      code: 'INTERNAL_ERROR'
+    });
+  }
+});
+
+// User logout endpoint with Kafka integration
+fastify.post('/api/auth/logout', {
+  preHandler: authenticateUser,
+  schema: {
+    description: 'User logout endpoint',
+    tags: ['Authentication'],
+    summary: 'Logout user and invalidate session',
+    security: [{ bearerAuth: [] }],
+    response: {
+      200: {
+        description: 'Successfully logged out',
+        type: 'object',
+        properties: {
+          success: { type: 'boolean', description: 'Logout success status' },
+          message: { type: 'string', description: 'Logout message' },
+        },
+      },
+      401: {
+        description: 'Unauthorized - Invalid or missing token',
+        type: 'object',
+        properties: {
+          error: { type: 'string' }
+        }
+      }
+    },
+  },
+}, async (request, reply) => {
+  try {
+    const user = request.user as JwtPayload;
+
+    if (!user) {
+      return reply.code(401).send({
+        error: 'User not authenticated',
+        code: 'UNAUTHORIZED'
+      });
+    }
+
+    // Track logout activity via Kafka
+    await kafkaUserActivityService.logoutUser(user.id, user.email);
+
+    fastify.log.info(`User ${user.email} logged out successfully`);
+
+    return {
+      success: true,
+      message: 'Successfully logged out',
+    };
+  } catch (error) {
+    fastify.log.error('Logout error:', error);
+    return reply.code(500).send({
+      error: 'Internal server error',
+      code: 'INTERNAL_ERROR'
+    });
+  }
+});
+
 // Close the routes plugin
 });
 
@@ -810,6 +970,25 @@ const start = async () => {
 
     // Test basic functionality after startup
     fastify.log.info('Server started successfully, running post-startup tests...');
+
+    // Graceful shutdown handler
+    const gracefulShutdown = async (signal: string) => {
+      console.log(`\n🛑 Received ${signal}. Starting graceful shutdown...`);
+
+      try {
+        await kafkaUserActivityService.shutdown();
+        await fastify.close();
+        console.log('✅ Graceful shutdown completed');
+        process.exit(0);
+      } catch (error) {
+        console.error('❌ Error during graceful shutdown:', error);
+        process.exit(1);
+      }
+    };
+
+    // Register shutdown handlers
+    process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
+    process.on('SIGINT', () => gracefulShutdown('SIGINT'));
 
   } catch (err) {
     console.error('Failed to start server:', err);

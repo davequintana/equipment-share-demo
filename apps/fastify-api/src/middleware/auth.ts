@@ -1,5 +1,6 @@
 import { FastifyRequest, FastifyReply } from 'fastify';
 import { JwtPayload } from '../types';
+import { kafkaUserActivityService } from '../kafka-user-activity.js';
 
 /**
  * Authentication middleware for protected routes
@@ -23,6 +24,20 @@ export const authenticateUser = (request: FastifyRequest, reply: FastifyReply, d
       }
 
       // Success - continue to the route handler
+      // Track user activity for session management
+      kafkaUserActivityService.trackUserActivity(
+        user.id,
+        user.email,
+        'api-access',
+        {
+          userAgent: request.headers['user-agent'],
+          ip: request.ip,
+        }
+      ).catch((error) => {
+        // Don't fail the request if activity tracking fails
+        console.warn('Failed to track user activity:', error);
+      });
+
       done();
     })
     .catch((error) => {

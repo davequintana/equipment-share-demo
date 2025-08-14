@@ -4,10 +4,17 @@ import { isLocalOnlyMode } from '../utils/api-url';
 import { localAuth } from '../utils/local-auth';
 import { useIdleTimer } from '../hooks/useIdleTimer';
 import { SessionWarning } from '../components/SessionWarning';
+import { apiClient } from '../utils/api-client';
 
-interface User {
+/**
+ * Represents a user in the application
+ */
+export interface User {
+  /** Unique identifier for the user */
   id: string;
+  /** User's email address */
   email: string;
+  /** User's display name */
   name: string;
 }
 
@@ -93,7 +100,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children, isSSR = fa
     if (idleTimer) {
       idleTimer.reset();
     }
-  }, [idleTimer]);
+
+    // Track activity to extend session in Kafka
+    if (user) {
+      apiClient.trackActivity(user.id, 'session_extend').catch((error) => {
+        console.warn('Failed to track session extension activity:', error);
+      });
+    }
+  }, [idleTimer, user]);
 
   useEffect(() => {
     // Only run on client side
@@ -106,6 +120,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children, isSSR = fa
           const parsedUser = JSON.parse(storedUser);
           setToken(storedToken);
           setUser(parsedUser);
+
+          // Set token in API client for activity tracking
+          apiClient.setToken(storedToken);
         } catch (error) {
           console.error('Error parsing stored user:', error);
           localStorage.removeItem('user');
@@ -121,6 +138,24 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children, isSSR = fa
     }
   }, []);
 
+  // Set up periodic activity tracking when user is logged in
+  useEffect(() => {
+    if (!user || isLocalOnlyMode()) {
+      return;
+    }
+
+    // Track activity every 5 minutes while user is active
+    const activityInterval = setInterval(() => {
+      if (user && !idleTimer?.isWarning) {
+        apiClient.trackActivity(user.id, 'periodic_heartbeat').catch((error) => {
+          console.warn('Failed to track periodic activity:', error);
+        });
+      }
+    }, 5 * 60 * 1000); // 5 minutes
+
+    return () => clearInterval(activityInterval);
+  }, [user, idleTimer?.isWarning]);
+
   const login = useCallback(async (email: string, password: string) => {
     setLoading(true);
     try {
@@ -133,7 +168,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children, isSSR = fa
         // Original API logic for development
         const apiUrl = typeof window !== 'undefined'
           ? '/api/auth/login'
-          : `${process.env['VITE_API_URL'] || 'http://localhost:3334'}/api/auth/login`;
+          : `${import.meta.env.VITE_API_URL || 'http://localhost:3334'}/api/auth/login`;
 
         const response = await fetch(apiUrl, {
           method: 'POST',
@@ -155,6 +190,16 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children, isSSR = fa
         const data = await response.json() as { token: string; user: User };
         setToken(data.token);
         setUser(data.user);
+
+        // Set token in API client for activity tracking
+        apiClient.setToken(data.token);
+
+        // Track login activity
+        try {
+          await apiClient.trackActivity(data.user.id, 'login');
+        } catch (error) {
+          console.warn('Failed to track login activity:', error);
+        }
 
         // Store in localStorage only on client side
         if (typeof window !== 'undefined') {
@@ -179,7 +224,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children, isSSR = fa
         // Original API logic for development
         const apiUrl = typeof window !== 'undefined'
           ? '/api/auth/register'
-          : `${process.env['VITE_API_URL'] || 'http://localhost:3334'}/api/auth/register`;
+          : `${import.meta.env.VITE_API_URL || 'http://localhost:3334'}/api/auth/register`;
 
         const response = await fetch(apiUrl, {
           method: 'POST',
@@ -202,6 +247,16 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children, isSSR = fa
         setToken(data.token);
         setUser(data.user);
 
+        // Set token in API client for activity tracking
+        apiClient.setToken(data.token);
+
+        // Track registration activity
+        try {
+          await apiClient.trackActivity(data.user.id);
+        } catch (error) {
+          console.warn('Failed to track registration activity:', error);
+        }
+
         // Store in localStorage only on client side
         if (typeof window !== 'undefined') {
           localStorage.setItem('token', data.token);
@@ -214,6 +269,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children, isSSR = fa
   }, []);
 
   const logout = useCallback(() => {
+    // Clear token from API client
+    apiClient.setToken(null);
+
     setUser(null);
     setToken(null);
 

@@ -21,6 +21,11 @@ export const Header: React.FC = () => {
           {user ? (
             <>
               <li>
+                <Link to="/dashboard" className={styles.navLink}>
+                  Dashboard
+                </Link>
+              </li>
+              <li>
                 <Link to="/profile" className={styles.navLink}>
                   Profile
                 </Link>
