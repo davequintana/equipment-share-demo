@@ -9,9 +9,7 @@ export const Header: React.FC = () => {
   return (
     <header className={styles.header}>
       <nav className={styles.nav}>
-        <div className={styles.logo}>
-          Enterprise NX Monorepo
-        </div>
+        <div className={styles.logo}>Enterprise NX Monorepo</div>
         <ul className={styles.navLinks}>
           <li>
             <Link to="/" className={styles.navLink}>
@@ -31,9 +29,7 @@ export const Header: React.FC = () => {
                 </Link>
               </li>
               <li>
-                <span className={styles.navLink}>
-                  Welcome, {user.name}
-                </span>
+                <span className={styles.navLink}>Welcome, {user.name}</span>
               </li>
               <li>
                 <button

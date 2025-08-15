@@ -15,16 +15,21 @@ function DemoBanner() {
   if (!isLocalOnlyMode()) return null;
 
   return (
-    <div style={{
-      background: 'linear-gradient(90deg, #667eea 0%, #764ba2 100%)',
-      color: 'white',
-      padding: '8px 16px',
-      textAlign: 'center',
-      fontSize: '14px',
-      fontWeight: '500',
-      boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
-    }}>
-      <span role="img" aria-label="theater mask">🎭</span> Demo Mode: This is a static demo with mock API responses.
+    <div
+      style={{
+        background: 'linear-gradient(90deg, #667eea 0%, #764ba2 100%)',
+        color: 'white',
+        padding: '8px 16px',
+        textAlign: 'center',
+        fontSize: '14px',
+        fontWeight: '500',
+        boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+      }}
+    >
+      <span role="img" aria-label="theater mask">
+        🎭
+      </span>{' '}
+      Demo Mode: This is a static demo with mock API responses.
       <span style={{ marginLeft: '8px', opacity: 0.9 }}>
         Try: demo@example.com / any password
       </span>
@@ -39,12 +44,14 @@ function AppContent() {
   if (loading) {
     return (
       <div className={styles.container}>
-        <div style={{
-          display: 'flex',
-          justifyContent: 'center',
-          alignItems: 'center',
-          height: '100vh'
-        }}>
+        <div
+          style={{
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            height: '100vh',
+          }}
+        >
           <div>Loading...</div>
         </div>
       </div>
@@ -80,9 +87,7 @@ function AppContent() {
               <Dashboard />
             ) : authMode === 'login' ? (
               <div className={styles.main}>
-                <LoginForm
-                  onSuccess={() => setAuthMode(null)}
-                />
+                <LoginForm onSuccess={() => setAuthMode(null)} />
                 <div style={{ textAlign: 'center', marginTop: '1rem' }}>
                   <button
                     onClick={() => setAuthMode('register')}
@@ -92,7 +97,7 @@ function AppContent() {
                       color: '#007bff',
                       textDecoration: 'underline',
                       cursor: 'pointer',
-                      marginRight: '1rem'
+                      marginRight: '1rem',
                     }}
                   >
                     Create Account
@@ -127,9 +132,17 @@ function AppContent() {
                     Welcome to Enterprise NX Monorepo with SSR
                   </h1>
                   <p className={styles.heroSubtitle}>
-                    Server-side rendered React application with modern technologies
+                    Server-side rendered React application with modern
+                    technologies
                   </p>
-                  <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', marginTop: '2rem' }}>
+                  <div
+                    style={{
+                      display: 'flex',
+                      gap: '1rem',
+                      justifyContent: 'center',
+                      marginTop: '2rem',
+                    }}
+                  >
                     <button
                       onClick={() => setAuthMode('login')}
                       className={styles.button}

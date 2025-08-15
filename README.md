@@ -1,13 +1,46 @@
 # Enterprise NX Monorepo
 
-[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?pr## 🛠️ Technology Stack
+[![Quality Ga## 🚀 Quick Start
 
-**Frontend**: React 19, TypeScript, Vanilla Extract, Vite, React Router, Storybook  
-**Backend**: Fastify 5, JWT Auth, OpenAPI/Swagger, Kafka Integration  
-**Database**: PostgreSQL, Redis, Apache Kafka  
-**Testing**: Playwright E2E, Vitest Unit Tests, ESLint 9  
-**Infrastructure**: Docker, Kubernetes, AWS CloudFormation  
-**Tooling**: NX Monorepo, pnpm, TypeScript, Node.js 23.6.0  
+```bash
+# Install dependencies
+pnpm install
+
+# Start development environment
+pnpm run dev           # SSR React app only (localhost:4200)
+pnpm run dev:ssr       # React app + API + Redis
+pnpm run dev:kafka     # Full stack with Kafka analytics
+
+# Or start services individually
+pnpm run serve:web-app       # React app (localhost:4200)
+pnpm run serve:fastify-api   # Fastify API (localhost:3334)
+
+# With Docker (full stack with Kafka)
+pnpm start    # Complete development environment
+```
+
+## ⚡ Development Scripts
+
+````bash
+# Quality & Testing
+pnpm run quality      # Lint + format check + type check
+pnpm run test         # Run all tests
+pnpm run e2e          # Playwright E2E tests
+pnpm run analyze      # Coverage + lint + SonarQube
+
+# Project Management
+pnpm run clean        # Clean build artifacts
+pnpm run nuke         # Full reset (dependencies + lock file)
+pnpm run health       # Check NX daemon and projects
+pnpm run outdated     # Check for dependency updates
+```/sonarcloud.io/api/project_badges/measure?pr## 🛠️ Technology Stack
+
+**Frontend**: React 19, TypeScript, Vanilla Extract, Vite, React Router, Storybook
+**Backend**: Fastify 5, JWT Auth, OpenAPI/Swagger, Kafka Integration
+**Database**: PostgreSQL, Redis, Apache Kafka
+**Testing**: Playwright E2E, Vitest Unit Tests, ESLint 9
+**Infrastructure**: Docker, Kubernetes, AWS CloudFormation
+**Tooling**: NX Monorepo, pnpm, TypeScript, Node.js 23.6.0
 
 ## ⚡ Performance & Security Features
 
@@ -53,7 +86,7 @@ pnpm run serve:fastify-api   # Fastify API (localhost:3334)
 
 # With Docker (full stack with Kafka)
 pnpm run dev:kafka    # Start databases + Kafka + development servers
-```
+````
 
 ### Access Points
 
@@ -67,15 +100,15 @@ pnpm run dev:kafka    # Start databases + Kafka + development servers
 
 ## 📚 Documentation
 
-| Topic | Description |
-|-------|-------------|
-| [📋 Changelog](CHANGELOG.md) | Recent updates, features, and improvements |
-| [� User Behavior Tracking](docs/user-behavior-tracking.md) | Kafka-based analytics with ReDoS protection |
-| [�️ Development Setup](DEVELOPMENT-SETUP.md) | Prerequisites, installation, and development workflow |
-| [🔐 Security Features](SECURITY.md) | Authentication, ReDoS protection, and security best practices |
-| [🧪 Testing Guide](docs/testing.md) | Unit tests, E2E tests, and testing strategies |
-| [🐳 Deployment](DEPLOYMENT.md) | Docker, Kubernetes, and production deployment |
-| [⚙️ Configuration](docs/configuration.md) | Environment variables and settings |
+| Topic                                                      | Description                                                   |
+| ---------------------------------------------------------- | ------------------------------------------------------------- |
+| [📋 Changelog](CHANGELOG.md)                               | Recent updates, features, and improvements                    |
+| [� User Behavior Tracking](docs/user-behavior-tracking.md) | Kafka-based analytics with ReDoS protection                   |
+| [�️ Development Setup](DEVELOPMENT-SETUP.md)               | Prerequisites, installation, and development workflow         |
+| [🔐 Security Features](SECURITY.md)                        | Authentication, ReDoS protection, and security best practices |
+| [🧪 Testing Guide](docs/testing.md)                        | Unit tests, E2E tests, and testing strategies                 |
+| [🐳 Deployment](DEPLOYMENT.md)                             | Docker, Kubernetes, and production deployment                 |
+| [⚙️ Configuration](docs/configuration.md)                  | Environment variables and settings                            |
 
 ## 🔧 Key Features
 
@@ -90,7 +123,7 @@ pnpm run dev:kafka    # Start databases + Kafka + development servers
 ✅ **Cloud Native** with AWS CloudFormation templates  
 ✅ **Event Streaming** with Apache Kafka for real-time user analytics  
 ✅ **Security Hardened** with ReDoS protection, input validation, and rate limiting  
-✅ **Developer Experience** with NX monorepo tooling, caching, and hot reload  
+✅ **Developer Experience** with NX monorepo tooling, caching, and hot reload
 
 ## 🏗️ Project Structure
 

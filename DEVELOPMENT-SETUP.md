@@ -46,7 +46,7 @@ pnpm run dev:kafka
 docker-compose up -d postgres redis
 
 # Start frontend and backend separately
-pnpm run serve:web-app      # React app at localhost:4200
+pnpm run serve:web-app      # SSR React app at localhost:4200
 pnpm run serve:fastify-api  # API at localhost:3334
 
 # Or start both together
@@ -66,34 +66,42 @@ docker-compose --profile kafka up -d kafka-ui
 ## Docker Compose Profiles
 
 ### Default (Development)
+
 - ✅ PostgreSQL database
 - ✅ Redis cache
 - ❌ Application containers (run locally)
 
 ### Production Profile
+
 ```bash
 docker-compose --profile production up -d
 ```
+
 - ✅ Full application stack
 - ✅ Built containers for web-app and fastify-api
 
 ### Tools Profile
+
 ```bash
 docker-compose --profile tools up -d
 ```
+
 - ✅ PgAdmin for database management
 - 🌐 Access at http://localhost:8080
 
 ### Kafka Profile
+
 ```bash
 docker-compose --profile kafka up -d
 ```
+
 - ✅ Zookeeper + Kafka + Kafka UI
 - 🌐 Kafka UI at http://localhost:8081
 
 ## Environment Configuration
 
 ### Database Connection
+
 ```bash
 # PostgreSQL
 Host: localhost
@@ -104,6 +112,7 @@ Password: ${POSTGRES_PASSWORD}
 ```
 
 ### Redis Connection
+
 ```bash
 # Redis
 Host: localhost
@@ -115,12 +124,14 @@ URL: redis://:${REDIS_PASSWORD}@localhost:6379
 ## Security Features
 
 ### Development Security
+
 - ✅ **Password authentication** (removed `trust` method)
 - ✅ **Resource limits** prevent excessive memory usage
 - ✅ **Health checks** ensure service reliability
 - ✅ **Isolated network** (`enterprise-dev`)
 
 ### Production Security
+
 - ✅ **Separate profiles** for different environments
 - ✅ **Environment variable** configuration
 - ✅ **Persistent volumes** for data safety
@@ -128,6 +139,7 @@ URL: redis://:${REDIS_PASSWORD}@localhost:6379
 ## Troubleshooting
 
 ### Reset Development Environment
+
 ```bash
 # Stop all services
 docker-compose down
@@ -140,6 +152,7 @@ docker-compose up -d postgres redis
 ```
 
 ### Check Service Logs
+
 ```bash
 # View PostgreSQL logs
 docker-compose logs postgres
@@ -152,6 +165,7 @@ docker-compose logs -f postgres redis
 ```
 
 ### Resource Usage
+
 ```bash
 # Check memory/CPU usage
 docker stats
@@ -169,6 +183,7 @@ docker-compose config
 5. **Stop services**: `docker-compose down`
 
 ---
+
 **Updated**: August 4, 2025  
 **Docker Compose Version**: 3.8+  
 **Tested**: macOS, Linux, Windows (WSL2)

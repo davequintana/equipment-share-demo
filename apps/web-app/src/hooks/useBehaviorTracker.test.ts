@@ -5,19 +5,19 @@ import { useBehaviorTracker } from './useBehaviorTracker';
 // Mock the API client
 vi.mock('../utils/api-client', () => ({
   apiClient: {
-    trackActivity: vi.fn().mockResolvedValue(undefined)
-  }
+    trackActivity: vi.fn().mockResolvedValue(undefined),
+  },
 }));
 
 // Mock the dependencies
 vi.mock('../context/AuthContext', () => ({
   useAuth: () => ({
-    user: { id: 'test-user-id', email: 'test@example.com' }
-  })
+    user: { id: 'test-user-id', email: 'test@example.com' },
+  }),
 }));
 
 vi.mock('../utils/api-url', () => ({
-  isLocalOnlyMode: vi.fn().mockReturnValue(false)
+  isLocalOnlyMode: vi.fn().mockReturnValue(false),
 }));
 
 // Mock timers for testing
@@ -40,9 +40,9 @@ describe('useBehaviorTracker', () => {
     Object.defineProperty(window, 'location', {
       value: {
         pathname: '/test-page',
-        search: '?param=value'
+        search: '?param=value',
       },
-      writable: true
+      writable: true,
     });
   });
 
@@ -78,9 +78,7 @@ describe('useBehaviorTracker', () => {
 
   describe('Event Batching', () => {
     it('should batch events and flush when batch size is reached', async () => {
-      const { result } = renderHook(() =>
-        useBehaviorTracker({ batchSize: 2 })
-      );
+      const { result } = renderHook(() => useBehaviorTracker({ batchSize: 2 }));
 
       // Hook automatically tracks page view on mount, so we should have 1 event already
       expect(result.current.getQueueLength()).toBe(1);
@@ -118,8 +116,8 @@ describe('useBehaviorTracker', () => {
         'page_view',
         '/test-page?param=value',
         expect.objectContaining({
-          timestamp: expect.any(Number)
-        })
+          timestamp: expect.any(Number),
+        }),
       );
       expect(result.current.getQueueLength()).toBe(0);
     });
@@ -133,7 +131,7 @@ describe('useBehaviorTracker', () => {
       const clickEvent = new MouseEvent('click', {
         clientX: 100,
         clientY: 200,
-        bubbles: true
+        bubbles: true,
       });
 
       Object.defineProperty(clickEvent, 'target', {
@@ -141,8 +139,8 @@ describe('useBehaviorTracker', () => {
           tagName: 'BUTTON',
           textContent: 'Click me',
           id: 'test-button',
-          className: 'btn'
-        }
+          className: 'btn',
+        },
       });
 
       act(() => {
@@ -154,10 +152,12 @@ describe('useBehaviorTracker', () => {
     });
 
     it('should not track mouse events when disabled', () => {
-      renderHook(() => useBehaviorTracker({
-        trackClicks: false,
-        trackMouseMovement: false
-      }));
+      renderHook(() =>
+        useBehaviorTracker({
+          trackClicks: false,
+          trackMouseMovement: false,
+        }),
+      );
 
       // Simulate events
       act(() => {
@@ -177,8 +177,8 @@ describe('useBehaviorTracker', () => {
           trackClicks: false,
           trackMouseMovement: false,
           trackScrolling: false,
-          trackKeyboard: false
-        })
+          trackKeyboard: false,
+        }),
       );
 
       // Even with all tracking disabled, should still provide functions
@@ -190,12 +190,10 @@ describe('useBehaviorTracker', () => {
     it('should use custom batch size and flush interval', () => {
       const customOptions = {
         batchSize: 5,
-        flushIntervalMs: 1000
+        flushIntervalMs: 1000,
       };
 
-      const { result } = renderHook(() =>
-        useBehaviorTracker(customOptions)
-      );
+      const { result } = renderHook(() => useBehaviorTracker(customOptions));
 
       // Should initialize with custom configuration (but still has auto page view on mount)
       expect(result.current.getQueueLength()).toBe(1);
@@ -206,9 +204,7 @@ describe('useBehaviorTracker', () => {
     it('should handle API errors gracefully', async () => {
       mockTrackActivity.mockRejectedValueOnce(new Error('API Error'));
 
-      const { result } = renderHook(() =>
-        useBehaviorTracker({ batchSize: 1 })
-      );
+      const { result } = renderHook(() => useBehaviorTracker({ batchSize: 1 }));
 
       const consoleSpy = vi.spyOn(console, 'debug').mockImplementation(() => {
         // Mock implementation for console.debug
@@ -222,7 +218,7 @@ describe('useBehaviorTracker', () => {
       await vi.waitFor(() => {
         expect(consoleSpy).toHaveBeenCalledWith(
           'Failed to flush behavior events:',
-          expect.any(Error)
+          expect.any(Error),
         );
       });
 
@@ -234,18 +230,22 @@ describe('useBehaviorTracker', () => {
     it('should handle rapid event generation without blocking', () => {
       const startTime = Date.now();
 
-      renderHook(() => useBehaviorTracker({
-        trackMouseMovement: true,
-        throttleMs: 50
-      }));
+      renderHook(() =>
+        useBehaviorTracker({
+          trackMouseMovement: true,
+          throttleMs: 50,
+        }),
+      );
 
       // Simulate rapid mouse movements
       for (let i = 0; i < 100; i++) {
         act(() => {
-          document.dispatchEvent(new MouseEvent('mousemove', {
-            clientX: i,
-            clientY: i
-          }));
+          document.dispatchEvent(
+            new MouseEvent('mousemove', {
+              clientX: i,
+              clientY: i,
+            }),
+          );
         });
       }
 
@@ -260,8 +260,8 @@ describe('useBehaviorTracker', () => {
         useBehaviorTracker({
           trackMouseMovement: true,
           throttleMs: 100,
-          batchSize: 1000 // Large batch to prevent auto-flush
-        })
+          batchSize: 1000, // Large batch to prevent auto-flush
+        }),
       );
 
       // Simulate rapid mouse movements
@@ -311,14 +311,14 @@ describe('useBehaviorTracker', () => {
         'a'.repeat(10000),
         '((a+)+)+b',
         '([a-zA-Z]+)*',
-        'x'.repeat(50000)
+        'x'.repeat(50000),
       ];
 
       const startTime = Date.now();
 
       const { result } = renderHook(() => useBehaviorTracker());
 
-      maliciousPatterns.forEach(pattern => {
+      maliciousPatterns.forEach((pattern) => {
         act(() => {
           result.current.trackPageView(`/test?q=${pattern}`);
         });

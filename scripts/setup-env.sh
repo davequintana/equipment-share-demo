@@ -34,12 +34,12 @@ DATABASE_URL=postgresql://enterprise:\${POSTGRES_PASSWORD}@localhost:5432/enterp
 REDIS_URL=redis://localhost:6379
 
 # API Configuration
-API_PORT=3333
+API_PORT=3334
 NODE_ENV=development
 LOG_LEVEL=info
 
 # CORS Configuration (comma-separated)
-CORS_ORIGINS=http://localhost:4200,http://localhost:4201
+CORS_ORIGINS=http://localhost:4200
 
 # Development flags
 USE_LOCAL_SECRETS=true

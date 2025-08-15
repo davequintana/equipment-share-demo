@@ -285,7 +285,7 @@ kubectl apply -f k8s/ssl/cluster-issuer.yaml
 ```bash
 # Application settings
 NODE_ENV=production
-PORT=3333
+PORT=3334
 
 # Database (use AWS RDS endpoint)
 DATABASE_URL=postgresql://enterprise:password@your-rds-endpoint.amazonaws.com:5432/enterprise_db
@@ -323,9 +323,9 @@ metadata:
   name: app-secrets
 type: Opaque
 stringData:
-  database-url: "postgresql://enterprise:password@rds-endpoint:5432/enterprise_db"
-  redis-url: "redis://elasticache-endpoint:6379"
-  jwt-secret: "your-production-jwt-secret"
+  database-url: 'postgresql://enterprise:password@rds-endpoint:5432/enterprise_db'
+  redis-url: 'redis://elasticache-endpoint:6379'
+  jwt-secret: 'your-production-jwt-secret'
 ```
 
 ## Monitoring and Observability
@@ -338,14 +338,14 @@ Configure Kubernetes health checks:
 livenessProbe:
   httpGet:
     path: /health
-    port: 3333
+    port: 3334
   initialDelaySeconds: 30
   periodSeconds: 10
 
 readinessProbe:
   httpGet:
     path: /health
-    port: 3333
+    port: 3334
   initialDelaySeconds: 5
   periodSeconds: 5
 ```

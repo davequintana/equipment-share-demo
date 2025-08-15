@@ -41,12 +41,14 @@ The release workflow will:
 1. **Go to the GitHub Actions run** for your release
 2. **Download the deployment artifacts** (e.g., `deployment-1.0.0.zip`)
 3. **Extract on your production server**:
+
    ```bash
    unzip deployment-1.0.0.zip
    cd deployment/
    ```
 
 4. **Set up secrets** (create `.env` file):
+
    ```bash
    # Copy and edit the environment variables
    nano .env
@@ -75,17 +77,17 @@ Add these secrets to your GitHub repository for production deployment:
 1. **Go to GitHub Repository → Settings → Secrets and Variables → Actions**
 2. **Add the following secrets**:
 
-| Secret Name | Description | Example |
-|-------------|-------------|---------|
-| `POSTGRES_PASSWORD` | PostgreSQL database password | `your-secure-db-password` |
-| `JWT_SECRET` | JWT signing secret | `your-super-secret-jwt-key-256-bits-long` |
+| Secret Name         | Description                  | Example                                   |
+| ------------------- | ---------------------------- | ----------------------------------------- |
+| `POSTGRES_PASSWORD` | PostgreSQL database password | `your-secure-db-password`                 |
+| `JWT_SECRET`        | JWT signing secret           | `your-super-secret-jwt-key-256-bits-long` |
 
 ## 🌍 Environment Setup
 
 ### Production Server Requirements
 
 - **Docker** and **Docker Compose** installed
-- **Ports** 80, 3333, 5432, 6379 available
+- **Ports** 80, 3334, 5432, 6379 available
 - **Minimum 2GB RAM** recommended
 
 ### Environment Variables
@@ -97,8 +99,8 @@ NODE_ENV=production
 DATABASE_URL=postgresql://enterprise:${POSTGRES_PASSWORD}@postgres:5432/enterprise_db
 REDIS_URL=redis://redis:6379
 JWT_SECRET=${JWT_SECRET}
-API_URL=http://fastify-api:3333
-PORT=3333
+API_URL=http://fastify-api:3334
+PORT=3334
 ```
 
 ## 📊 Monitoring Deployment
@@ -106,8 +108,8 @@ PORT=3333
 After deployment, your services will be available at:
 
 - **🌐 Web Application**: http://your-server
-- **🔌 API**: http://your-server:3333
-- **📊 Health Checks**: http://your-server:3333/health
+- **🔌 API**: http://your-server:3334
+- **📊 Health Checks**: http://your-server:3334/health
 
 ### Check Service Status
 
@@ -119,7 +121,7 @@ docker-compose -f docker-compose.prod.yml ps
 docker-compose -f docker-compose.prod.yml logs -f
 
 # Check health
-curl http://localhost:3333/health
+curl http://localhost:3334/health
 ```
 
 ## 🔄 Rollback Process
@@ -141,7 +143,7 @@ docker-compose -f docker-compose.prod.yml up -d
 ### Common Issues
 
 1. **Images not found**: Ensure the release workflow completed successfully
-2. **Port conflicts**: Check that ports 80, 3333, 5432, 6379 are available
+2. **Port conflicts**: Check that ports 80, 3334, 5432, 6379 are available
 3. **Database connection issues**: Verify POSTGRES_PASSWORD secret is set
 4. **JWT errors**: Ensure JWT_SECRET is properly configured
 
@@ -157,7 +159,7 @@ docker-compose -f docker-compose.prod.yml logs fastify-api
 
 # Check service health
 docker-compose -f docker-compose.prod.yml exec web-app wget -qO- http://localhost:3000
-docker-compose -f docker-compose.prod.yml exec fastify-api wget -qO- http://localhost:3333/health
+docker-compose -f docker-compose.prod.yml exec fastify-api wget -qO- http://localhost:3334/health
 ```
 
 ## 📈 Release Workflow Features

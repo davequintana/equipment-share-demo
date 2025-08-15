@@ -46,13 +46,10 @@ pnpm run dev
 ```bash
 # Frontend only
 pnpm run serve:web-app         # CSR React app (port 4200)
-pnpm run serve:web-app       # React app with SSR (port 4201)
+pnpm run serve:web-app:ssr     # React app with SSR (port 4200)
 
 # Backend API
 pnpm run serve:fastify-api     # Fastify API (port 3334)
-
-# Development tools
-pnpm run storybook             # Component library (port 6006)
 ```
 
 ### Build Commands
@@ -212,7 +209,7 @@ Create `.env` file in the root directory:
 ```bash
 # Application
 NODE_ENV=development
-PORT=3333
+PORT=3334
 
 # Database
 DATABASE_URL=postgresql://enterprise:password@localhost:5432/enterprise_db
@@ -253,26 +250,30 @@ AWS_SECRET_ACCESS_KEY=your-secret-key
 ### Feature Development
 
 1. **Create feature branch**
+
    ```bash
    git checkout -b feature/your-feature-name
    ```
 
 2. **Start development servers**
+
    ```bash
    pnpm run dev
    ```
 
 3. **Make changes and test**
+
    ```bash
    # Run tests while developing
    npx nx test web-app --watch
-   
+
    # Check affected projects
    npx nx affected:build
    npx nx affected:test
    ```
 
 4. **Code quality checks**
+
    ```bash
    npx nx run-many -t lint --fix
    npx nx format:write
@@ -344,24 +345,27 @@ npx nx build web-app --configuration=production
 ### Common Issues
 
 1. **Port conflicts**
+
    ```bash
    # Find process using port
    lsof -i :3334
-   
+
    # Kill process
    kill -9 <PID>
    ```
 
 2. **Database connection issues**
+
    ```bash
    # Restart database
    docker-compose restart postgres
-   
+
    # Check database logs
    docker-compose logs postgres
    ```
 
 3. **Node modules issues**
+
    ```bash
    # Clear and reinstall
    rm -rf node_modules

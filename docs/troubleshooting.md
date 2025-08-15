@@ -11,6 +11,7 @@ This guide covers common issues you might encounter during development and their
 #### Issue: `pnpm: command not found`
 
 **Solution:**
+
 ```bash
 # Install pnpm globally
 npm install -g pnpm
@@ -25,6 +26,7 @@ pnpm --version
 #### Issue: Node.js version mismatch
 
 **Solution:**
+
 ```bash
 # Check current Node.js version
 node --version
@@ -41,6 +43,7 @@ node --version  # Should show v18.x.x
 #### Issue: `Cannot resolve dependency` errors
 
 **Solution:**
+
 ```bash
 # Clear pnpm cache
 pnpm store prune
@@ -59,6 +62,7 @@ pnpm install
 #### Issue: Docker containers won't start
 
 **Solution:**
+
 ```bash
 # Check if Docker is running
 docker info
@@ -77,6 +81,7 @@ docker-compose logs redis
 **Error:** `bind: address already in use`
 
 **Solution:**
+
 ```bash
 # Find process using the port
 lsof -i :5432  # PostgreSQL
@@ -96,6 +101,7 @@ docker-compose up -d
 #### Issue: Database connection refused
 
 **Solution:**
+
 ```bash
 # Check if PostgreSQL container is running
 docker-compose ps
@@ -117,6 +123,7 @@ docker-compose exec postgres psql -U enterprise -d enterprise_db
 #### Issue: Vite dev server won't start
 
 **Solution:**
+
 ```bash
 # Clear Vite cache
 rm -rf node_modules/.vite
@@ -125,7 +132,7 @@ rm -rf node_modules/.vite
 lsof -i :4200
 
 # Start with different port
-npx nx serve web-app --port 4201
+npx nx serve web-app --port 4200
 
 # Clear browser cache and cookies
 # Disable browser extensions
@@ -134,6 +141,7 @@ npx nx serve web-app --port 4201
 #### Issue: Hot Module Replacement (HMR) not working
 
 **Solution:**
+
 ```bash
 # Restart dev server
 npx nx serve web-app
@@ -148,6 +156,7 @@ npx nx serve web-app --host 0.0.0.0
 #### Issue: TypeScript compilation errors
 
 **Solution:**
+
 ```bash
 # Check TypeScript configuration
 npx tsc --noEmit
@@ -164,6 +173,7 @@ rm -rf apps/web-app/.tsbuildinfo
 #### Issue: Fastify API won't start
 
 **Solution:**
+
 ```bash
 # Check for syntax errors
 npx nx lint fastify-api
@@ -182,6 +192,7 @@ npx nx serve fastify-api --verbose
 #### Issue: Authentication not working
 
 **Solution:**
+
 ```bash
 # Verify JWT_SECRET is set
 echo $JWT_SECRET
@@ -202,6 +213,7 @@ curl -X POST http://localhost:3334/api/auth/login \
 #### Issue: Database connection timeout
 
 **Solution:**
+
 ```bash
 # Check PostgreSQL status
 docker-compose exec postgres pg_isready
@@ -216,6 +228,7 @@ docker-compose exec postgres cat /var/lib/postgresql/data/postgresql.conf
 #### Issue: Database migration failures
 
 **Solution:**
+
 ```bash
 # Check migration status
 npx nx run database:migration:status
@@ -236,6 +249,7 @@ npx nx run database:migration:up
 #### Issue: Permission denied errors
 
 **Solution:**
+
 ```bash
 # Fix PostgreSQL permissions
 docker-compose exec postgres chown -R postgres:postgres /var/lib/postgresql/data
@@ -252,6 +266,7 @@ docker-compose exec postgres psql -U enterprise -d enterprise_db -c "GRANT ALL P
 #### Issue: Redis connection refused
 
 **Solution:**
+
 ```bash
 # Check Redis status
 docker-compose exec redis redis-cli ping
@@ -273,6 +288,7 @@ docker-compose exec redis redis-cli FLUSHALL
 #### Issue: Build fails with memory errors
 
 **Solution:**
+
 ```bash
 # Increase Node.js memory limit
 export NODE_OPTIONS="--max-old-space-size=4096"
@@ -289,6 +305,7 @@ npx nx reset
 #### Issue: Dependency graph errors
 
 **Solution:**
+
 ```bash
 # Clear NX cache
 npx nx reset
@@ -306,6 +323,7 @@ npx nx graph
 #### Issue: Type checking errors
 
 **Solution:**
+
 ```bash
 # Run type checking
 npx nx run-many -t type-check
@@ -324,6 +342,7 @@ npx nx run-many -t type-check
 #### Issue: Tests failing after changes
 
 **Solution:**
+
 ```bash
 # Clear test cache
 npx nx reset
@@ -341,6 +360,7 @@ cat apps/web-app/vitest.config.ts
 #### Issue: Test coverage issues
 
 **Solution:**
+
 ```bash
 # Generate coverage report
 npx nx test web-app --coverage
@@ -357,6 +377,7 @@ npx nx test web-app --coverage
 #### Issue: Playwright tests failing
 
 **Solution:**
+
 ```bash
 # Install Playwright browsers
 npx playwright install
@@ -374,6 +395,7 @@ cat apps/e2e/playwright.config.ts
 #### Issue: Test environment setup
 
 **Solution:**
+
 ```bash
 # Ensure test database is clean
 docker-compose exec postgres psql -U enterprise -d test_db -c "TRUNCATE TABLE users CASCADE;"
@@ -392,6 +414,7 @@ npx nx e2e e2e
 #### Issue: Docker build failures
 
 **Solution:**
+
 ```bash
 # Build with verbose output
 docker build --no-cache -f infrastructure/docker/web-app.Dockerfile -t web-app .
@@ -406,6 +429,7 @@ docker build --platform linux/amd64 -f infrastructure/docker/web-app.Dockerfile 
 #### Issue: Kubernetes deployment failures
 
 **Solution:**
+
 ```bash
 # Check deployment status
 kubectl get deployments
@@ -426,6 +450,7 @@ kubectl describe node
 #### Issue: High memory usage
 
 **Solution:**
+
 ```bash
 # Monitor memory usage
 docker stats
@@ -440,6 +465,7 @@ node --inspect apps/fastify-api/dist/main.js
 #### Issue: Slow API responses
 
 **Solution:**
+
 ```bash
 # Enable API logging
 export LOG_LEVEL=debug
@@ -458,6 +484,7 @@ docker-compose exec redis redis-cli info stats
 #### Issue: JWT tokens not working
 
 **Solution:**
+
 ```bash
 # Verify JWT_SECRET is set
 echo $JWT_SECRET
@@ -474,12 +501,13 @@ curl -X POST http://localhost:3334/api/auth/login \
 #### Issue: CORS errors
 
 **Solution:**
+
 ```bash
 # Check CORS configuration
 grep -r "CORS_ORIGINS" .
 
 # Update CORS settings for development
-export CORS_ORIGINS="http://localhost:4200,http://localhost:4201"
+export CORS_ORIGINS="http://localhost:4200"
 
 # Restart API servers
 pnpm run serve:fastify-api &
@@ -525,16 +553,19 @@ pnpm run serve:fastify-api &
 ### Browser Developer Tools
 
 #### Network Tab
+
 - Check API requests and responses
 - Verify authentication headers
 - Monitor request timing
 
 #### Console Tab
+
 - Check for JavaScript errors
 - Monitor authentication state
 - Debug React components
 
 #### Application Tab
+
 - Check localStorage for tokens
 - Monitor cookies
 - Inspect service workers
@@ -550,16 +581,16 @@ ALTER SYSTEM SET log_min_duration_statement = 0;
 
 -- Check slow queries
 SELECT query, mean_time, calls, total_time
-FROM pg_stat_statements 
-ORDER BY mean_time DESC 
+FROM pg_stat_statements
+ORDER BY mean_time DESC
 LIMIT 10;
 
 -- Check table sizes
-SELECT 
+SELECT
   schemaname,
   tablename,
   pg_size_pretty(pg_total_relation_size(schemaname||'.'||tablename)) as size
-FROM pg_tables 
+FROM pg_tables
 ORDER BY pg_total_relation_size(schemaname||'.'||tablename) DESC;
 ```
 

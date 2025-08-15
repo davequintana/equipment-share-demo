@@ -10,7 +10,7 @@ export default defineConfig(({ mode }) => ({
   publicDir: 'public',
 
   server: {
-    port: 4201,
+    port: 4200,
     host: 'localhost',
     hmr: {
       port: 4202,
@@ -39,7 +39,9 @@ export default defineConfig(({ mode }) => ({
 
   build: {
     // Let NX handle outDir via outputPath, but ensure paths are correct
-    outDir: process.env.NX_TASK_TARGET_PROJECT ? '../../dist/apps/web-app' : 'dist',
+    outDir: process.env.NX_TASK_TARGET_PROJECT
+      ? '../../dist/apps/web-app'
+      : 'dist',
     emptyOutDir: true,
     reportCompressedSize: true,
     copyPublicDir: true,

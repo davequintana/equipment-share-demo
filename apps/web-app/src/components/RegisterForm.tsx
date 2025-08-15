@@ -12,7 +12,7 @@ interface RegisterFormProps {
 export const RegisterForm: React.FC<RegisterFormProps> = ({
   onSuccess,
   onSwitchToLogin,
-  redirectTo = '/dashboard'
+  redirectTo = '/dashboard',
 }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -82,7 +82,9 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({
 
   return (
     <form className={styles.authForm} onSubmit={handleSubmit}>
-      <h2 style={{ textAlign: 'center', marginBottom: '1.5rem' }}>Create Account</h2>
+      <h2 style={{ textAlign: 'center', marginBottom: '1.5rem' }}>
+        Create Account
+      </h2>
 
       <div className={styles.formGroup}>
         <label className={styles.label} htmlFor="name">
@@ -128,8 +130,16 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({
           placeholder="Min 8 chars, uppercase, lowercase, number, special char"
           minLength={8}
         />
-        <small style={{ fontSize: '0.8rem', color: '#666', marginTop: '0.25rem', display: 'block' }}>
-          Password must contain: 8+ characters, uppercase, lowercase, number, and special character
+        <small
+          style={{
+            fontSize: '0.8rem',
+            color: '#666',
+            marginTop: '0.25rem',
+            display: 'block',
+          }}
+        >
+          Password must contain: 8+ characters, uppercase, lowercase, number,
+          and special character
         </small>
       </div>
 
@@ -160,7 +170,14 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({
         {loading ? 'Creating Account...' : 'Create Account'}
       </button>
 
-      <p style={{ textAlign: 'center', marginTop: '1rem', fontSize: '0.875rem', color: '#666' }}>
+      <p
+        style={{
+          textAlign: 'center',
+          marginTop: '1rem',
+          fontSize: '0.875rem',
+          color: '#666',
+        }}
+      >
         Already have an account?{' '}
         <button
           type="button"

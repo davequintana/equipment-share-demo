@@ -45,10 +45,13 @@ class KafkaUserActivityService {
 
   constructor() {
     // Check if Kafka should be enabled based on environment
-    this.isEnabled = process.env['NODE_ENV'] !== 'test' && process.env['CI'] !== 'true';
+    this.isEnabled =
+      process.env['NODE_ENV'] !== 'test' && process.env['CI'] !== 'true';
 
     if (this.isEnabled) {
-      const brokers = process.env['KAFKA_BROKERS']?.split(',') || ['localhost:9094'];
+      const brokers = process.env['KAFKA_BROKERS']?.split(',') || [
+        'localhost:9094',
+      ];
 
       this.kafka = new Kafka({
         clientId: 'user-activity-service',
@@ -102,8 +105,13 @@ class KafkaUserActivityService {
       this.isConnected = true;
       console.log('✅ Kafka User Activity Service initialized successfully');
     } catch (error) {
-      console.error('❌ Failed to initialize Kafka User Activity Service:', error);
-      console.log('💡 Continuing without Kafka - falling back to in-memory session tracking');
+      console.error(
+        '❌ Failed to initialize Kafka User Activity Service:',
+        error,
+      );
+      console.log(
+        '💡 Continuing without Kafka - falling back to in-memory session tracking',
+      );
       this.isEnabled = false;
     }
   }
@@ -163,7 +171,9 @@ class KafkaUserActivityService {
   /**
    * Handle incoming user activity events
    */
-  private async handleUserActivityEvent(event: UserActivityEvent): Promise<void> {
+  private async handleUserActivityEvent(
+    event: UserActivityEvent,
+  ): Promise<void> {
     const { userId, email, eventType, timestamp, sessionId } = event;
 
     if (eventType === 'activity') {
@@ -182,7 +192,7 @@ class KafkaUserActivityService {
     userId: string,
     email: string,
     timestamp: number,
-    sessionId?: string
+    sessionId?: string,
   ): void {
     // Clear existing timeout if any
     const existingSession = this.activeSessions.get(userId);
@@ -201,11 +211,16 @@ class KafkaUserActivityService {
       email,
       lastActivity: timestamp,
       timeoutId,
-      sessionId: sessionId || existingSession?.sessionId || `session-${userId}-${Date.now()}`,
+      sessionId:
+        sessionId ||
+        existingSession?.sessionId ||
+        `session-${userId}-${Date.now()}`,
     };
 
     this.activeSessions.set(userId, session);
-    console.log(`🔄 Updated session for user ${userId}, auto-logout in ${this.IDLE_TIMEOUT / 1000}s`);
+    console.log(
+      `🔄 Updated session for user ${userId}, auto-logout in ${this.IDLE_TIMEOUT / 1000}s`,
+    );
   }
 
   /**
@@ -223,8 +238,13 @@ class KafkaUserActivityService {
   /**
    * Handle user timeout (auto-logout)
    */
-  private async handleUserTimeout(userId: string, email: string): Promise<void> {
-    console.log(`⏰ User ${userId} (${email}) timed out - triggering auto-logout`);
+  private async handleUserTimeout(
+    userId: string,
+    email: string,
+  ): Promise<void> {
+    console.log(
+      `⏰ User ${userId} (${email}) timed out - triggering auto-logout`,
+    );
 
     // Publish logout event
     await this.publishUserActivity({
@@ -279,7 +299,7 @@ class KafkaUserActivityService {
       text?: string;
       timestamp?: number;
       [key: string]: unknown;
-    }
+    },
   ): Promise<void> {
     await this.publishUserActivity({
       userId,
@@ -302,9 +322,24 @@ class KafkaUserActivityService {
         text: metadata?.text,
         // Include any additional metadata
         ...Object.fromEntries(
-          Object.entries(metadata || {}).filter(([key]) =>
-            !['userAgent', 'ip', 'sessionId', 'page', 'x', 'y', 'element', 'key', 'scrollTop', 'scrollLeft', 'target', 'text', 'timestamp'].includes(key)
-          )
+          Object.entries(metadata || {}).filter(
+            ([key]) =>
+              ![
+                'userAgent',
+                'ip',
+                'sessionId',
+                'page',
+                'x',
+                'y',
+                'element',
+                'key',
+                'scrollTop',
+                'scrollLeft',
+                'target',
+                'text',
+                'timestamp',
+              ].includes(key),
+          ),
         ),
       },
     });

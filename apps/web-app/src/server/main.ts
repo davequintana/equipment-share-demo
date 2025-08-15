@@ -9,7 +9,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const isProduction = process.env['NODE_ENV'] === 'production';
-const port = parseInt(process.env['PORT'] || '4201', 10);
+const port = parseInt(process.env['PORT'] || '4200', 10);
 
 async function createServer() {
   console.log('Creating SSR server...');
@@ -41,7 +41,10 @@ async function createServer() {
     if (!fs.existsSync(webAppRoot)) {
       console.error('Web app directory not found for Vite server creation');
       console.log('Tried webAppRoot:', webAppRoot);
-      console.log('Directory contents of process.cwd():', fs.readdirSync(process.cwd()));
+      console.log(
+        'Directory contents of process.cwd():',
+        fs.readdirSync(process.cwd()),
+      );
       throw new Error(`Web app directory not found: ${webAppRoot}`);
     }
 
@@ -58,11 +61,11 @@ async function createServer() {
         resolve: {
           alias: {
             '@': path.resolve('.', 'src'),
-          }
+          },
         },
         optimizeDeps: {
-          entries: ['./src/client/main.tsx']
-        }
+          entries: ['./src/client/main.tsx'],
+        },
       });
     } finally {
       // Don't restore working directory immediately - keep it for Vite operation
@@ -86,7 +89,10 @@ async function createServer() {
         const response = await fetch(apiUrl, {
           method: request.method,
           headers: requestHeaders,
-          body: request.method !== 'GET' && request.method !== 'HEAD' ? JSON.stringify(request.body) : undefined,
+          body:
+            request.method !== 'GET' && request.method !== 'HEAD'
+              ? JSON.stringify(request.body)
+              : undefined,
         });
 
         const data = await response.text();
@@ -94,10 +100,7 @@ async function createServer() {
         response.headers.forEach((value, key) => {
           headers[key] = value;
         });
-        reply
-          .code(response.status)
-          .headers(headers)
-          .send(data);
+        reply.code(response.status).headers(headers).send(data);
       } catch (error) {
         reply.code(500).send({ error: 'Proxy error', details: error });
       }
@@ -106,7 +109,12 @@ async function createServer() {
     // Register Vite middleware for development
     app.addHook('onRequest', async (request, reply) => {
       // Let Vite handle its dev server routes
-      if (vite && (request.url.startsWith('/@') || request.url.startsWith('/src/') || request.url.match(/\.(js|css|ts|tsx)$/))) {
+      if (
+        vite &&
+        (request.url.startsWith('/@') ||
+          request.url.startsWith('/src/') ||
+          request.url.match(/\.(js|css|ts|tsx)$/))
+      ) {
         const viteHandler = vite.middlewares;
         await new Promise<void>((resolve, reject) => {
           viteHandler(request.raw, reply.raw, (err: Error | null) => {
@@ -128,7 +136,12 @@ async function createServer() {
   if (!(isProduction && process.env['CI'] !== 'true')) {
     app.addHook('onRequest', async (request, reply) => {
       // Let Vite handle its dev server routes
-      if (vite && (request.url.startsWith('/@') || request.url.startsWith('/src/') || request.url.match(/\.(js|css|ts|tsx)$/))) {
+      if (
+        vite &&
+        (request.url.startsWith('/@') ||
+          request.url.startsWith('/src/') ||
+          request.url.match(/\.(js|css|ts|tsx)$/))
+      ) {
         const viteHandler = vite.middlewares;
         await new Promise<void>((resolve, reject) => {
           viteHandler(request.raw, reply.raw, (err: Error | null) => {
@@ -190,23 +203,39 @@ async function createServer() {
 
         if (!fs.existsSync(indexPath)) {
           // If index.html not found, try looking in the original location
-          const fallbackPath = path.resolve(__dirname, '..', '..', 'index.html');
+          const fallbackPath = path.resolve(
+            __dirname,
+            '..',
+            '..',
+            'index.html',
+          );
           console.log('Debug - Trying fallback path:', fallbackPath);
 
           if (fs.existsSync(fallbackPath)) {
-            const templateFile = await fs.promises.readFile(fallbackPath, 'utf-8');
-            template = vite ? await vite.transformIndexHtml(url, templateFile) : templateFile;
+            const templateFile = await fs.promises.readFile(
+              fallbackPath,
+              'utf-8',
+            );
+            template = vite
+              ? await vite.transformIndexHtml(url, templateFile)
+              : templateFile;
           } else {
-            throw new Error(`index.html not found at: ${indexPath} or ${fallbackPath}`);
+            throw new Error(
+              `index.html not found at: ${indexPath} or ${fallbackPath}`,
+            );
           }
         } else {
           const templateFile = await fs.promises.readFile(indexPath, 'utf-8');
-          template = vite ? await vite.transformIndexHtml(url, templateFile) : templateFile;
+          template = vite
+            ? await vite.transformIndexHtml(url, templateFile)
+            : templateFile;
         }
 
         // Load the server-side render function
         if (!vite) {
-          throw new Error('Vite server is not available for SSR module loading');
+          throw new Error(
+            'Vite server is not available for SSR module loading',
+          );
         }
         render = (await vite.ssrLoadModule('/src/server/entry.tsx')).render;
       }
@@ -230,16 +259,18 @@ async function createServer() {
   return { app, vite };
 }
 
-createServer().then(({ app }) => {
-  console.log('Starting SSR server...');
-  app.listen({ port, host: '0.0.0.0' }, (err, address) => {
-    if (err) {
-      console.error('Failed to start SSR server:', err);
-      process.exit(1);
-    }
-    console.log(`🚀 SSR React app ready at ${address}`);
+createServer()
+  .then(({ app }) => {
+    console.log('Starting SSR server...');
+    app.listen({ port, host: '0.0.0.0' }, (err, address) => {
+      if (err) {
+        console.error('Failed to start SSR server:', err);
+        process.exit(1);
+      }
+      console.log(`🚀 SSR React app ready at ${address}`);
+    });
+  })
+  .catch((error) => {
+    console.error('Failed to create server:', error);
+    process.exit(1);
   });
-}).catch((error) => {
-  console.error('Failed to create server:', error);
-  process.exit(1);
-});

@@ -11,7 +11,7 @@ The application uses environment variables for configuration across different en
 ```bash
 # Application
 NODE_ENV=development
-PORT=3333
+PORT=3334
 
 # Database
 DATABASE_URL=postgresql://enterprise:password@localhost:5432/enterprise_db
@@ -35,7 +35,7 @@ KAFKA_BROKERS=localhost:9092
 KAFKA_CLIENT_ID=enterprise-app-dev
 
 # Security
-CORS_ORIGINS=http://localhost:4200,http://localhost:4201
+CORS_ORIGINS=http://localhost:4200
 RATE_LIMIT_WINDOW_MS=900000
 RATE_LIMIT_MAX_ATTEMPTS=5
 BCRYPT_SALT_ROUNDS=10
@@ -50,7 +50,7 @@ ENABLE_REQUEST_LOGGING=true
 ```bash
 # Application
 NODE_ENV=production
-PORT=3333
+PORT=3334
 
 # Database (use AWS RDS)
 DATABASE_URL=postgresql://enterprise:secure-password@your-rds-endpoint.amazonaws.com:5432/enterprise_db
@@ -155,14 +155,7 @@ METRICS_ENABLED=false
   },
   "namedInputs": {
     "default": ["{projectRoot}/**/*", "sharedGlobals"],
-    "production": [
-      "default",
-      "!{projectRoot}/**/?(*.)+(spec|test).[jt]s?(x)?(.snap)",
-      "!{projectRoot}/tsconfig.spec.json",
-      "!{projectRoot}/jest.config.[jt]s",
-      "!{projectRoot}/.eslintrc.json",
-      "!{projectRoot}/**/*.stories.@(js|jsx|ts|tsx|mdx)"
-    ],
+    "production": ["default", "!{projectRoot}/**/?(*.)+(spec|test).[jt]s?(x)?(.snap)", "!{projectRoot}/tsconfig.spec.json", "!{projectRoot}/jest.config.[jt]s", "!{projectRoot}/.eslintrc.json", "!{projectRoot}/**/*.stories.@(js|jsx|ts|tsx|mdx)"],
     "sharedGlobals": []
   },
   "generators": {
@@ -350,7 +343,7 @@ import { vanillaExtractPlugin } from '@vanilla-extract/vite-plugin';
 export default defineConfig({
   root: __dirname,
   cacheDir: '../../node_modules/.vite/apps/web-app',
-  
+
   server: {
     port: 4200,
     host: 'localhost',
@@ -361,11 +354,7 @@ export default defineConfig({
     host: 'localhost',
   },
 
-  plugins: [
-    react(),
-    nxViteTsPaths(),
-    vanillaExtractPlugin(),
-  ],
+  plugins: [react(), nxViteTsPaths(), vanillaExtractPlugin()],
 
   build: {
     outDir: '../../dist/apps/web-app',
@@ -477,7 +466,7 @@ services:
       POSTGRES_USER: enterprise
       POSTGRES_PASSWORD: password
     ports:
-      - "5432:5432"
+      - '5432:5432'
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./infrastructure/database/init.sql:/docker-entrypoint-initdb.d/init.sql
@@ -485,7 +474,7 @@ services:
   redis:
     image: redis:7
     ports:
-      - "6379:6379"
+      - '6379:6379'
     volumes:
       - redis_data:/data
 
@@ -496,7 +485,7 @@ services:
       KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
     ports:
-      - "9092:9092"
+      - '9092:9092'
     depends_on:
       - zookeeper
 
@@ -506,7 +495,7 @@ services:
       ZOOKEEPER_CLIENT_PORT: 2181
       ZOOKEEPER_TICK_TIME: 2000
     ports:
-      - "2181:2181"
+      - '2181:2181'
 
 volumes:
   postgres_data:
@@ -535,7 +524,7 @@ services:
       context: .
       dockerfile: infrastructure/docker/fastify-api.Dockerfile
     ports:
-      - "3333:3334"
+      - "3334:3334"
     environment:
       - NODE_ENV=production
       - DATABASE_URL=${DATABASE_URL}
@@ -575,13 +564,13 @@ metadata:
   name: app-config
   namespace: enterprise-app
 data:
-  NODE_ENV: "production"
-  LOG_LEVEL: "info"
-  CORS_ORIGINS: "https://yourdomain.com"
-  RATE_LIMIT_WINDOW_MS: "900000"
-  RATE_LIMIT_MAX_ATTEMPTS: "3"
-  BCRYPT_SALT_ROUNDS: "12"
-  JWT_EXPIRES_IN: "24h"
+  NODE_ENV: 'production'
+  LOG_LEVEL: 'info'
+  CORS_ORIGINS: 'https://yourdomain.com'
+  RATE_LIMIT_WINDOW_MS: '900000'
+  RATE_LIMIT_MAX_ATTEMPTS: '3'
+  BCRYPT_SALT_ROUNDS: '12'
+  JWT_EXPIRES_IN: '24h'
 ```
 
 ### Secrets
@@ -595,9 +584,9 @@ metadata:
   namespace: enterprise-app
 type: Opaque
 stringData:
-  database-url: "postgresql://enterprise:password@postgres:5432/enterprise_db"
-  redis-url: "redis://redis:6379"
-  jwt-secret: "your-production-jwt-secret"
+  database-url: 'postgresql://enterprise:password@postgres:5432/enterprise_db'
+  redis-url: 'redis://redis:6379'
+  jwt-secret: 'your-production-jwt-secret'
 ```
 
 ## Linting Configuration
@@ -688,21 +677,23 @@ const limiter = rateLimit({
   message: 'Too many requests from this IP, please try again later.',
 });
 
-app.use(helmet({
-  contentSecurityPolicy: {
-    directives: {
-      defaultSrc: ["'self'"],
-      styleSrc: ["'self'", "'unsafe-inline'"],
-      scriptSrc: ["'self'"],
-      imgSrc: ["'self'", "data:", "https:"],
+app.use(
+  helmet({
+    contentSecurityPolicy: {
+      directives: {
+        defaultSrc: ["'self'"],
+        styleSrc: ["'self'", "'unsafe-inline'"],
+        scriptSrc: ["'self'"],
+        imgSrc: ["'self'", 'data:', 'https:'],
+      },
     },
-  },
-  hsts: {
-    maxAge: 31536000,
-    includeSubDomains: true,
-    preload: true,
-  },
-}));
+    hsts: {
+      maxAge: 31536000,
+      includeSubDomains: true,
+      preload: true,
+    },
+  }),
+);
 
 app.use(limiter);
 ```

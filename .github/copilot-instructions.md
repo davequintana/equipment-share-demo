@@ -18,6 +18,7 @@ This is an enterprise-level NX monorepo featuring:
 ## Architecture Guidelines
 
 ### Folder Structure
+
 - `apps/` - Applications (web-app, fastify-api, e2e)
 - `libs/` - Shared libraries and utilities
 - `infrastructure/` - Infrastructure as Code (Docker, K8s, AWS)
@@ -34,27 +35,32 @@ This is an enterprise-level NX monorepo featuring:
 ### Technology-Specific Guidelines
 
 #### React Components
+
 - Use Vanilla Extract for styling
 - Export named components
 - Include proper TypeScript interfaces
 - Add Storybook stories for reusable components
 
 #### Backend APIs
+
 - Fastify for high-performance APIs with OpenAPI docs
 - JWT authentication with bcrypt password hashing
 - Proper error handling middleware
 
 #### Database
+
 - PostgreSQL for primary data storage
 - Redis for caching and sessions
 - Proper migrations and indexing
 
 #### Testing
+
 - Unit tests with Vitest
 - E2E tests with Playwright
 - Component testing with Storybook
 
 #### Code Quality & Security Analysis
+
 - **SonarCloud**: Integrated code quality and security analysis
 - **Quality Gate**: Must pass before merging (enforced in CI)
 - **Coverage**: Minimum thresholds enforced via SonarCloud
@@ -62,6 +68,7 @@ This is an enterprise-level NX monorepo featuring:
 - **ReDoS Testing**: Required for all regex patterns (see Security Guidelines)
 
 #### Infrastructure
+
 - Docker for containerization
 - Kubernetes for orchestration
 - AWS CloudFormation for infrastructure
@@ -81,12 +88,15 @@ This is an enterprise-level NX monorepo featuring:
 **Critical: All regex patterns must be ReDoS-safe to prevent Denial of Service attacks**
 
 #### ❌ **Avoid These Dangerous Patterns:**
+
 - Nested quantifiers: `(a+)+`, `(a*)*`, `(a+)*`
 - Alternation with overlapping: `(a|a)*`, `(.*|.+)`
 - Exponential backtracking: `[^\s@]+@[^\s@]+` (vulnerable to catastrophic backtracking)
 
 #### ✅ **Use These Safe Patterns:**
+
 - **Email Validation** (ReDoS-safe):
+
   ```typescript
   const emailRegex = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/;
   // Always add length limits: if (input.length > 254) return false;
@@ -99,20 +109,19 @@ This is an enterprise-level NX monorepo featuring:
   ```
 
 #### **Mandatory ReDoS Testing:**
+
 For every regex pattern, include this test:
+
 ```typescript
 it('should handle potential ReDoS attack patterns safely', () => {
-  const maliciousPatterns = [
-    'malicious-pattern-here',
-    'another-attack-vector',
-  ];
-  
+  const maliciousPatterns = ['malicious-pattern-here', 'another-attack-vector'];
+
   const startTime = Date.now();
-  maliciousPatterns.forEach(pattern => {
+  maliciousPatterns.forEach((pattern) => {
     yourValidationFunction(pattern);
   });
   const endTime = Date.now();
-  
+
   // Must complete under 100ms even with attack patterns
   expect(endTime - startTime).toBeLessThan(100);
 });
@@ -121,29 +130,35 @@ it('should handle potential ReDoS attack patterns safely', () => {
 ## Testing Guidelines
 
 ### Comprehensive Test Structure
+
 Follow this testing structure for all new features:
 
 #### 1. **Basic Functionality Tests**
+
 - Test default values and initialization
 - Test core functionality with happy path scenarios
 - Test return values and state changes
 
 #### 2. **Error Handling Tests**
+
 - Test invalid inputs and edge cases
 - Test error boundaries and graceful failures
 - Test timeout scenarios and resource limits
 
 #### 3. **Integration Tests**
+
 - Test interaction with external dependencies (APIs, databases)
 - Test component integration and data flow
 - Test authentication and authorization flows
 
 #### 4. **Performance & Security Tests**
+
 - Always include ReDoS protection tests
 - Test with large datasets and edge values
 - Test timeout scenarios and resource exhaustion
 
 ### React Hook Testing Patterns
+
 When testing custom React hooks, follow these patterns:
 
 ```typescript
@@ -172,17 +187,18 @@ describe('useCustomHook', () => {
 
   it('should handle state changes correctly', () => {
     const { result } = renderHook(() => useCustomHook());
-    
+
     act(() => {
       result.current.updateFunction();
     });
-    
+
     expect(result.current.newState).toBe(expectedNewValue);
   });
 });
 ```
 
 ### Enterprise Service Testing Patterns
+
 For services with external dependencies (AWS, databases):
 
 ```typescript
@@ -206,7 +222,7 @@ describe('EnterpriseService', () => {
   describe('Core Functionality', () => {
     it('should handle successful operations', async () => {
       mockSecretsManager.getSecretValue.mockResolvedValue({
-        SecretString: JSON.stringify({ key: 'value' })
+        SecretString: JSON.stringify({ key: 'value' }),
       });
 
       const result = await service.getSecret('test-secret');
@@ -216,12 +232,9 @@ describe('EnterpriseService', () => {
 
   describe('Error Scenarios', () => {
     it('should handle service errors gracefully', async () => {
-      mockSecretsManager.getSecretValue.mockRejectedValue(
-        new Error('Service unavailable')
-      );
+      mockSecretsManager.getSecretValue.mockRejectedValue(new Error('Service unavailable'));
 
-      await expect(service.getSecret('test-secret'))
-        .rejects.toThrow('Service unavailable');
+      await expect(service.getSecret('test-secret')).rejects.toThrow('Service unavailable');
     });
   });
 
@@ -229,11 +242,11 @@ describe('EnterpriseService', () => {
     it('should validate inputs against ReDoS attacks', () => {
       const maliciousInputs = ['((a+)+)+b', 'a'.repeat(10000)];
       const startTime = Date.now();
-      
-      maliciousInputs.forEach(input => {
+
+      maliciousInputs.forEach((input) => {
         expect(() => service.validateInput(input)).not.toThrow();
       });
-      
+
       expect(Date.now() - startTime).toBeLessThan(100);
     });
   });
@@ -241,6 +254,7 @@ describe('EnterpriseService', () => {
 ```
 
 #### **Regex Best Practices:**
+
 1. **Use specific character classes** instead of broad negated classes
 2. **Add length limits** before regex validation
 3. **Prefer bounded quantifiers** `{0,61}` over unbounded `+` or `*`
@@ -259,17 +273,18 @@ describe('EnterpriseService', () => {
 
 1. Run `pnpm install` to install dependencies
 2. Use `pnpm run dev:kafka` to start all services with Kafka for full analytics (recommended)
-3. Use `pnpm run dev` to start all services with CSR React app
-4. Use `pnpm run dev:ssr` to start all services with SSR React app  
-5. Use `pnpm run serve:web-app` for frontend development only (localhost:4200)
-6. Use `pnpm run serve:fastify-api` for Fastify API only (localhost:3334)
-7. Use `docker-compose up` for full stack development with databases
-8. Run `pnpm run test:all` for testing all projects (all 56 unit tests + 21 E2E tests pass)
-9. Use `npx nx e2e e2e` for end-to-end testing
+3. Use `pnpm run dev` to start SSR React app only (localhost:4200)
+4. Use `pnpm run dev:ssr` to start all services with SSR React app and API
+5. Use `pnpm start` for the complete Kafka development environment
+6. Use `docker-compose up` for full stack development with databases
+7. Run `pnpm run test` for testing all projects (consolidated from test:all)
+8. Run `pnpm run build` for building all projects (consolidated from build:all)
+9. Use `pnpm run e2e` for end-to-end testing
 
 ## Code Generation Guidelines
 
 When generating code:
+
 - Follow existing patterns and structures
 - Use proper TypeScript types
 - Include error handling

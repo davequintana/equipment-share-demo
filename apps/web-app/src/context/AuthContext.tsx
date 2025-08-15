@@ -1,4 +1,11 @@
-import React, { createContext, useState, useEffect, ReactNode, useMemo, useCallback } from 'react';
+import React, {
+  createContext,
+  useState,
+  useEffect,
+  ReactNode,
+  useMemo,
+  useCallback,
+} from 'react';
 import 'isomorphic-fetch'; // For SSR compatibility
 import { isLocalOnlyMode } from '../utils/api-url';
 import { localAuth } from '../utils/local-auth';
@@ -47,7 +54,10 @@ interface AuthProviderProps {
   isSSR?: boolean;
 }
 
-export const AuthProvider: React.FC<AuthProviderProps> = ({ children, isSSR = false }) => {
+export const AuthProvider: React.FC<AuthProviderProps> = ({
+  children,
+  isSSR = false,
+}) => {
   const [user, setUser] = useState<User | null>(null);
   const [token, setToken] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -74,7 +84,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children, isSSR = fa
         if (Notification.permission === 'granted') {
           new Notification('Session Expired', {
             body: 'You have been logged out due to inactivity.',
-            icon: '/favicon.ico'
+            icon: '/favicon.ico',
           });
         }
       }
@@ -145,13 +155,18 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children, isSSR = fa
     }
 
     // Track activity every 5 minutes while user is active
-    const activityInterval = setInterval(() => {
-      if (user && !idleTimer?.isWarning) {
-        apiClient.trackActivity(user.id, 'periodic_heartbeat').catch((error) => {
-          console.warn('Failed to track periodic activity:', error);
-        });
-      }
-    }, 5 * 60 * 1000); // 5 minutes
+    const activityInterval = setInterval(
+      () => {
+        if (user && !idleTimer?.isWarning) {
+          apiClient
+            .trackActivity(user.id, 'periodic_heartbeat')
+            .catch((error) => {
+              console.warn('Failed to track periodic activity:', error);
+            });
+        }
+      },
+      5 * 60 * 1000,
+    ); // 5 minutes
 
     return () => clearInterval(activityInterval);
   }, [user, idleTimer?.isWarning]);
@@ -166,9 +181,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children, isSSR = fa
         setUser(user);
       } else {
         // Original API logic for development
-        const apiUrl = typeof window !== 'undefined'
-          ? '/api/auth/login'
-          : `${import.meta.env.VITE_API_URL || 'http://localhost:3334'}/api/auth/login`;
+        const apiUrl =
+          typeof window !== 'undefined'
+            ? '/api/auth/login'
+            : `${import.meta.env.VITE_API_URL || 'http://localhost:3334'}/api/auth/login`;
 
         const response = await fetch(apiUrl, {
           method: 'POST',
@@ -179,7 +195,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children, isSSR = fa
         });
 
         if (!response.ok) {
-          const error = await response.json() as { error?: string; message?: string; details?: string[] };
+          const error = (await response.json()) as {
+            error?: string;
+            message?: string;
+            details?: string[];
+          };
           // Handle different types of error responses
           if (error.details && Array.isArray(error.details)) {
             throw new Error(error.details.join(', '));
@@ -187,7 +207,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children, isSSR = fa
           throw new Error(error.error || error.message || 'Login failed');
         }
 
-        const data = await response.json() as { token: string; user: User };
+        const data = (await response.json()) as { token: string; user: User };
         setToken(data.token);
         setUser(data.user);
 
@@ -212,61 +232,75 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children, isSSR = fa
     }
   }, []);
 
-  const register = useCallback(async (email: string, password: string, name: string) => {
-    setLoading(true);
-    try {
-      // Use local auth for GitHub Pages, API for development
-      if (isLocalOnlyMode()) {
-        const { user, token } = await localAuth.register(email, password, name);
-        setToken(token);
-        setUser(user);
-      } else {
-        // Original API logic for development
-        const apiUrl = typeof window !== 'undefined'
-          ? '/api/auth/register'
-          : `${import.meta.env.VITE_API_URL || 'http://localhost:3334'}/api/auth/register`;
+  const register = useCallback(
+    async (email: string, password: string, name: string) => {
+      setLoading(true);
+      try {
+        // Use local auth for GitHub Pages, API for development
+        if (isLocalOnlyMode()) {
+          const { user, token } = await localAuth.register(
+            email,
+            password,
+            name,
+          );
+          setToken(token);
+          setUser(user);
+        } else {
+          // Original API logic for development
+          const apiUrl =
+            typeof window !== 'undefined'
+              ? '/api/auth/register'
+              : `${import.meta.env.VITE_API_URL || 'http://localhost:3334'}/api/auth/register`;
 
-        const response = await fetch(apiUrl, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ email, password, name }),
-        });
+          const response = await fetch(apiUrl, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ email, password, name }),
+          });
 
-        if (!response.ok) {
-          const error = await response.json() as { error?: string; message?: string; details?: string[] };
-          // Handle different types of error responses
-          if (error.details && Array.isArray(error.details)) {
-            throw new Error(error.details.join(', '));
+          if (!response.ok) {
+            const error = (await response.json()) as {
+              error?: string;
+              message?: string;
+              details?: string[];
+            };
+            // Handle different types of error responses
+            if (error.details && Array.isArray(error.details)) {
+              throw new Error(error.details.join(', '));
+            }
+            throw new Error(
+              error.error || error.message || 'Registration failed',
+            );
           }
-          throw new Error(error.error || error.message || 'Registration failed');
+
+          const data = (await response.json()) as { token: string; user: User };
+          setToken(data.token);
+          setUser(data.user);
+
+          // Set token in API client for activity tracking
+          apiClient.setToken(data.token);
+
+          // Track registration activity
+          try {
+            await apiClient.trackActivity(data.user.id);
+          } catch (error) {
+            console.warn('Failed to track registration activity:', error);
+          }
+
+          // Store in localStorage only on client side
+          if (typeof window !== 'undefined') {
+            localStorage.setItem('token', data.token);
+            localStorage.setItem('user', JSON.stringify(data.user));
+          }
         }
-
-        const data = await response.json() as { token: string; user: User };
-        setToken(data.token);
-        setUser(data.user);
-
-        // Set token in API client for activity tracking
-        apiClient.setToken(data.token);
-
-        // Track registration activity
-        try {
-          await apiClient.trackActivity(data.user.id);
-        } catch (error) {
-          console.warn('Failed to track registration activity:', error);
-        }
-
-        // Store in localStorage only on client side
-        if (typeof window !== 'undefined') {
-          localStorage.setItem('token', data.token);
-          localStorage.setItem('user', JSON.stringify(data.user));
-        }
+      } finally {
+        setLoading(false);
       }
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+    },
+    [],
+  );
 
   const logout = useCallback(() => {
     // Clear token from API client
@@ -283,14 +317,17 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children, isSSR = fa
   }, []);
 
   // Memoize the context value to prevent unnecessary re-renders
-  const contextValue = useMemo(() => ({
-    user,
-    token,
-    login,
-    register,
-    logout,
-    loading
-  }), [user, token, login, register, logout, loading]);
+  const contextValue = useMemo(
+    () => ({
+      user,
+      token,
+      login,
+      register,
+      logout,
+      loading,
+    }),
+    [user, token, login, register, logout, loading],
+  );
 
   return (
     <AuthContext.Provider value={contextValue}>

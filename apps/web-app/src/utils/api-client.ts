@@ -40,7 +40,7 @@ class ApiClient {
 
   private async request<T>(
     endpoint: string,
-    options: RequestInit = {}
+    options: RequestInit = {},
   ): Promise<T> {
     const url = `${this.baseUrl}${endpoint}`;
 
@@ -53,8 +53,12 @@ class ApiClient {
     });
 
     if (!response.ok) {
-      const error = await response.json().catch(() => ({ error: 'Network error' }));
-      throw new Error(error.error || error.message || `HTTP ${response.status}`);
+      const error = await response
+        .json()
+        .catch(() => ({ error: 'Network error' }));
+      throw new Error(
+        error.error || error.message || `HTTP ${response.status}`,
+      );
     }
 
     return response.json();
@@ -67,28 +71,44 @@ class ApiClient {
    * @param page - The page where activity occurred (optional)
    * @param metadata - Additional metadata for the activity (optional)
    */
-  async trackActivity(userId: string, action = 'activity', page?: string, metadata?: Record<string, unknown>): Promise<void> {
+  async trackActivity(
+    userId: string,
+    action = 'activity',
+    page?: string,
+    metadata?: Record<string, unknown>,
+  ): Promise<void> {
     if (!this.token) {
       console.debug('trackActivity: No authentication token available');
       throw new Error('No authentication token available');
     }
 
     const url = `${this.baseUrl}/api/user/activity`;
-    console.debug('trackActivity: Making request to', url, { action, page, metadata });
+    console.debug('trackActivity: Making request to', url, {
+      action,
+      page,
+      metadata,
+    });
 
     const response = await fetch(url, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${this.token}`,
+        Authorization: `Bearer ${this.token}`,
       },
       body: JSON.stringify({ action, page, metadata }),
     });
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.debug('trackActivity error:', response.status, response.statusText, errorText);
-      throw new Error(`Failed to track activity: ${response.status} ${response.statusText} - ${errorText}`);
+      console.debug(
+        'trackActivity error:',
+        response.status,
+        response.statusText,
+        errorText,
+      );
+      throw new Error(
+        `Failed to track activity: ${response.status} ${response.statusText} - ${errorText}`,
+      );
     }
 
     console.debug('trackActivity: Success', response.status);
@@ -101,7 +121,10 @@ class ApiClient {
     }
 
     try {
-      const response = await this.request<{ success: boolean; message: string }>('/api/auth/logout', {
+      const response = await this.request<{
+        success: boolean;
+        message: string;
+      }>('/api/auth/logout', {
         method: 'POST',
       });
 

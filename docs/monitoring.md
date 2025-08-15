@@ -17,6 +17,7 @@ GET /health
 ```
 
 **Response:**
+
 ```json
 {
   "status": "healthy",
@@ -41,6 +42,7 @@ GET /health
 ```
 
 **Enhanced Response:**
+
 ```json
 {
   "status": "healthy",
@@ -84,15 +86,15 @@ export class HealthCheckService {
       const start = Date.now();
       await this.db.query('SELECT 1');
       const responseTime = Date.now() - start;
-      
+
       return {
         status: 'healthy',
-        responseTime: `${responseTime}ms`
+        responseTime: `${responseTime}ms`,
       };
     } catch (error) {
       return {
         status: 'unhealthy',
-        error: error.message
+        error: error.message,
       };
     }
   }
@@ -102,15 +104,15 @@ export class HealthCheckService {
       const start = Date.now();
       await this.redis.ping();
       const responseTime = Date.now() - start;
-      
+
       return {
         status: 'healthy',
-        responseTime: `${responseTime}ms`
+        responseTime: `${responseTime}ms`,
       };
     } catch (error) {
       return {
         status: 'unhealthy',
-        error: error.message
+        error: error.message,
       };
     }
   }
@@ -119,12 +121,12 @@ export class HealthCheckService {
     const used = process.memoryUsage();
     const total = used.heapTotal;
     const usage = Math.round((used.heapUsed / total) * 100);
-    
+
     return {
       status: usage > 90 ? 'unhealthy' : 'healthy',
       usage: `${usage}%`,
       heapUsed: `${Math.round(used.heapUsed / 1024 / 1024)}MB`,
-      heapTotal: `${Math.round(total / 1024 / 1024)}MB`
+      heapTotal: `${Math.round(total / 1024 / 1024)}MB`,
     };
   }
 }
@@ -142,33 +144,33 @@ spec:
   template:
     spec:
       containers:
-      - name: fastify-api
-        image: fastify-api:latest
-        ports:
-        - containerPort: 3333
-        livenessProbe:
-          httpGet:
-            path: /health
-            port: 3333
-          initialDelaySeconds: 30
-          periodSeconds: 10
-          timeoutSeconds: 5
-          failureThreshold: 3
-        readinessProbe:
-          httpGet:
-            path: /health
-            port: 3333
-          initialDelaySeconds: 5
-          periodSeconds: 5
-          timeoutSeconds: 3
-          failureThreshold: 1
-        resources:
-          requests:
-            memory: "256Mi"
-            cpu: "250m"
-          limits:
-            memory: "512Mi"
-            cpu: "500m"
+        - name: fastify-api
+          image: fastify-api:latest
+          ports:
+            - containerPort: 3334
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 3334
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 3334
+            initialDelaySeconds: 5
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 1
+          resources:
+            requests:
+              memory: '256Mi'
+              cpu: '250m'
+            limits:
+              memory: '512Mi'
+              cpu: '500m'
 ```
 
 ## Logging
@@ -211,11 +213,7 @@ All applications use structured logging with consistent format and levels.
 // Winston logger configuration
 import winston from 'winston';
 
-const logFormat = winston.format.combine(
-  winston.format.timestamp(),
-  winston.format.errors({ stack: true }),
-  winston.format.json()
-);
+const logFormat = winston.format.combine(winston.format.timestamp(), winston.format.errors({ stack: true }), winston.format.json());
 
 export const logger = winston.createLogger({
   level: process.env.LOG_LEVEL || 'info',
@@ -226,28 +224,27 @@ export const logger = winston.createLogger({
   },
   transports: [
     new winston.transports.Console({
-      format: winston.format.combine(
-        winston.format.colorize(),
-        winston.format.simple()
-      )
+      format: winston.format.combine(winston.format.colorize(), winston.format.simple()),
     }),
     new winston.transports.File({
       filename: 'logs/error.log',
-      level: 'error'
+      level: 'error',
     }),
     new winston.transports.File({
-      filename: 'logs/combined.log'
-    })
-  ]
+      filename: 'logs/combined.log',
+    }),
+  ],
 });
 
 // Production: send logs to CloudWatch or ELK
 if (process.env.NODE_ENV === 'production') {
-  logger.add(new winston.transports.CloudWatchLogs({
-    logGroupName: process.env.LOG_GROUP_NAME,
-    logStreamName: process.env.LOG_STREAM_NAME,
-    awsRegion: process.env.AWS_REGION
-  }));
+  logger.add(
+    new winston.transports.CloudWatchLogs({
+      logGroupName: process.env.LOG_GROUP_NAME,
+      logStreamName: process.env.LOG_STREAM_NAME,
+      awsRegion: process.env.AWS_REGION,
+    }),
+  );
 }
 ```
 
@@ -260,9 +257,9 @@ import { v4 as uuidv4 } from 'uuid';
 export const requestLogger = (req: Request, res: Response, next: NextFunction) => {
   const requestId = uuidv4();
   req.requestId = requestId;
-  
+
   const startTime = Date.now();
-  
+
   // Log request
   logger.info('Incoming request', {
     requestId,
@@ -270,23 +267,23 @@ export const requestLogger = (req: Request, res: Response, next: NextFunction) =
     url: req.url,
     userAgent: req.get('User-Agent'),
     ip: req.ip,
-    userId: req.user?.id
+    userId: req.user?.id,
   });
 
   // Override res.end to log response
   const originalEnd = res.end;
-  res.end = function(chunk: any, encoding: any) {
+  res.end = function (chunk: any, encoding: any) {
     const duration = Date.now() - startTime;
-    
+
     logger.info('Request completed', {
       requestId,
       method: req.method,
       url: req.url,
       statusCode: res.statusCode,
       duration,
-      userId: req.user?.id
+      userId: req.user?.id,
     });
-    
+
     originalEnd.call(this, chunk, encoding);
   };
 
@@ -309,14 +306,14 @@ services:
       - discovery.type=single-node
       - xpack.security.enabled=false
     ports:
-      - "9200:9200"
+      - '9200:9200'
     volumes:
       - elasticsearch_data:/usr/share/elasticsearch/data
 
   logstash:
     image: docker.elastic.co/logstash/logstash:8.5.0
     ports:
-      - "5044:5044"
+      - '5044:5044'
     volumes:
       - ./infrastructure/logging/logstash.conf:/usr/share/logstash/pipeline/logstash.conf
     depends_on:
@@ -325,7 +322,7 @@ services:
   kibana:
     image: docker.elastic.co/kibana/kibana:8.5.0
     ports:
-      - "5601:5601"
+      - '5601:5601'
     environment:
       - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
     depends_on:
@@ -342,7 +339,7 @@ volumes:
 import AWS from 'aws-sdk';
 
 const cloudWatchLogs = new AWS.CloudWatchLogs({
-  region: process.env.AWS_REGION
+  region: process.env.AWS_REGION,
 });
 
 export const cloudWatchTransport = new winston.transports.CloudWatchLogs({
@@ -351,7 +348,7 @@ export const cloudWatchTransport = new winston.transports.CloudWatchLogs({
   awsRegion: process.env.AWS_REGION,
   messageFormatter: (logObject) => {
     return JSON.stringify(logObject);
-  }
+  },
 });
 ```
 
@@ -375,7 +372,7 @@ const httpRequestDuration = new client.Histogram({
   name: 'http_request_duration_seconds',
   help: 'Duration of HTTP requests in seconds',
   labelNames: ['method', 'route', 'status_code'],
-  buckets: [0.1, 0.5, 1, 2, 5]
+  buckets: [0.1, 0.5, 1, 2, 5],
 });
 
 // Database query duration histogram
@@ -383,20 +380,20 @@ const dbQueryDuration = new client.Histogram({
   name: 'db_query_duration_seconds',
   help: 'Duration of database queries in seconds',
   labelNames: ['query_type', 'table'],
-  buckets: [0.01, 0.05, 0.1, 0.5, 1]
+  buckets: [0.01, 0.05, 0.1, 0.5, 1],
 });
 
 // Active user gauge
 const activeUsers = new client.Gauge({
   name: 'active_users_total',
-  help: 'Number of currently active users'
+  help: 'Number of currently active users',
 });
 
 // Login attempts counter
 const loginAttempts = new client.Counter({
   name: 'login_attempts_total',
   help: 'Total number of login attempts',
-  labelNames: ['status', 'method']
+  labelNames: ['status', 'method'],
 });
 
 // Register metrics
@@ -421,20 +418,18 @@ app.get('/metrics', async (req, res) => {
 // Fastify metrics middleware
 export const metricsMiddleware = (req: Request, res: Response, next: NextFunction) => {
   const startTime = Date.now();
-  
+
   res.on('finish', () => {
     const duration = (Date.now() - startTime) / 1000;
-    
-    httpRequestDuration
-      .labels(req.method, req.route?.path || req.url, res.statusCode.toString())
-      .observe(duration);
-      
+
+    httpRequestDuration.labels(req.method, req.route?.path || req.url, res.statusCode.toString()).observe(duration);
+
     if (req.url.includes('/login')) {
       const status = res.statusCode === 200 ? 'success' : 'failure';
       loginAttempts.labels(status, 'password').inc();
     }
   });
-  
+
   next();
 };
 ```
@@ -589,20 +584,20 @@ route:
   receiver: 'web.hook'
 
 receivers:
-- name: 'web.hook'
-  email_configs:
-  - to: 'admin@yourdomain.com'
-    subject: 'Enterprise App Alert'
-    body: |
-      {{ range .Alerts }}
-      Alert: {{ .Annotations.summary }}
-      Description: {{ .Annotations.description }}
-      {{ end }}
-  slack_configs:
-  - api_url: 'YOUR_SLACK_WEBHOOK_URL'
-    channel: '#alerts'
-    title: 'Enterprise App Alert'
-    text: '{{ range .Alerts }}{{ .Annotations.summary }}{{ end }}'
+  - name: 'web.hook'
+    email_configs:
+      - to: 'admin@yourdomain.com'
+        subject: 'Enterprise App Alert'
+        body: |
+          {{ range .Alerts }}
+          Alert: {{ .Annotations.summary }}
+          Description: {{ .Annotations.description }}
+          {{ end }}
+    slack_configs:
+      - api_url: 'YOUR_SLACK_WEBHOOK_URL'
+        channel: '#alerts'
+        title: 'Enterprise App Alert'
+        text: '{{ range .Alerts }}{{ .Annotations.summary }}{{ end }}'
 ```
 
 ## Performance Monitoring
@@ -619,18 +614,18 @@ exports.config = {
   app_name: ['Enterprise App'],
   license_key: process.env.NEW_RELIC_LICENSE_KEY,
   distributed_tracing: {
-    enabled: true
+    enabled: true,
   },
   logging: {
-    level: 'info'
+    level: 'info',
   },
   transaction_tracer: {
     enabled: true,
-    transaction_threshold: 'apdex_f'
+    transaction_threshold: 'apdex_f',
   },
   error_collector: {
-    enabled: true
-  }
+    enabled: true,
+  },
 };
 ```
 
@@ -648,19 +643,19 @@ export class PerformanceTracker {
   static endTimer(label: string): number {
     const start = this.timers.get(label);
     if (!start) return 0;
-    
+
     const duration = Date.now() - start;
     this.timers.delete(label);
-    
+
     // Record metric
     dbQueryDuration.labels('select', 'users').observe(duration / 1000);
-    
+
     return duration;
   }
 
   static trackDatabaseQuery<T>(operation: () => Promise<T>, queryType: string, table: string): Promise<T> {
     const start = Date.now();
-    
+
     return operation().finally(() => {
       const duration = (Date.now() - start) / 1000;
       dbQueryDuration.labels(queryType, table).observe(duration);
@@ -678,15 +673,15 @@ ALTER SYSTEM SET log_statement = 'all';
 ALTER SYSTEM SET log_duration = on;
 
 -- Query performance analysis
-SELECT 
+SELECT
   query,
   calls,
   total_time,
   mean_time,
   max_time,
   rows
-FROM pg_stat_statements 
-ORDER BY total_time DESC 
+FROM pg_stat_statements
+ORDER BY total_time DESC
 LIMIT 10;
 ```
 
@@ -705,7 +700,7 @@ export class SecurityLogger {
       ip: event.ip,
       userAgent: event.userAgent,
       success: event.success,
-      reason: event.reason
+      reason: event.reason,
     });
   }
 
@@ -716,7 +711,7 @@ export class SecurityLogger {
       severity: activity.severity,
       details: activity.details,
       ip: activity.ip,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     });
   }
 }
@@ -728,35 +723,27 @@ export class SecurityLogger {
 // Rate limiting and suspicious activity detection
 export class SecurityMonitor {
   private static suspiciousIPs = new Set<string>();
-  
+
   static checkSuspiciousActivity(req: Request): boolean {
     const ip = req.ip;
-    
+
     // Check for common attack patterns
-    const suspiciousPatterns = [
-      /\/admin/,
-      /\.php$/,
-      /wp-admin/,
-      /sqlmap/,
-      /<script>/i
-    ];
-    
-    const isSuspicious = suspiciousPatterns.some(pattern => 
-      pattern.test(req.url) || pattern.test(req.get('User-Agent') || '')
-    );
-    
+    const suspiciousPatterns = [/\/admin/, /\.php$/, /wp-admin/, /sqlmap/, /<script>/i];
+
+    const isSuspicious = suspiciousPatterns.some((pattern) => pattern.test(req.url) || pattern.test(req.get('User-Agent') || ''));
+
     if (isSuspicious) {
       this.suspiciousIPs.add(ip);
       SecurityLogger.logSuspiciousActivity({
         type: 'suspicious_request',
         severity: 'medium',
         details: { url: req.url, userAgent: req.get('User-Agent') },
-        ip
+        ip,
       });
-      
+
       return true;
     }
-    
+
     return false;
   }
 }

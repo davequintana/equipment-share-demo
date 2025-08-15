@@ -8,7 +8,10 @@ interface LoginFormProps {
   redirectTo?: string;
 }
 
-export const LoginForm: React.FC<LoginFormProps> = ({ onSuccess, redirectTo = '/dashboard' }) => {
+export const LoginForm: React.FC<LoginFormProps> = ({
+  onSuccess,
+  redirectTo = '/dashboard',
+}) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -81,7 +84,14 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSuccess, redirectTo = '/
         {loading ? 'Logging in...' : 'Login'}
       </button>
 
-      <p style={{ textAlign: 'center', marginTop: '1rem', fontSize: '0.875rem', color: '#666' }}>
+      <p
+        style={{
+          textAlign: 'center',
+          marginTop: '1rem',
+          fontSize: '0.875rem',
+          color: '#666',
+        }}
+      >
         Demo credentials: admin@example.com / password
       </p>
     </form>

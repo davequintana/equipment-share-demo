@@ -37,7 +37,7 @@ function App() {
     <div>
       {/* Enable tracking for authenticated users */}
       {user && (
-        <BehaviorTracker 
+        <BehaviorTracker
           enableMouseTracking={true}
           enableKeyboardTracking={false}  // Disabled by default for privacy
           options={{
@@ -73,7 +73,7 @@ function MyComponent() {
   const handleSpecialAction = () => {
     // Track custom page view
     trackPageView('/special-action');
-    
+
     // Force flush events
     flushEvents();
   };
@@ -101,6 +101,7 @@ export default withBehaviorTracking(MyPage, {
 ## 📊 Event Types
 
 ### Page View Events
+
 ```json
 {
   "eventType": "page_view",
@@ -111,6 +112,7 @@ export default withBehaviorTracking(MyPage, {
 ```
 
 ### Click Events
+
 ```json
 {
   "eventType": "click",
@@ -127,6 +129,7 @@ export default withBehaviorTracking(MyPage, {
 ```
 
 ### Mouse Movement Events
+
 ```json
 {
   "eventType": "mouse_move",
@@ -140,6 +143,7 @@ export default withBehaviorTracking(MyPage, {
 ```
 
 ### Scroll Events
+
 ```json
 {
   "eventType": "scroll",
@@ -153,6 +157,7 @@ export default withBehaviorTracking(MyPage, {
 ```
 
 ### Keyboard Events (Safe Keys Only)
+
 ```json
 {
   "eventType": "keyboard",
@@ -168,16 +173,16 @@ export default withBehaviorTracking(MyPage, {
 
 ### BehaviorTracker Options
 
-| Option | Type | Default | Description |
-|--------|------|---------|-------------|
-| `trackPageViews` | boolean | `true` | Track route changes and page views |
-| `trackClicks` | boolean | `true` | Track mouse click events |
-| `trackMouseMovement` | boolean | `true` | Track mouse movement (performance impact) |
-| `trackScrolling` | boolean | `true` | Track scroll position changes |
-| `trackKeyboard` | boolean | `false` | Track safe keyboard navigation keys |
-| `throttleMs` | number | `200` | Throttle interval for mouse/scroll events |
-| `batchSize` | number | `15` | Events to batch before auto-flush |
-| `flushIntervalMs` | number | `10000` | Auto-flush interval (10 seconds) |
+| Option               | Type    | Default | Description                               |
+| -------------------- | ------- | ------- | ----------------------------------------- |
+| `trackPageViews`     | boolean | `true`  | Track route changes and page views        |
+| `trackClicks`        | boolean | `true`  | Track mouse click events                  |
+| `trackMouseMovement` | boolean | `true`  | Track mouse movement (performance impact) |
+| `trackScrolling`     | boolean | `true`  | Track scroll position changes             |
+| `trackKeyboard`      | boolean | `false` | Track safe keyboard navigation keys       |
+| `throttleMs`         | number  | `200`   | Throttle interval for mouse/scroll events |
+| `batchSize`          | number  | `15`    | Events to batch before auto-flush         |
+| `flushIntervalMs`    | number  | `10000` | Auto-flush interval (10 seconds)          |
 
 ### Performance Tuning
 
@@ -202,13 +207,16 @@ export default withBehaviorTracking(MyPage, {
 ## 🔒 Privacy & Security
 
 ### Safe Keyboard Tracking
+
 Only navigation keys are tracked by default:
+
 - `Enter`, `Tab`, `Escape`
 - Arrow keys: `ArrowUp`, `ArrowDown`, `ArrowLeft`, `ArrowRight`
 
 Sensitive keys (letters, numbers, function keys) are filtered out to protect user privacy.
 
 ### ReDoS Protection
+
 All input validation includes protection against Regular Expression Denial of Service attacks:
 
 ```typescript
@@ -220,6 +228,7 @@ const validateInput = (input: string) => {
 ```
 
 ### Data Minimization
+
 - Mouse coordinates are relative to viewport, not absolute screen position
 - Text content is truncated to 100 characters maximum
 - Sensitive form data is never captured
@@ -268,74 +277,69 @@ Content-Type: application/json
 ## 📈 Analytics Use Cases
 
 ### Heat Maps
+
 Track mouse movements and clicks to generate visual heat maps:
 
 ```typescript
 // Filter for mouse events
-const mouseEvents = events.filter(e => 
-  e.eventType === 'click' || e.eventType === 'mouse_move'
-);
+const mouseEvents = events.filter((e) => e.eventType === 'click' || e.eventType === 'mouse_move');
 
 // Generate heat map data
-const heatMapData = mouseEvents.map(e => ({
+const heatMapData = mouseEvents.map((e) => ({
   x: e.metadata.x,
   y: e.metadata.y,
-  value: e.eventType === 'click' ? 10 : 1
+  value: e.eventType === 'click' ? 10 : 1,
 }));
 ```
 
 ### User Journey Analysis
+
 Track page views to understand user flow:
 
 ```typescript
 // User session events
-const sessionEvents = events
-  .filter(e => e.sessionId === targetSessionId)
-  .sort((a, b) => a.timestamp - b.timestamp);
+const sessionEvents = events.filter((e) => e.sessionId === targetSessionId).sort((a, b) => a.timestamp - b.timestamp);
 
 // Extract journey
-const userJourney = sessionEvents
-  .filter(e => e.eventType === 'page_view')
-  .map(e => e.page);
+const userJourney = sessionEvents.filter((e) => e.eventType === 'page_view').map((e) => e.page);
 ```
 
 ### Engagement Metrics
+
 Calculate time spent on pages and interaction rates:
 
 ```typescript
 // Page dwell time
-const dwellTime = calculateTimeBetweenEvents(
-  pageViewEvent,
-  nextPageViewEvent
-);
+const dwellTime = calculateTimeBetweenEvents(pageViewEvent, nextPageViewEvent);
 
 // Interaction rate per page
-const interactions = events.filter(e => 
-  e.page === targetPage && e.eventType === 'click'
-).length;
+const interactions = events.filter((e) => e.page === targetPage && e.eventType === 'click').length;
 ```
 
 ## 🚨 Testing
 
 ### Unit Tests
+
 ```bash
 pnpm test apps/web-app/src/hooks/useBehaviorTracker.test.ts
 ```
 
 ### Integration Tests
+
 ```bash
 pnpm run test:e2e -- --grep "behavior tracking"
 ```
 
 ### Performance Tests
+
 ```typescript
 it('should handle 1000 rapid events without blocking', () => {
   const startTime = Date.now();
-  
+
   for (let i = 0; i < 1000; i++) {
     trackPageView(`/page-${i}`);
   }
-  
+
   const endTime = Date.now();
   expect(endTime - startTime).toBeLessThan(100);
 });
@@ -344,6 +348,7 @@ it('should handle 1000 rapid events without blocking', () => {
 ## 🔍 Monitoring
 
 ### Debug Mode
+
 Enable debug logging in development:
 
 ```typescript
@@ -361,6 +366,7 @@ useEffect(() => {
 ```
 
 ### Kafka Monitoring
+
 View events in real-time:
 
 ```bash
@@ -377,6 +383,7 @@ docker exec -it kafka kafka-console-consumer \
 ## 🎛️ Advanced Configuration
 
 ### Custom Event Types
+
 ## 🧪 Testing
 
 ### Comprehensive Test Coverage
@@ -405,18 +412,14 @@ All regex patterns are tested with malicious inputs that could cause exponential
 
 ```typescript
 it('should handle ReDoS attack patterns safely', () => {
-  const maliciousPatterns = [
-    'a'.repeat(10000),
-    '((a+)+)+b',
-    'user@' + 'a'.repeat(5000) + '.com'
-  ];
-  
+  const maliciousPatterns = ['a'.repeat(10000), '((a+)+)+b', 'user@' + 'a'.repeat(5000) + '.com'];
+
   const startTime = Date.now();
-  maliciousPatterns.forEach(pattern => {
+  maliciousPatterns.forEach((pattern) => {
     validateInput(pattern);
   });
   const endTime = Date.now();
-  
+
   // Must complete under 100ms even with attack patterns
   expect(endTime - startTime).toBeLessThan(100);
 });
@@ -445,7 +448,7 @@ Enable tracking based on user preferences:
 ```typescript
 const { preferences } = useUserPreferences();
 
-<BehaviorTracker 
+<BehaviorTracker
   options={{
     trackMouseMovement: preferences.allowMouseTracking,
     trackClicks: preferences.allowClickTracking,

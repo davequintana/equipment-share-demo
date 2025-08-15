@@ -16,19 +16,22 @@ export const useActivityTracker = () => {
    * @param action - The type of activity being tracked
    * @param page - The page where the activity occurred
    */
-  const trackActivity = useCallback(async (action = 'activity', page?: string) => {
-    // Don't track activity in local mode or if no user
-    if (!user || isLocalOnlyMode()) {
-      return;
-    }
+  const trackActivity = useCallback(
+    async (action = 'activity', page?: string) => {
+      // Don't track activity in local mode or if no user
+      if (!user || isLocalOnlyMode()) {
+        return;
+      }
 
-    try {
-      await apiClient.trackActivity(user.id, action, page);
-    } catch (error) {
-      // Silently fail - don't disrupt user experience
-      console.debug('Failed to track activity:', error);
-    }
-  }, [user]);
+      try {
+        await apiClient.trackActivity(user.id, action, page);
+      } catch (error) {
+        // Silently fail - don't disrupt user experience
+        console.debug('Failed to track activity:', error);
+      }
+    },
+    [user],
+  );
 
   return { trackActivity };
 };

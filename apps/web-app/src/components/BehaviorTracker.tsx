@@ -77,7 +77,9 @@ export const BehaviorTracker: React.FC<BehaviorTrackerProps> = ({
     const interval = setInterval(() => {
       const queueLength = getQueueLength();
       if (queueLength > 0) {
-        console.debug(`[BehaviorTracker] Queue length: ${queueLength} events pending`);
+        console.debug(
+          `[BehaviorTracker] Queue length: ${queueLength} events pending`,
+        );
       }
     }, 30000); // Every 30 seconds
 
@@ -93,7 +95,7 @@ export const BehaviorTracker: React.FC<BehaviorTrackerProps> = ({
  */
 export const withBehaviorTracking = <P extends object>(
   Component: React.ComponentType<P>,
-  trackerOptions?: BehaviorTrackerProps['options']
+  trackerOptions?: BehaviorTrackerProps['options'],
 ) => {
   const WrappedComponent: React.FC<P> = (props) => {
     return (

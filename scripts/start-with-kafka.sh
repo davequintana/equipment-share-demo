@@ -66,7 +66,7 @@ else
     echo -e "${YELLOW}⚠️  Node.js not found for verification, checking manually...${NC}"
 
     # Simple curl checks
-    if curl -s http://localhost:4201 > /dev/null; then
+    if curl -s http://localhost:4200 > /dev/null; then
         echo -e "${GREEN}✅ Web App - Running${NC}"
     else
         echo -e "${RED}❌ Web App - Not accessible${NC}"
@@ -88,7 +88,7 @@ fi
 echo ""
 echo -e "${GREEN}${BOLD}🎉 Development environment is ready!${NC}"
 echo -e "${BLUE}📱 Open these URLs:${NC}"
-echo -e "   • ${BOLD}Web App:${NC} http://localhost:4201"
+echo -e "   • ${BOLD}Web App:${NC} http://localhost:4200"
 echo -e "   • ${BOLD}API:${NC} http://localhost:3334"
 echo -e "   • ${BOLD}Kafka UI:${NC} http://localhost:8080"
 echo ""

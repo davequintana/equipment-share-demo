@@ -24,9 +24,10 @@ To connect your GitHub Pages app to a real backend API:
 ### Option 1: Update Environment Variable
 
 1. **Edit `.github/workflows/deploy-pages.yml`**:
+
    ```yaml
    env:
-     VITE_API_URL: https://your-api-domain.com  # Replace with your API URL
+     VITE_API_URL: https://your-api-domain.com # Replace with your API URL
    ```
 
 2. **Deploy**: Push changes to trigger redeployment
@@ -64,10 +65,12 @@ PUT  /api/users/profile
 
 ```javascript
 // Express.js example
-app.use(cors({
-  origin: ['https://davequintana.github.io', 'http://localhost:4201'],
-  credentials: true
-}));
+app.use(
+  cors({
+    origin: ['https://davequintana.github.io', 'http://localhost:4200'],
+    credentials: true,
+  }),
+);
 ```
 
 ## 🏗️ API Hosting Options
@@ -90,11 +93,11 @@ app.use(cors({
 
 ## 🔧 Development vs Production
 
-| Environment | API URL | Mode |
-|-------------|---------|------|
-| **Local Development** | `http://localhost:3334` | Real API |
+| Environment             | API URL                       | Mode      |
+| ----------------------- | ----------------------------- | --------- |
+| **Local Development**   | `http://localhost:3334`       | Real API  |
 | **GitHub Pages (Demo)** | `https://api.your-domain.com` | Demo Mode |
-| **GitHub Pages (Real)** | Your deployed API URL | Real API |
+| **GitHub Pages (Real)** | Your deployed API URL         | Real API  |
 
 ## 🎯 Current Status
 
@@ -113,4 +116,4 @@ app.use(cors({
 
 ---
 
-*The demo mode provides a complete application experience while you set up your production API infrastructure.*
+_The demo mode provides a complete application experience while you set up your production API infrastructure._

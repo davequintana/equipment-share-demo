@@ -15,7 +15,14 @@ interface BehaviorTrackingOptions {
 }
 
 interface UserBehaviorEvent {
-  eventType: 'page_view' | 'click' | 'mouse_move' | 'scroll' | 'keyboard' | 'focus' | 'blur';
+  eventType:
+    | 'page_view'
+    | 'click'
+    | 'mouse_move'
+    | 'scroll'
+    | 'keyboard'
+    | 'focus'
+    | 'blur';
   timestamp: number;
   page: string;
   metadata?: {
@@ -81,14 +88,17 @@ export const useBehaviorTracker = (options: BehaviorTrackingOptions = {}) => {
     }
   }, [user]);
 
-  const addEventToQueue = useCallback((event: UserBehaviorEvent) => {
-    eventQueueRef.current.push(event);
+  const addEventToQueue = useCallback(
+    (event: UserBehaviorEvent) => {
+      eventQueueRef.current.push(event);
 
-    // Auto-flush if batch size reached
-    if (eventQueueRef.current.length >= batchSize) {
-      flushEvents();
-    }
-  }, [batchSize, flushEvents]);
+      // Auto-flush if batch size reached
+      if (eventQueueRef.current.length >= batchSize) {
+        flushEvents();
+      }
+    },
+    [batchSize, flushEvents],
+  );
 
   // Auto-flush events periodically
   useEffect(() => {
@@ -99,61 +109,70 @@ export const useBehaviorTracker = (options: BehaviorTrackingOptions = {}) => {
   }, [user, flushEvents, flushIntervalMs]);
 
   // Track page views
-  const trackPageView = useCallback((page?: string) => {
-    if (!trackPageViews) return;
+  const trackPageView = useCallback(
+    (page?: string) => {
+      if (!trackPageViews) return;
 
-    const currentPage = page || getCurrentPage();
-    addEventToQueue({
-      eventType: 'page_view',
-      timestamp: Date.now(),
-      page: currentPage,
-    });
-  }, [trackPageViews, getCurrentPage, addEventToQueue]);
+      const currentPage = page || getCurrentPage();
+      addEventToQueue({
+        eventType: 'page_view',
+        timestamp: Date.now(),
+        page: currentPage,
+      });
+    },
+    [trackPageViews, getCurrentPage, addEventToQueue],
+  );
 
   // Track clicks
-  const handleClick = useCallback((event: MouseEvent) => {
-    if (!trackClicks) return;
+  const handleClick = useCallback(
+    (event: MouseEvent) => {
+      if (!trackClicks) return;
 
-    const target = event.target as Element | null;
-    if (!target?.tagName) return;
+      const target = event.target as Element | null;
+      if (!target?.tagName) return;
 
-    const element = target.tagName.toLowerCase();
-    const text = target.textContent?.slice(0, 100) || '';
-    const id = target.id;
-    const className = target.className;
+      const element = target.tagName.toLowerCase();
+      const text = target.textContent?.slice(0, 100) || '';
+      const id = target.id;
+      const className = target.className;
 
-    addEventToQueue({
-      eventType: 'click',
-      timestamp: Date.now(),
-      page: getCurrentPage(),
-      metadata: {
-        x: event.clientX,
-        y: event.clientY,
-        element,
-        target: id || className || element,
-        text,
-      },
-    });
-  }, [trackClicks, getCurrentPage, addEventToQueue]);
+      addEventToQueue({
+        eventType: 'click',
+        timestamp: Date.now(),
+        page: getCurrentPage(),
+        metadata: {
+          x: event.clientX,
+          y: event.clientY,
+          element,
+          target: id || className || element,
+          text,
+        },
+      });
+    },
+    [trackClicks, getCurrentPage, addEventToQueue],
+  );
 
   // Track mouse movement (throttled)
-  const handleMouseMove = useCallback((event: MouseEvent) => {
-    if (!trackMouseMovement) return;
+  const handleMouseMove = useCallback(
+    (event: MouseEvent) => {
+      if (!trackMouseMovement) return;
 
-    const now = Date.now();
-    if (now - lastMouseMoveRef.current < throttleMs) return;
-    lastMouseMoveRef.current = now;
+      const now = Date.now();
+      if (now - lastMouseMoveRef.current < throttleMs) return;
+      lastMouseMoveRef.current = now;
 
-    addEventToQueue({
-      eventType: 'mouse_move',
-      timestamp: now,
-      page: getCurrentPage(),
-      metadata: {
-        x: event.clientX,
-        y: event.clientY,
-      },
-    });
-  }, [trackMouseMovement, throttleMs, getCurrentPage, addEventToQueue]);
+      addEventToQueue({
+        eventType: 'mouse_move',
+        timestamp: now,
+        page: getCurrentPage(),
+        metadata: {
+          x: event.clientX,
+          y: event.clientY,
+        },
+      });
+    },
+    [trackMouseMovement, throttleMs, getCurrentPage, addEventToQueue],
+  );
 
   // Track scrolling (throttled)
   const handleScroll = useCallback(() => {
@@ -171,22 +190,33 @@ export const useBehaviorTracker = (options: BehaviorTrackingOptions = {}) => {
   }, [trackScrolling, getCurrentPage, addEventToQueue]);
 
   // Track keyboard events (optional - privacy sensitive)
-  const handleKeyDown = useCallback((event: KeyboardEvent) => {
-    if (!trackKeyboard) return;
+  const handleKeyDown = useCallback(
+    (event: KeyboardEvent) => {
+      if (!trackKeyboard) return;
 
-    // Only track non-sensitive keys
-    const allowedKeys = ['Enter', 'Tab', 'Escape', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'];
-    if (!allowedKeys.includes(event.key)) return;
+      // Only track non-sensitive keys
+      const allowedKeys = [
+        'Enter',
+        'Tab',
+        'Escape',
+        'ArrowUp',
+        'ArrowDown',
+        'ArrowLeft',
+        'ArrowRight',
+      ];
+      if (!allowedKeys.includes(event.key)) return;
 
-    addEventToQueue({
-      eventType: 'keyboard',
-      timestamp: Date.now(),
-      page: getCurrentPage(),
-      metadata: {
-        key: event.key,
-      },
-    });
-  }, [trackKeyboard, getCurrentPage, addEventToQueue]);
+      addEventToQueue({
+        eventType: 'keyboard',
+        timestamp: Date.now(),
+        page: getCurrentPage(),
+        metadata: {
+          key: event.key,
+        },
+      });
+    },
+    [trackKeyboard, getCurrentPage, addEventToQueue],
+  );
 
   // Set up event listeners
   useEffect(() => {
@@ -225,8 +255,19 @@ export const useBehaviorTracker = (options: BehaviorTrackingOptions = {}) => {
       // Flush any remaining events
       flushEvents();
     };
-  }, [user, trackClicks, trackMouseMovement, trackScrolling, trackKeyboard,
-      handleClick, handleMouseMove, handleScroll, handleKeyDown, throttleMs, flushEvents]);
+  }, [
+    user,
+    trackClicks,
+    trackMouseMovement,
+    trackScrolling,
+    trackKeyboard,
+    handleClick,
+    handleMouseMove,
+    handleScroll,
+    handleKeyDown,
+    throttleMs,
+    flushEvents,
+  ]);
 
   // Track page view on mount and route changes
   useEffect(() => {
@@ -259,7 +300,10 @@ export const useBehaviorTracker = (options: BehaviorTrackingOptions = {}) => {
 };
 
 // Utility function for throttling
-function throttle<T extends (...args: unknown[]) => unknown>(func: T, limit: number): T {
+function throttle<T extends (...args: unknown[]) => unknown>(
+  func: T,
+  limit: number,
+): T {
   let inThrottle: boolean;
   return ((...args: unknown[]) => {
     if (!inThrottle) {

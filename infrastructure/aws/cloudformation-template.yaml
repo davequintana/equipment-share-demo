@@ -142,7 +142,7 @@ Resources:
           ToPort: 80
           SourceSecurityGroupId: !Ref ALBSecurityGroup
         - IpProtocol: tcp
-          FromPort: 3333
+          FromPort: 3334
           ToPort: 3334
           SourceSecurityGroupId: !Ref ALBSecurityGroup
 
@@ -286,8 +286,14 @@ Resources:
         # Memory and Connection Settings
         shared_preload_libraries: 'pg_stat_statements,pg_hint_plan,auto_explain'
         max_connections: !If [IsProd, '500', '200']
-        shared_buffers: !If [IsProd, '{DBInstanceClassMemory/4}', '{DBInstanceClassMemory/4}']
-        effective_cache_size: !If [IsProd, '{DBInstanceClassMemory*3/4}', '{DBInstanceClassMemory/2}']
+        shared_buffers:
+          !If [IsProd, '{DBInstanceClassMemory/4}', '{DBInstanceClassMemory/4}']
+        effective_cache_size:
+          !If [
+            IsProd,
+            '{DBInstanceClassMemory*3/4}',
+            '{DBInstanceClassMemory/2}',
+          ]
         work_mem: !If [IsProd, '32MB', '16MB']
         maintenance_work_mem: !If [IsProd, '512MB', '256MB']
 
