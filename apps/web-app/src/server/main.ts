@@ -113,7 +113,7 @@ async function createServer() {
         vite &&
         (request.url.startsWith('/@') ||
           request.url.startsWith('/src/') ||
-          request.url.match(/\.(js|css|ts|tsx)$/))
+          RegExp(/\.(js|css|ts|tsx)$/).exec(request.url))
       ) {
         const viteHandler = vite.middlewares;
         await new Promise<void>((resolve, reject) => {
@@ -121,8 +121,7 @@ async function createServer() {
             if (err) reject(err);
             else resolve();
           });
-        });
-        return; // Don't continue to other routes
+        }); // Don't continue to other routes
       }
     });
   }
@@ -140,7 +139,7 @@ async function createServer() {
         vite &&
         (request.url.startsWith('/@') ||
           request.url.startsWith('/src/') ||
-          request.url.match(/\.(js|css|ts|tsx)$/))
+          RegExp(/\.(js|css|ts|tsx)$/).exec(request.url))
       ) {
         const viteHandler = vite.middlewares;
         await new Promise<void>((resolve, reject) => {
@@ -148,8 +147,7 @@ async function createServer() {
             if (err) reject(err);
             else resolve();
           });
-        });
-        return; // Don't continue to other routes
+        }); // Don't continue to other routes
       }
     });
   }

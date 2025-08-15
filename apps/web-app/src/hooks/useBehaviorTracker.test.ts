@@ -125,7 +125,14 @@ describe('useBehaviorTracker', () => {
 
   describe('Mouse Event Tracking', () => {
     it('should track click events when enabled', () => {
-      renderHook(() => useBehaviorTracker({ trackClicks: true }));
+      const { result } = renderHook(() => useBehaviorTracker({
+        trackClicks: true,
+        batchSize: 100 // Large batch to prevent auto-flush
+      }));
+
+      // Initial queue should have page view event from mount
+      const initialQueueLength = result.current.getQueueLength();
+      expect(initialQueueLength).toBe(1);
 
       // Simulate click event
       const clickEvent = new MouseEvent('click', {
@@ -147,17 +154,22 @@ describe('useBehaviorTracker', () => {
         document.dispatchEvent(clickEvent);
       });
 
-      // Should have captured click event
-      // Note: This is a simplified test - in reality the event queue would contain the click
+      // Should have captured click event (page view + click event)
+      expect(result.current.getQueueLength()).toBe(2);
     });
 
     it('should not track mouse events when disabled', () => {
-      renderHook(() =>
+      const { result } = renderHook(() =>
         useBehaviorTracker({
           trackClicks: false,
           trackMouseMovement: false,
+          batchSize: 100 // Large batch to prevent auto-flush
         }),
       );
+
+      // Initial queue should have page view event from mount
+      const initialQueueLength = result.current.getQueueLength();
+      expect(initialQueueLength).toBe(1);
 
       // Simulate events
       act(() => {
@@ -165,7 +177,33 @@ describe('useBehaviorTracker', () => {
         document.dispatchEvent(new MouseEvent('mousemove'));
       });
 
-      // Events should not be tracked (queue remains empty except for page view)
+      // Events should not be tracked (queue remains same as initial - only page view)
+      expect(result.current.getQueueLength()).toBe(initialQueueLength);
+    });
+
+    it('should track mouse movement when enabled', () => {
+      const { result } = renderHook(() =>
+        useBehaviorTracker({
+          trackMouseMovement: true,
+          throttleMs: 0, // Disable throttling for test
+          batchSize: 100 // Large batch to prevent auto-flush
+        }),
+      );
+
+      // Initial queue should have page view event from mount
+      const initialQueueLength = result.current.getQueueLength();
+      expect(initialQueueLength).toBe(1);
+
+      // Simulate mouse movement
+      act(() => {
+        document.dispatchEvent(new MouseEvent('mousemove', {
+          clientX: 150,
+          clientY: 250,
+        }));
+      });
+
+      // Should have captured mouse movement event
+      expect(result.current.getQueueLength()).toBe(2);
     });
   });
 
@@ -279,29 +317,64 @@ describe('useBehaviorTracker', () => {
 
   describe('Security & Privacy', () => {
     it('should not track keyboard events by default', () => {
-      renderHook(() => useBehaviorTracker());
+      const { result } = renderHook(() => useBehaviorTracker({
+        batchSize: 100 // Large batch to prevent auto-flush
+      }));
+
+      // Initial queue should have page view event from mount
+      const initialQueueLength = result.current.getQueueLength();
+      expect(initialQueueLength).toBe(1);
 
       act(() => {
         document.dispatchEvent(new KeyboardEvent('keydown', { key: 'a' }));
       });
 
-      // Should not capture keyboard events by default
-    });
-
-    it('should only track safe keyboard events when enabled', () => {
-      renderHook(() => useBehaviorTracker({ trackKeyboard: true }));
-
       act(() => {
-        // Safe keys
-        document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter' }));
-        document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Tab' }));
-
-        // Sensitive keys (should be filtered out)
-        document.dispatchEvent(new KeyboardEvent('keydown', { key: 'a' }));
         document.dispatchEvent(new KeyboardEvent('keydown', { key: '1' }));
       });
 
-      // Should only track safe navigation keys
+      act(() => {
+        document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter' }));
+      });
+
+      // Should not capture keyboard events by default
+      expect(result.current.getQueueLength()).toBe(initialQueueLength);
+    });
+
+    it('should only track safe keyboard events when enabled', () => {
+      const { result } = renderHook(() => useBehaviorTracker({
+        trackKeyboard: true,
+        batchSize: 100 // Large batch to prevent auto-flush
+      }));
+
+      // Initial queue should have page view event from mount
+      const initialQueueLength = result.current.getQueueLength();
+      expect(initialQueueLength).toBe(1);
+
+      // Dispatch safe keys
+      act(() => {
+        document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter' }));
+      });
+
+      act(() => {
+        document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Tab' }));
+      });
+
+      act(() => {
+        document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
+      });
+
+      // Dispatch unsafe keys (should be filtered out)
+      act(() => {
+        document.dispatchEvent(new KeyboardEvent('keydown', { key: 'a' }));
+      });
+
+      act(() => {
+        document.dispatchEvent(new KeyboardEvent('keydown', { key: '1' }));
+      });
+
+      // Should only track safe navigation keys (3 safe keys + initial page view)
+      expect(result.current.getQueueLength()).toBe(4);
     });
   });
 
@@ -316,18 +389,28 @@ describe('useBehaviorTracker', () => {
 
       const startTime = Date.now();
 
-      const { result } = renderHook(() => useBehaviorTracker());
+      const { result } = renderHook(() => useBehaviorTracker({
+        batchSize: 100 // Large batch to prevent auto-flush
+      }));
 
-      maliciousPatterns.forEach((pattern) => {
+      // Initial queue should have page view event from mount
+      const initialQueueLength = result.current.getQueueLength();
+      expect(initialQueueLength).toBe(1);
+
+      // Track each malicious pattern
+      for (const pattern of maliciousPatterns) {
         act(() => {
           result.current.trackPageView(`/test?q=${pattern}`);
         });
-      });
+      }
 
       const endTime = Date.now();
 
       // Must complete under 100ms even with attack patterns
       expect(endTime - startTime).toBeLessThan(100);
+
+      // Should have tracked all page views (initial + malicious patterns)
+      expect(result.current.getQueueLength()).toBe(initialQueueLength + maliciousPatterns.length);
     });
   });
 });
