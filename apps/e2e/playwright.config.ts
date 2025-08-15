@@ -23,7 +23,7 @@ export default defineConfig({
     timeout: process.env.CI ? 60000 : 15000, // 1 minute for CI (increased for stability), 15 seconds for local
   },
   use: {
-    baseURL: 'http://localhost:4201',
+    baseURL: 'http://localhost:4200',
     trace: 'on-first-retry',
     screenshot: 'only-on-failure',
     video: 'retain-on-failure',
@@ -83,8 +83,9 @@ export default defineConfig({
 
   webServer: [
     {
-      command: 'NODE_OPTIONS="--no-deprecation --max-old-space-size=4096" pnpm run serve:web-app',
-      port: 4201,
+      command:
+        'NODE_OPTIONS="--no-deprecation --max-old-space-size=4096" pnpm run serve:web-app',
+      port: 4200,
       reuseExistingServer: !process.env.CI,
       timeout: process.env.CI ? 300 * 1000 : 120 * 1000, // 5 minutes for CI with more workers, 2 minutes for local
       stdout: 'pipe',

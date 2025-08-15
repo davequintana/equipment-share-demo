@@ -2,26 +2,71 @@ apiVersion: v1
 kind: Namespace
 metadata:
   name: enterprise-app
+  labels:
+    name: enterprise-app
+    app.kubernetes.io/name: enterprise-app
+    app.kubernetes.io/instance: enterprise-app
+    app.kubernetes.io/version: "1.0.0"
 ---
+# Resource Quota for the namespace
 apiVersion: v1
-kind: ConfigMap
+kind: ResourceQuota
 metadata:
-  name: app-config
+  name: enterprise-app-quota
   namespace: enterprise-app
-data:
-  NODE_ENV: "production"
-  DATABASE_URL: "postgresql://enterprise:password@postgres:5432/enterprise_db"
-  REDIS_URL: "redis://redis:6379"
-  KAFKA_BROKERS: "kafka:9092"
+spec:
+  hard:
+    requests.cpu: "2"
+    requests.memory: 4Gi
+    limits.cpu: "4"
+    limits.memory: 8Gi
+    persistentvolumeclaims: "4"
+    pods: "20"
+    services: "10"
+    secrets: "5"
+    configmaps: "5"
+---
+# Limit Range for pod resources
+apiVersion: v1
+kind: LimitRange
+metadata:
+  name: enterprise-app-limits
+  namespace: enterprise-app
+spec:
+  limits:
+  - type: Pod
+    max:
+      cpu: "1"
+      memory: 1Gi
+    min:
+      cpu: "10m"
+      memory: 16Mi
+  - type: Container
+    default:
+      cpu: "100m"
+      memory: 128Mi
+    defaultRequest:
+      cpu: "50m"
+      memory: 64Mi
+    max:
+      cpu: "500m"
+      memory: 512Mi
+    min:
+      cpu: "10m"
+      memory: 16Mi
 ---
 apiVersion: v1
 kind: Secret
 metadata:
   name: app-secrets
   namespace: enterprise-app
+  labels:
+    app.kubernetes.io/name: enterprise-app
+    app.kubernetes.io/component: secrets
 type: Opaque
 data:
-  # Note: These are placeholder values - replace with actual base64-encoded secrets in production
+  # Secrets for authentication and database access
+  # These are placeholder values - replace with actual base64-encoded secrets in production
   # Generate JWT_SECRET: openssl rand -hex 64 | base64
   # Generate POSTGRES_PASSWORD: echo "your-secure-password" | base64
   JWT_SECRET: "REPLACE_WITH_BASE64_ENCODED_JWT_SECRET"
@@ -35,6 +80,11 @@ metadata:
   namespace: enterprise-app
   labels:
     app: web-app
+    component: frontend
+    tier: application
+    app.kubernetes.io/name: web-app
+    app.kubernetes.io/component: frontend
+    app.kubernetes.io/version: "1.0.0"
 spec:
   replicas: 2
   selector:
@@ -44,32 +94,116 @@ spec:
     metadata:
       labels:
         app: web-app
+        component: frontend
+        tier: application
     spec:
+      automountServiceAccountToken: false
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                - key: app
+                  operator: In
+                  values:
+                  - web-app
+              topologyKey: kubernetes.io/hostname
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        runAsGroup: 10001
+        fsGroup: 10001
+      initContainers:
+      - name: wait-for-api
+        image: busybox:1.35
+        imagePullPolicy: Always
+        command: ['sh', '-c', 'until nc -z fastify-api-service 3334; do echo waiting for API; sleep 2; done;']
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          runAsNonRoot: true
+          runAsUser: 10001
+          runAsGroup: 10001
+          capabilities:
+            drop:
+            - ALL
+        resources:
+          requests:
+            memory: "16Mi"
+            cpu: "10m"
+            ephemeral-storage: "64Mi"
+          limits:
+            memory: "32Mi"
+            cpu: "50m"
+            ephemeral-storage: "128Mi"
       containers:
       - name: web-app
-        image: enterprise/web-app:latest
+        image: enterprise/web-app:1.0.0  # Use specific version tag
+        imagePullPolicy: Always
         ports:
-        - containerPort: 80
+        - containerPort: 4200
+          name: http
+        env:
+        - name: NODE_ENV
+          value: "production"
+        - name: LOG_LEVEL
+          value: "info"
+        - name: API_URL
+          value: "http://fastify-api-service:3334"
+        livenessProbe:
+          httpGet:
+            path: /
+            port: 4200
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /health  # Different endpoint for readiness
+            port: 4200
+          initialDelaySeconds: 5
+          periodSeconds: 5
+          timeoutSeconds: 3
+          failureThreshold: 2  # Different from liveness
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          runAsNonRoot: true
+          runAsUser: 10001
+          runAsGroup: 10001
+          capabilities:
+            drop:
+            - ALL
         resources:
           requests:
             memory: "64Mi"
             cpu: "50m"
+            ephemeral-storage: "256Mi"
           limits:
             memory: "128Mi"
             cpu: "100m"
+            ephemeral-storage: "512Mi"
 ---
 apiVersion: v1
 kind: Service
 metadata:
   name: web-app-service
   namespace: enterprise-app
+  labels:
+    app: web-app
+    component: frontend
+    tier: application
 spec:
   selector:
     app: web-app
   ports:
-  - protocol: TCP
+  - name: http
+    protocol: TCP
     port: 80
-    targetPort: 80
+    targetPort: 4200
   type: LoadBalancer
 ---
 # Fastify API Deployment
@@ -80,8 +214,13 @@ metadata:
   namespace: enterprise-app
   labels:
     app: fastify-api
+    component: backend
+    tier: application
+    app.kubernetes.io/name: fastify-api
+    app.kubernetes.io/component: backend
+    app.kubernetes.io/version: "1.0.0"
 spec:
-  replicas: 3
+  # replicas managed by HPA - see fastify-api-hpa below
   selector:
     matchLabels:
       app: fastify-api
@@ -89,47 +228,320 @@ spec:
     metadata:
       labels:
         app: fastify-api
+        component: backend
+        tier: application
     spec:
-      containers:
-      - name: fastify-api
-        image: enterprise/fastify-api:latest
-        ports:
-        - containerPort: 3334
-        envFrom:
-        - configMapRef:
-            name: app-config
-        - secretRef:
-            name: app-secrets
+      automountServiceAccountToken: false
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                - key: app
+                  operator: In
+                  values:
+                  - fastify-api
+              topologyKey: kubernetes.io/hostname
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10000
+        runAsGroup: 10000
+        fsGroup: 10000
+      initContainers:
+      - name: wait-for-postgres
+        image: postgres:15-alpine
+        imagePullPolicy: Always
+        command: ['sh', '-c', 'until pg_isready -h postgres -p 5432 -U enterprise; do echo waiting for postgres; sleep 2; done;']
+        env:
+        - name: PGPASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: app-secrets
+              key: POSTGRES_PASSWORD
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          runAsNonRoot: true
+          runAsUser: 10000
+          runAsGroup: 10000
+          capabilities:
+            drop:
+            - ALL
         resources:
           requests:
-            memory: "128Mi"
-            cpu: "100m"
+            memory: "32Mi"
+            cpu: "10m"
+            ephemeral-storage: "64Mi"
           limits:
-            memory: "256Mi"
-            cpu: "200m"
+            memory: "64Mi"
+            cpu: "50m"
+            ephemeral-storage: "128Mi"
+      - name: wait-for-redis
+        image: redis:7-alpine
+        imagePullPolicy: Always
+        command: ['sh', '-c', 'until redis-cli -h redis -p 6379 ping; do echo waiting for redis; sleep 2; done;']
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          runAsNonRoot: true
+          runAsUser: 10000
+          runAsGroup: 10000
+          capabilities:
+            drop:
+            - ALL
+        resources:
+          requests:
+            memory: "16Mi"
+            cpu: "10m"
+            ephemeral-storage: "64Mi"
+          limits:
+            memory: "32Mi"
+            cpu: "50m"
+            ephemeral-storage: "128Mi"
+      - name: wait-for-kafka
+        image: busybox:1.35
+        imagePullPolicy: Always
+        command: ['sh', '-c', 'until nc -z kafka 9092; do echo waiting for kafka; sleep 2; done;']
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          runAsNonRoot: true
+          runAsUser: 10000
+          runAsGroup: 10000
+          capabilities:
+            drop:
+            - ALL
+        resources:
+          requests:
+            memory: "16Mi"
+            cpu: "10m"
+            ephemeral-storage: "64Mi"
+          limits:
+            memory: "32Mi"
+            cpu: "50m"
+            ephemeral-storage: "128Mi"
+      containers:
+      - name: fastify-api
+        image: enterprise/fastify-api:1.0.0  # Use specific version tag
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 3334
+          name: http
+        env:
+        - name: NODE_ENV
+          value: "production"
+        - name: DATABASE_URL
+          value: "postgresql://enterprise@postgres:5432/enterprise_db"
+        - name: REDIS_URL
+          value: "redis://redis:6379"
+        - name: KAFKA_BROKERS
+          value: "kafka:9092"
+        - name: LOG_LEVEL
+          value: "info"
+        - name: SESSION_TIMEOUT
+          value: "1800"
+        - name: CORS_ORIGIN
+          value: "*"
+        - name: PORT
+          value: "3334"
+        - name: HOST
+          value: "0.0.0.0"
+        - name: JWT_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: app-secrets
+              key: JWT_SECRET
+        - name: POSTGRES_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: app-secrets
+              key: POSTGRES_PASSWORD
         livenessProbe:
           httpGet:
             path: /health
             port: 3334
           initialDelaySeconds: 30
           periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
         readinessProbe:
           httpGet:
-            path: /health
+            path: /ready  # Different endpoint for readiness
             port: 3334
-          initialDelaySeconds: 5
+          initialDelaySeconds: 10
           periodSeconds: 5
+          timeoutSeconds: 3
+          failureThreshold: 2  # Different threshold
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: false  # Node.js apps may need temporary file access
+          runAsNonRoot: true
+          runAsUser: 10000
+          runAsGroup: 10000
+          capabilities:
+            drop:
+            - ALL
+        resources:
+          requests:
+            memory: "128Mi"
+            cpu: "100m"
+            ephemeral-storage: "512Mi"
+          limits:
+            memory: "256Mi"
+            cpu: "200m"
+            ephemeral-storage: "1Gi"
 ---
 apiVersion: v1
 kind: Service
 metadata:
   name: fastify-api-service
   namespace: enterprise-app
+  labels:
+    app: fastify-api
+    component: backend
+    tier: application
 spec:
   selector:
     app: fastify-api
   ports:
-  - protocol: TCP
+  - name: http
+    protocol: TCP
     port: 3334
     targetPort: 3334
   type: ClusterIP
+---
+# Pod Disruption Budget for Frontend
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: web-app-pdb
+  namespace: enterprise-app
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: web-app
+---
+# Pod Disruption Budget for Backend API
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: fastify-api-pdb
+  namespace: enterprise-app
+spec:
+  minAvailable: 2
+  selector:
+    matchLabels:
+      app: fastify-api
+---
+# Horizontal Pod Autoscaler for API
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: fastify-api-hpa
+  namespace: enterprise-app
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: fastify-api
+  minReplicas: 3
+  maxReplicas: 10
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 70
+  - type: Resource
+    resource:
+      name: memory
+      target:
+        type: Utilization
+        averageUtilization: 80
+---
+# Network Policy for Frontend
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: web-app-network-policy
+  namespace: enterprise-app
+spec:
+  podSelector:
+    matchLabels:
+      app: web-app
+  policyTypes:
+  - Ingress
+  - Egress
+  ingress:
+  - from: []  # Allow ingress from anywhere (public frontend)
+    ports:
+    - protocol: TCP
+      port: 4200
+  egress:
+  - to:
+    - podSelector:
+        matchLabels:
+          app: fastify-api  # Allow calls to API
+    ports:
+    - protocol: TCP
+      port: 3334
+  - to: []  # Allow external DNS, etc.
+    ports:
+    - protocol: TCP
+      port: 53
+    - protocol: UDP
+      port: 53
+---
+# Network Policy for Backend API
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: fastify-api-network-policy
+  namespace: enterprise-app
+spec:
+  podSelector:
+    matchLabels:
+      app: fastify-api
+  policyTypes:
+  - Ingress
+  - Egress
+  ingress:
+  - from:
+    - podSelector:
+        matchLabels:
+          app: web-app  # Allow frontend
+    ports:
+    - protocol: TCP
+      port: 3334
+  egress:
+  - to:
+    - podSelector:
+        matchLabels:
+          app: postgres  # Allow database access
+    ports:
+    - protocol: TCP
+      port: 5432
+  - to:
+    - podSelector:
+        matchLabels:
+          app: redis  # Allow cache access
+    ports:
+    - protocol: TCP
+      port: 6379
+  - to:
+    - podSelector:
+        matchLabels:
+          app: kafka  # Allow messaging access
+    ports:
+    - protocol: TCP
+      port: 9092
+  - to: []  # Allow external DNS, etc.
+    ports:
+    - protocol: TCP
+      port: 53
+    - protocol: UDP
+      port: 53

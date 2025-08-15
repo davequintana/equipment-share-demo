@@ -145,20 +145,24 @@ export const ProfilePage: React.FC = () => {
         {!isEditing ? (
           <div>
             <div className={styles.formGroup}>
-              <label className={styles.label}>Email</label>
-              <div style={{
-                padding: '0.75rem',
-                backgroundColor: '#f8f9fa',
-                border: '1px solid #dee2e6',
-                borderRadius: '0.375rem',
-                color: '#6c757d'
-              }}>
+              <div className={styles.label} style={{ fontWeight: 'bold', marginBottom: '0.5rem' }}>
+                Email
+              </div>
+              <div
+                style={{
+                  padding: '0.75rem',
+                  backgroundColor: '#f8f9fa',
+                  border: '1px solid #dee2e6',
+                  borderRadius: '0.375rem',
+                  color: '#6c757d'
+                }}
+              >
                 {profile.email}
               </div>
             </div>
 
             <div className={styles.formGroup}>
-              <label className={styles.label}>Full Name</label>
+              <div className={styles.label} style={{ fontWeight: 'bold', marginBottom: '0.5rem' }}>Full Name</div>
               <div style={{
                 padding: '0.75rem',
                 backgroundColor: '#f8f9fa',
@@ -171,7 +175,7 @@ export const ProfilePage: React.FC = () => {
 
             {profile.createdAt && (
               <div className={styles.formGroup}>
-                <label className={styles.label}>Member Since</label>
+                <div className={styles.label} style={{ fontWeight: 'bold', marginBottom: '0.5rem' }}>Member Since</div>
                 <div style={{
                   padding: '0.75rem',
                   backgroundColor: '#f8f9fa',
@@ -195,7 +199,7 @@ export const ProfilePage: React.FC = () => {
         ) : (
           <form onSubmit={handleUpdateProfile}>
             <div className={styles.formGroup}>
-              <label className={styles.label}>Email</label>
+              <div className={styles.label} style={{ fontWeight: 'bold', marginBottom: '0.5rem' }}>Email</div>
               <div style={{
                 padding: '0.75rem',
                 backgroundColor: '#f8f9fa',

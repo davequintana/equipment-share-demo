@@ -24,7 +24,9 @@ The application implements enterprise-grade JWT-based authentication with compre
 The application requires proper environment configuration for security:
 
 ```bash
+
 # Copy .env.example to .env and configure:
+
 NODE_ENV=development
 JWT_SECRET=your-very-long-and-random-jwt-secret-here
 VITE_API_URL=http://localhost:3334
@@ -44,9 +46,9 @@ VITE_API_URL=http://localhost:3334
 
 ## API Endpoints
 
-### Fastify API (Port 3334)
+### Fastify API (Port 3334) - Enhanced Security Responses
 
-#### Authentication Endpoints
+#### Authentication Endpoints (Basic Example)
 
 ```http
 POST /api/auth/login
@@ -59,6 +61,7 @@ Content-Type: application/json
 ```
 
 **Response:**
+
 ```json
 {
   "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
@@ -114,6 +117,7 @@ Content-Type: application/json
 ```
 
 **Enhanced Response with Security Headers:**
+
 ```json
 {
   "success": true,
@@ -159,11 +163,13 @@ Content-Type: application/json
 ### Rate Limiting
 
 **Configuration:**
+
 - **5 attempts** per 15-minute window per IP address
 - **Exponential backoff** for repeated failures
 - **Memory-based storage** (Redis recommended for production)
 
 **Implementation:**
+
 ```typescript
 const rateLimit = new Map();
 
@@ -195,12 +201,14 @@ function checkRateLimit(identifier: string): boolean {
 ### Password Validation
 
 **Requirements:**
+
 - **Minimum 8 characters**
 - **At least one uppercase letter** (A-Z)
 - **At least one lowercase letter** (a-z)
 - **At least one number** (0-9)
 
 **Implementation:**
+
 ```typescript
 function validatePassword(password: string): boolean {
   const minLength = 8;
@@ -218,6 +226,7 @@ function validatePassword(password: string): boolean {
 ### Email Validation
 
 **Comprehensive regex pattern:**
+
 ```typescript
 function validateEmail(email: string): boolean {
   const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
@@ -228,12 +237,14 @@ function validateEmail(email: string): boolean {
 ### JWT Token Security
 
 **Configuration:**
+
 - **24-hour expiration** for security
 - **HS256 algorithm** for signing
 - **Secure secret key** from environment variables
 - **Payload includes** user ID and email only (no sensitive data)
 
 **Token Structure:**
+
 ```json
 {
   "userId": 1,
@@ -248,6 +259,7 @@ function validateEmail(email: string): boolean {
 ### Authentication Errors
 
 **Invalid credentials:**
+
 ```json
 {
   "error": "Invalid email or password",
@@ -256,6 +268,7 @@ function validateEmail(email: string): boolean {
 ```
 
 **Rate limit exceeded:**
+
 ```json
 {
   "error": "Too many login attempts. Please try again in 15 minutes.",
@@ -264,6 +277,7 @@ function validateEmail(email: string): boolean {
 ```
 
 **Invalid password format:**
+
 ```json
 {
   "error": "Password must be at least 8 characters long and contain uppercase, lowercase, and numeric characters",
@@ -272,6 +286,7 @@ function validateEmail(email: string): boolean {
 ```
 
 **Invalid email format:**
+
 ```json
 {
   "error": "Please provide a valid email address",
@@ -280,6 +295,7 @@ function validateEmail(email: string): boolean {
 ```
 
 **Token expired:**
+
 ```json
 {
   "error": "Token expired",
@@ -288,6 +304,7 @@ function validateEmail(email: string): boolean {
 ```
 
 **Invalid token:**
+
 ```json
 {
   "error": "Invalid token",
@@ -371,7 +388,9 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 ### Testing Rate Limiting
 
 ```bash
+
 # Test rate limiting with curl
+
 for i in {1..6}; do
   curl -X POST http://localhost:3334/api/auth/login \
     -H "Content-Type: application/json" \
@@ -383,11 +402,14 @@ done
 ### Testing JWT Validation
 
 ```bash
+
 # Test with valid token
+
 curl -X GET http://localhost:3334/api/users/profile \
   -H "Authorization: Bearer <valid-jwt-token>"
 
 # Test with invalid token
+
 curl -X GET http://localhost:3334/api/users/profile \
   -H "Authorization: Bearer invalid-token"
 ```
@@ -408,7 +430,9 @@ curl -X GET http://localhost:3334/api/users/profile \
 ### Environment Configuration
 
 ```bash
+
 # .env.production
+
 JWT_SECRET=your-super-secure-256-bit-secret-key-change-this-in-production
 JWT_EXPIRES_IN=24h
 RATE_LIMIT_WINDOW_MS=900000

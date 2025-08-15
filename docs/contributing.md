@@ -15,6 +15,7 @@ Thank you for contributing to the Enterprise NX Monorepo! This guide outlines ou
    - Git
 
 2. **Clone and Setup**
+
    ```bash
    git clone <repository-url>
    cd enterprise-nx-monorepo
@@ -22,12 +23,14 @@ Thank you for contributing to the Enterprise NX Monorepo! This guide outlines ou
    ```
 
 3. **Environment Configuration**
+
    ```bash
    cp .env.example .env
    # Edit .env with your local settings
    ```
 
 4. **Start Development Environment**
+
    ```bash
    pnpm run dev
    ```
@@ -58,6 +61,7 @@ release/v1.2.0
 ### TypeScript Guidelines
 
 1. **Strict Type Safety**
+
    ```typescript
    // ✅ Good: Explicit types
    interface User {
@@ -77,6 +81,7 @@ release/v1.2.0
    ```
 
 2. **Interface over Type Aliases**
+
    ```typescript
    // ✅ Preferred: Interfaces for object shapes
    interface ApiResponse<T> {
@@ -90,6 +95,7 @@ release/v1.2.0
    ```
 
 3. **Consistent Naming**
+
    ```typescript
    // ✅ Good: PascalCase for interfaces, camelCase for functions
    interface UserProfile {
@@ -105,6 +111,7 @@ release/v1.2.0
 ### React Component Guidelines
 
 1. **Functional Components with Hooks**
+
    ```typescript
    // ✅ Preferred: Functional component with TypeScript
    interface LoginFormProps {
@@ -125,6 +132,7 @@ release/v1.2.0
    ```
 
 2. **Named Exports**
+
    ```typescript
    // ✅ Good: Named exports
    export function LoginForm() { /* ... */ }
@@ -135,7 +143,8 @@ release/v1.2.0
    ```
 
 3. **Component Organization**
-   ```
+
+   ```text
    src/components/
    ├── LoginForm/
    │   ├── LoginForm.tsx
@@ -148,6 +157,7 @@ release/v1.2.0
 ### Styling Guidelines
 
 1. **Vanilla Extract CSS-in-TypeScript**
+
    ```typescript
    // LoginForm.css.ts
    import { style } from '@vanilla-extract/css';
@@ -171,6 +181,7 @@ release/v1.2.0
    ```
 
 2. **BEM-like Class Naming**
+
    ```typescript
    export const formContainer = style({ /* styles */ });
    export const formInput = style({ /* styles */ });
@@ -181,6 +192,7 @@ release/v1.2.0
 ### Backend API Guidelines
 
 1. **RESTful API Design**
+
    ```typescript
    // ✅ Good: RESTful endpoints
    GET    /api/users              // Get all users
@@ -196,6 +208,7 @@ release/v1.2.0
    ```
 
 2. **Consistent Error Handling**
+
    ```typescript
    // Error response format
    interface ApiError {
@@ -219,6 +232,7 @@ release/v1.2.0
    ```
 
 3. **Input Validation**
+
    ```typescript
    // Use JSON schemas for validation
    const loginSchema = {
@@ -245,6 +259,7 @@ release/v1.2.0
 ### Unit Testing
 
 1. **Test Structure**
+
    ```typescript
    // LoginForm.test.tsx
    import { render, screen, fireEvent, waitFor } from '@testing-library/react';
@@ -270,6 +285,7 @@ release/v1.2.0
    ```
 
 2. **Test Naming**
+
    ```typescript
    // ✅ Good: Descriptive test names
    it('should display validation error when email format is invalid')
@@ -323,7 +339,9 @@ describe('Auth API', () => {
 We follow **Conventional Commits** specification:
 
 ```bash
+
 # Format
+
 <type>[optional scope]: <description>
 
 [optional body]
@@ -331,6 +349,7 @@ We follow **Conventional Commits** specification:
 [optional footer(s)]
 
 # Examples
+
 feat(auth): add rate limiting to login endpoint
 fix(ui): resolve button alignment issue in mobile view
 docs(readme): update installation instructions
@@ -339,6 +358,7 @@ refactor(db): optimize user query performance
 ```
 
 **Types:**
+
 - `feat`: New feature
 - `fix`: Bug fix
 - `docs`: Documentation changes
@@ -350,6 +370,7 @@ refactor(db): optimize user query performance
 ### Pull Request Process
 
 1. **Create Feature Branch**
+
    ```bash
    git checkout develop
    git pull origin develop
@@ -357,12 +378,14 @@ refactor(db): optimize user query performance
    ```
 
 2. **Make Changes and Commit**
+
    ```bash
    git add .
    git commit -m "feat(auth): add rate limiting to login endpoint"
    ```
 
 3. **Push and Create PR**
+
    ```bash
    git push origin feature/your-feature-name
    # Create PR through GitHub interface
@@ -377,28 +400,34 @@ refactor(db): optimize user query performance
 ### Pull Request Template
 
 ```markdown
+
 ## Description
+
 Brief description of changes made.
 
 ## Type of Change
+
 - [ ] Bug fix (non-breaking change which fixes an issue)
 - [ ] New feature (non-breaking change which adds functionality)
 - [ ] Breaking change (fix or feature that would cause existing functionality to not work as expected)
 - [ ] Documentation update
 
 ## Testing
+
 - [ ] Unit tests pass
 - [ ] Integration tests pass
 - [ ] E2E tests pass
 - [ ] Manual testing completed
 
 ## Checklist
+
 - [ ] Code follows project style guidelines
 - [ ] Self-review completed
 - [ ] Documentation updated
 - [ ] Tests added for new functionality
 
 ## Screenshots (if applicable)
+
 Add screenshots to help explain your changes.
 ```
 
@@ -448,6 +477,7 @@ Add screenshots to help explain your changes.
 ### Code Documentation
 
 1. **Function Documentation**
+
    ```typescript
    /**
     * Authenticates a user with email and password
@@ -465,6 +495,7 @@ Add screenshots to help explain your changes.
    ```
 
 2. **Complex Logic Comments**
+
    ```typescript
    // Rate limiting: Allow max 5 attempts per 15-minute window
    if (!checkRateLimit(req.ip)) {
@@ -519,6 +550,7 @@ We use **Semantic Versioning** (SemVer):
 ### Release Workflow
 
 1. **Prepare Release**
+
    ```bash
    git checkout develop
    git pull origin develop
@@ -526,6 +558,7 @@ We use **Semantic Versioning** (SemVer):
    ```
 
 2. **Update Version and Changelog**
+
    ```bash
    # Update package.json versions
    pnpm version 1.2.0
@@ -536,6 +569,7 @@ We use **Semantic Versioning** (SemVer):
    ```
 
 3. **Merge to Main**
+
    ```bash
    git checkout main
    git merge release/v1.2.0
@@ -566,7 +600,9 @@ We use **Semantic Versioning** (SemVer):
 ### Development Support
 
 ```bash
+
 # Common development tasks
+
 pnpm run dev              # Start development environment
 pnpm run test:all         # Run all tests
 pnpm run lint:fix         # Fix linting issues

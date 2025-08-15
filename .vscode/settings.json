@@ -1,3 +1,57 @@
 {
-  "nxConsole.generateAiAgentRules": true
+  "nxConsole.generateAiAgentRules": true,
+  "files.associations": {
+    "**/cloudformation-template.yaml": "cloudformation",
+    "**/infrastructure/**/*.yaml": "cloudformation",
+    "**/infrastructure/**/*.yml": "cloudformation",
+    "**/k8s/**/*.yaml": "kubernetes",
+    "**/k8s/**/*.yml": "kubernetes"
+  },
+  "yaml.schemas": {
+    "https://raw.githubusercontent.com/aws/aws-cloudformation-resource-specification/main/CloudFormationResourceSpecification.json": [
+      "infrastructure/**/*.yaml",
+      "infrastructure/**/*.yml",
+      "**/cloudformation-template.yaml"
+    ],
+    "kubernetes": [
+      "k8s/**/*.yaml",
+      "k8s/**/*.yml"
+    ]
+  },
+  "yaml.customTags": [
+    "!And",
+    "!Base64",
+    "!Cidr",
+    "!Condition",
+    "!Equals",
+    "!FindInMap",
+    "!GetAZs",
+    "!GetAtt",
+    "!If",
+    "!ImportValue",
+    "!Join",
+    "!Not",
+    "!Or",
+    "!Ref",
+    "!Select",
+    "!Split",
+    "!Sub",
+    "!Transform"
+  ],
+  "yaml.validate": true,
+  "yaml.completion": true,
+  "yaml.hover": true,
+  "yaml.format.enable": true,
+  "[kubernetes]": {
+    "yaml.validate": false
+  },
+  "problems.decorations.enabled": true,
+  "eslint.workingDirectories": [
+    {
+      "mode": "auto"
+    }
+  ],
+  "eslint.options": {
+    "ignorePath": ".eslintignore"
+  }
 }

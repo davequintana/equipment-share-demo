@@ -4,7 +4,7 @@ import { StaticRouter } from 'react-router-dom/server.js';
 import { AuthProvider } from '../context/AuthContext';
 import { AppContent } from '../app/app';
 
-function SSRApp({ url }: { url: string }) {
+function SSRApp({ url }: { readonly url: string }) {
   return (
     <React.StrictMode>
       <StaticRouter location={url}>

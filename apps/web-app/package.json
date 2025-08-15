@@ -8,8 +8,7 @@
     "build": "nx build web-app",
     "build:pages": "nx build-pages web-app",
     "test": "nx test web-app",
-    "preview": "nx preview web-app",
-    "storybook": "nx storybook web-app"
+    "preview": "nx preview web-app"
   },
   "dependencies": {
     "react": "19.0.0",

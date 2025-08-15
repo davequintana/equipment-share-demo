@@ -1,13 +1,19 @@
 import React, { useState, useContext } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
 import * as styles from '../styles/theme.css';
 
 interface RegisterFormProps {
   onSuccess?: () => void;
   onSwitchToLogin?: () => void;
+  redirectTo?: string;
 }
 
-export const RegisterForm: React.FC<RegisterFormProps> = ({ onSuccess, onSwitchToLogin }) => {
+export const RegisterForm: React.FC<RegisterFormProps> = ({
+  onSuccess,
+  onSwitchToLogin,
+  redirectTo = '/dashboard',
+}) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -15,6 +21,7 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({ onSuccess, onSwitchT
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const { register } = useContext(AuthContext);
+  const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -46,7 +53,7 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({ onSuccess, onSwitchT
       return;
     }
 
-    if (!/[0-9]/.test(password)) {
+    if (!/\d/.test(password)) {
       setError('Password must contain at least one number');
       setLoading(false);
       return;
@@ -60,7 +67,12 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({ onSuccess, onSwitchT
 
     try {
       await register(email, password, name);
+
+      // Call onSuccess callback if provided
       onSuccess?.();
+
+      // Navigate to dashboard or specified redirect URL
+      navigate(redirectTo);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Registration failed');
     } finally {
@@ -70,7 +82,9 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({ onSuccess, onSwitchT
 
   return (
     <form className={styles.authForm} onSubmit={handleSubmit}>
-      <h2 style={{ textAlign: 'center', marginBottom: '1.5rem' }}>Create Account</h2>
+      <h2 style={{ textAlign: 'center', marginBottom: '1.5rem' }}>
+        Create Account
+      </h2>
 
       <div className={styles.formGroup}>
         <label className={styles.label} htmlFor="name">
@@ -116,8 +130,16 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({ onSuccess, onSwitchT
           placeholder="Min 8 chars, uppercase, lowercase, number, special char"
           minLength={8}
         />
-        <small style={{ fontSize: '0.8rem', color: '#666', marginTop: '0.25rem', display: 'block' }}>
-          Password must contain: 8+ characters, uppercase, lowercase, number, and special character
+        <small
+          style={{
+            fontSize: '0.8rem',
+            color: '#666',
+            marginTop: '0.25rem',
+            display: 'block',
+          }}
+        >
+          Password must contain: 8+ characters, uppercase, lowercase, number,
+          and special character
         </small>
       </div>
 
@@ -148,7 +170,14 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({ onSuccess, onSwitchT
         {loading ? 'Creating Account...' : 'Create Account'}
       </button>
 
-      <p style={{ textAlign: 'center', marginTop: '1rem', fontSize: '0.875rem', color: '#666' }}>
+      <p
+        style={{
+          textAlign: 'center',
+          marginTop: '1rem',
+          fontSize: '0.875rem',
+          color: '#666',
+        }}
+      >
         Already have an account?{' '}
         <button
           type="button"

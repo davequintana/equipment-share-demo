@@ -1,0 +1,1 @@
+{"name":"web-app-e2e","version":"0.0.1","private":true,"type":"module","scripts":{"e2e":"nx e2e web-app-e2e"},"devDependencies":{"@playwright/test":"^1.40.0","@nx/playwright":"^21.3.11"}}

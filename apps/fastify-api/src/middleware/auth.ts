@@ -1,5 +1,6 @@
 import { FastifyRequest, FastifyReply } from 'fastify';
 import { JwtPayload } from '../types';
+import { kafkaUserActivityService } from '../kafka-user-activity.js';
 
 /**
  * Authentication middleware for protected routes
@@ -8,31 +9,48 @@ import { JwtPayload } from '../types';
  * @param reply - Fastify reply object
  * @param done - Callback function to signal completion
  */
-export const authenticateUser = (request: FastifyRequest, reply: FastifyReply, done: (err?: Error) => void): void => {
-  request.jwtVerify()
+export const authenticateUser = (
+  request: FastifyRequest,
+  reply: FastifyReply,
+  done: (err?: Error) => void,
+): void => {
+  request
+    .jwtVerify()
     .then(() => {
       // Additional validation - ensure user still exists
       const user = request.user as JwtPayload;
       if (!user?.id || !user?.email) {
         reply.code(401).send({
           error: 'Invalid token payload',
-          code: 'INVALID_TOKEN'
+          code: 'INVALID_TOKEN',
         });
         done(new Error('Invalid token payload'));
         return;
       }
 
       // Success - continue to the route handler
+      // Track user activity for session management
+      kafkaUserActivityService
+        .trackUserActivity(user.id, user.email, 'api-access', {
+          userAgent: request.headers['user-agent'],
+          ip: request.ip,
+        })
+        .catch((error) => {
+          // Don't fail the request if activity tracking fails
+          console.warn('Failed to track user activity:', error);
+        });
+
       done();
     })
     .catch((error) => {
       // More specific error handling
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      const errorMessage =
+        error instanceof Error ? error.message : 'Unknown error';
 
       if (errorMessage.includes('jwt expired')) {
         reply.code(401).send({
           error: 'Token expired',
-          code: 'TOKEN_EXPIRED'
+          code: 'TOKEN_EXPIRED',
         });
         done(new Error('Token expired'));
         return;
@@ -41,7 +59,7 @@ export const authenticateUser = (request: FastifyRequest, reply: FastifyReply, d
       if (errorMessage.includes('jwt must be provided')) {
         reply.code(401).send({
           error: 'Authorization token required',
-          code: 'TOKEN_REQUIRED'
+          code: 'TOKEN_REQUIRED',
         });
         done(new Error('Authorization token required'));
         return;
@@ -49,7 +67,7 @@ export const authenticateUser = (request: FastifyRequest, reply: FastifyReply, d
 
       reply.code(401).send({
         error: 'Unauthorized',
-        code: 'UNAUTHORIZED'
+        code: 'UNAUTHORIZED',
       });
       done(new Error('Unauthorized'));
     });
@@ -66,7 +84,8 @@ export function validateEmail(email: string): boolean {
 
   // ReDoS-safe email regex: Uses bounded quantifiers {0,61} and non-overlapping character classes
   // This pattern is specifically designed to prevent exponential backtracking attacks
-  const emailRegex = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/;
+  const emailRegex =
+    /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/;
 
   if (!emailRegex.test(email)) return false;
 
@@ -111,7 +130,9 @@ export function validateEmail(email: string): boolean {
  * @param password - Password to validate
  * @returns Object containing validation result and error messages
  */
-export const validatePassword = (password: string): { valid: boolean; errors: string[] } => {
+export const validatePassword = (
+  password: string,
+): { valid: boolean; errors: string[] } => {
   const errors: string[] = [];
 
   if (password.length < 6) {
@@ -132,7 +153,7 @@ export const validatePassword = (password: string): { valid: boolean; errors: st
 
   return {
     valid: errors.length === 0,
-    errors
+    errors,
   };
 };
 
@@ -144,7 +165,12 @@ export const validatePassword = (password: string): { valid: boolean; errors: st
 export const validateName = (name: string): boolean => {
   // Trim whitespace and check if the trimmed name meets requirements
   const trimmedName = name.trim();
-  return Boolean(trimmedName && trimmedName.length >= 2 && trimmedName.length <= 50 && trimmedName === name);
+  return Boolean(
+    trimmedName &&
+      trimmedName.length >= 2 &&
+      trimmedName.length <= 50 &&
+      trimmedName === name,
+  );
 };
 
 /**

@@ -16,10 +16,10 @@ export interface SecretConfig {
 }
 
 export class EnterpriseSecretsManager {
-  private secretsClient: SecretsManagerClient | null = null;
-  private ssmClient: SSMClient | null = null;
-  private environment: string;
-  private region: string;
+  private readonly secretsClient: SecretsManagerClient | null = null;
+  private readonly ssmClient: SSMClient | null = null;
+  private readonly environment: string;
+  private readonly region: string;
 
   constructor(environment = process.env['NODE_ENV'] || 'development', region = 'us-east-1') {
     this.environment = environment;
@@ -56,8 +56,11 @@ export class EnterpriseSecretsManager {
 
       // Fallback to environment variable if available
       if (fallbackEnvVar && process.env[fallbackEnvVar]) {
-        console.warn(`Using fallback environment variable ${fallbackEnvVar} for secret ${secretName}`);
-        return process.env[fallbackEnvVar] as string;
+        const fallbackValue = process.env[fallbackEnvVar];
+        if (fallbackValue) {
+          console.warn(`Using fallback environment variable ${fallbackEnvVar} for secret ${secretName}`);
+          return fallbackValue;
+        }
       }
 
       throw error;
@@ -91,8 +94,11 @@ export class EnterpriseSecretsManager {
 
       // Fallback to environment variable if available
       if (fallbackEnvVar && process.env[fallbackEnvVar]) {
-        console.warn(`Using fallback environment variable ${fallbackEnvVar} for parameter ${parameterName}`);
-        return process.env[fallbackEnvVar] as string;
+        const fallbackValue = process.env[fallbackEnvVar];
+        if (fallbackValue) {
+          console.warn(`Using fallback environment variable ${fallbackEnvVar} for parameter ${parameterName}`);
+          return fallbackValue;
+        }
       }
 
       throw error;
@@ -214,41 +220,47 @@ export class EnterpriseSecretsManager {
   // Health check method
   async healthCheck(): Promise<{ secretsManager: boolean; parameterStore: boolean }> {
     const result = {
-      secretsManager: false,
-      parameterStore: false
+      secretsManager: await this.checkSecretsManagerHealth(),
+      parameterStore: await this.checkParameterStoreHealth()
     };
 
-    if (this.secretsClient) {
-      try {
-        // Try to list secrets (this requires minimal permissions)
-        await this.secretsClient.send(new GetSecretValueCommand({ SecretId: 'health-check-secret' }));
-        result.secretsManager = true;
-      } catch (error) {
-        // Expected to fail if secret doesn't exist, but client is working
-        if (error instanceof Error && error.name === 'ResourceNotFoundException') {
-          result.secretsManager = true;
-        }
-      }
-    } else {
-      // In development, consider it healthy if we have fallback environment variables
-      result.secretsManager = true;
-    }
-
-    if (this.ssmClient) {
-      try {
-        await this.ssmClient.send(new GetParameterCommand({ Name: 'health-check-parameter' }));
-        result.parameterStore = true;
-      } catch (error) {
-        // Expected to fail if parameter doesn't exist, but client is working
-        if (error instanceof Error && error.name === 'ParameterNotFound') {
-          result.parameterStore = true;
-        }
-      }
-    } else {
-      // In development, consider it healthy
-      result.parameterStore = true;
-    }
-
     return result;
+  }
+
+  private async checkSecretsManagerHealth(): Promise<boolean> {
+    if (!this.secretsClient) {
+      // In development, consider it healthy if we have fallback environment variables
+      return true;
+    }
+
+    try {
+      // Try to list secrets (this requires minimal permissions)
+      await this.secretsClient.send(new GetSecretValueCommand({ SecretId: 'health-check-secret' }));
+      return true;
+    } catch (error) {
+      // Expected to fail if secret doesn't exist, but client is working
+      if (error instanceof Error && error.name === 'ResourceNotFoundException') {
+        return true;
+      }
+      return false;
+    }
+  }
+
+  private async checkParameterStoreHealth(): Promise<boolean> {
+    if (!this.ssmClient) {
+      // In development, consider it healthy
+      return true;
+    }
+
+    try {
+      await this.ssmClient.send(new GetParameterCommand({ Name: 'health-check-parameter' }));
+      return true;
+    } catch (error) {
+      // Expected to fail if parameter doesn't exist, but client is working
+      if (error instanceof Error && error.name === 'ParameterNotFound') {
+        return true;
+      }
+      return false;
+    }
   }
 }

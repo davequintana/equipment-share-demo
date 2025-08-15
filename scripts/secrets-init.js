@@ -1,4 +1,4 @@
-#!/usr/bin/env node
+#!/usr/bin/env npx tsx
 
 /**
  * Enterprise Secrets Initialization Script
@@ -7,23 +7,27 @@
  * for different environments (development, staging, production).
  *
  * Usage:
- *   pnpm run secrets:init <environment>
- *   pnpm run secrets:rotate <environment> <secret-name>
- *   pnpm run secrets:validate <environment>
+ *   npx tsx scripts/secrets-init.js init <environment>
+ *   npx tsx scripts/secrets-init.js rotate <environment> <secret-name>
+ *   npx tsx scripts/secrets-init.js validate <environment>
  */
 
-import { EnterpriseSecretsManager } from '../libs/secrets/src/secrets-manager';
+import { EnterpriseSecretsManager } from '../apps/fastify-api/src/enterprise-secrets-manager.ts';
 import * as crypto from 'crypto';
+import { readFile, writeFile, access } from 'fs/promises';
 
-interface SecretDefinition {
-  name: string;
-  type: 'secret' | 'parameter';
-  secure: boolean;
-  generator?: () => string;
-  description: string;
-}
+// Type definitions using JSDoc for JavaScript compatibility
+/**
+ * @typedef {Object} SecretDefinition
+ * @property {string} name
+ * @property {'secret' | 'parameter'} type
+ * @property {boolean} secure
+ * @property {() => string} [generator]
+ * @property {string} description
+ */
 
-const SECRETS_DEFINITIONS: SecretDefinition[] = [
+/** @type {SecretDefinition[]} */
+const SECRETS_DEFINITIONS = [
   {
     name: 'jwt-secret',
     type: 'secret',
@@ -58,15 +62,15 @@ const SECRETS_DEFINITIONS: SecretDefinition[] = [
 ];
 
 class SecretsInitializer {
-  private secretsManager: EnterpriseSecretsManager;
-  private environment: string;
-
-  constructor(environment: string) {
+  /**
+   * @param {string} environment
+   */
+  constructor(environment) {
     this.environment = environment;
     this.secretsManager = new EnterpriseSecretsManager(environment);
   }
 
-  async initializeSecrets(): Promise<void> {
+  async initializeSecrets() {
     console.log(`🔐 Initializing secrets for environment: ${this.environment}`);
 
     if (this.environment === 'development' || this.environment === 'test') {
@@ -87,7 +91,10 @@ class SecretsInitializer {
     }
   }
 
-  async rotateSecret(secretName: string): Promise<void> {
+  /**
+   * @param {string} secretName
+   */
+  async rotateSecret(secretName) {
     console.log(`🔄 Rotating secret: ${secretName}`);
 
     const secretDef = SECRETS_DEFINITIONS.find(s => s.name === secretName);
@@ -102,18 +109,19 @@ class SecretsInitializer {
     const newValue = secretDef.generator();
 
     if (secretDef.type === 'secret') {
-      await this.secretsManager.putSecret(secretName, newValue);
+      await this.secretsManager.createSecret(secretName, newValue, secretDef.description);
     } else {
-      await this.secretsManager.putParameter(secretName, newValue, secretDef.secure);
+      await this.secretsManager.createParameter(secretName, newValue, secretDef.description);
     }
 
     console.log(`✅ Secret ${secretName} rotated successfully`);
   }
 
-  async validateSecrets(): Promise<void> {
+  async validateSecrets() {
     console.log(`🔍 Validating secrets for environment: ${this.environment}`);
 
-    const results: Array<{ name: string; status: 'ok' | 'missing' | 'error'; message?: string }> = [];
+    /** @type {Array<{name: string, status: 'ok' | 'missing' | 'error', message?: string}>} */
+    const results = [];
 
     for (const secretDef of SECRETS_DEFINITIONS) {
       try {
@@ -150,7 +158,10 @@ class SecretsInitializer {
     }
   }
 
-  private async initializeSecret(secretDef: SecretDefinition): Promise<void> {
+  /**
+   * @param {SecretDefinition} secretDef
+   */
+  async initializeSecret(secretDef) {
     // Check if secret already exists
     try {
       if (secretDef.type === 'secret') {
@@ -164,7 +175,7 @@ class SecretsInitializer {
       // Secret doesn't exist, create it
     }
 
-    let value: string;
+    let value;
 
     if (secretDef.generator) {
       value = secretDef.generator();
@@ -174,28 +185,26 @@ class SecretsInitializer {
     }
 
     if (secretDef.type === 'secret') {
-      await this.secretsManager.putSecret(secretDef.name, value);
+      await this.secretsManager.createSecret(secretDef.name, value, secretDef.description);
     } else {
-      await this.secretsManager.putParameter(secretDef.name, value, secretDef.secure);
+      await this.secretsManager.createParameter(secretDef.name, value, secretDef.description);
     }
   }
 
-  private async initializeLocalSecrets(): Promise<void> {
+  async initializeLocalSecrets() {
     console.log('📁 Checking local environment configuration...');
 
     const envExample = '.env.example';
     const envLocal = '.env.local';
 
     try {
-      const fs = await import('fs/promises');
-      await fs.access(envLocal);
+      await access(envLocal);
       console.log(`✅ ${envLocal} exists`);
     } catch {
       console.log(`📋 Creating ${envLocal} from ${envExample}...`);
       try {
-        const fs = await import('fs/promises');
-        const exampleContent = await fs.readFile(envExample, 'utf8');
-        await fs.writeFile(envLocal, exampleContent);
+        const exampleContent = await readFile(envExample, 'utf8');
+        await writeFile(envLocal, exampleContent);
         console.log(`✅ Created ${envLocal} - please review and update values`);
       } catch (error) {
         console.error(`❌ Failed to create ${envLocal}:`, error);
@@ -203,7 +212,11 @@ class SecretsInitializer {
     }
   }
 
-  private async promptForSecret(secretDef: SecretDefinition): Promise<string> {
+  /**
+   * @param {SecretDefinition} secretDef
+   * @returns {Promise<string>}
+   */
+  async promptForSecret(secretDef) {
     // In a real implementation, you might use a proper CLI prompt library
     // For now, we'll provide instructions for manual setup
 
@@ -217,7 +230,7 @@ class SecretsInitializer {
         port: 5432,
         database: 'enterprise_db',
         username: 'enterprise',
-        password: 'generated-secure-password'
+        password: crypto.randomBytes(32).toString('hex')
       });
     }
 
@@ -245,11 +258,19 @@ async function main() {
 
   if (!command || !environment) {
     console.log('Usage:');
-    console.log('  node scripts/secrets-init.js init <environment>');
-    console.log('  node scripts/secrets-init.js rotate <environment> <secret-name>');
-    console.log('  node scripts/secrets-init.js validate <environment>');
+    console.log('  npx tsx scripts/secrets-init.js init <environment>');
+    console.log('  npx tsx scripts/secrets-init.js rotate <environment> <secret-name>');
+    console.log('  npx tsx scripts/secrets-init.js validate <environment>');
     console.log('');
-    console.log('Environments: development, staging, production');
+    console.log('Environments: development, staging, production, test');
+    process.exit(1);
+  }
+
+  // Validate environment
+  const validEnvironments = ['development', 'staging', 'production', 'test'];
+  if (!validEnvironments.includes(environment)) {
+    console.error(`❌ Invalid environment: ${environment}`);
+    console.error(`Valid environments: ${validEnvironments.join(', ')}`);
     process.exit(1);
   }
 
@@ -260,19 +281,21 @@ async function main() {
       case 'init':
         await initializer.initializeSecrets();
         break;
-      case 'rotate':
+      case 'rotate': {
         const secretName = args[2];
         if (!secretName) {
-          console.error('Secret name is required for rotation');
+          console.error('❌ Secret name is required for rotation');
           process.exit(1);
         }
         await initializer.rotateSecret(secretName);
         break;
+      }
       case 'validate':
         await initializer.validateSecrets();
         break;
       default:
-        console.error(`Unknown command: ${command}`);
+        console.error(`❌ Unknown command: ${command}`);
+        console.error('Valid commands: init, rotate, validate');
         process.exit(1);
     }
   } catch (error) {
@@ -281,6 +304,7 @@ async function main() {
   }
 }
 
-if (require.main === module) {
+// Only run main if this file is executed directly (ES module compatible)
+if (import.meta.url === `file://${process.argv[1]}`) {
   main().catch(console.error);
 }

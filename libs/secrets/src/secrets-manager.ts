@@ -10,10 +10,10 @@ interface DatabaseCredentials {
 }
 
 export class EnterpriseSecretsManager {
-  private secretsClient: SecretsManagerClient;
-  private ssmClient: SSMClient;
-  private environment: string;
-  private region: string;
+  private readonly secretsClient: SecretsManagerClient;
+  private readonly ssmClient: SSMClient;
+  private readonly environment: string;
+  private readonly region: string;
 
   constructor(environment = process.env.NODE_ENV || 'development', region = 'us-east-1') {
     this.environment = environment;
@@ -176,7 +176,20 @@ export class EnterpriseSecretsManager {
    */
   async getJwtSecret(): Promise<string> {
     const secret = await this.getSecret('jwt-secret');
-    return typeof secret === 'string' ? secret : String(secret);
+    if (typeof secret === 'string') {
+      return secret;
+    }
+    // If secret is an object, try to extract a 'jwt' or 'secret' property, else serialize
+    if (typeof secret === 'object' && secret !== null) {
+      if ('jwt' in secret) {
+        return String(secret['jwt']);
+      }
+      if ('secret' in secret) {
+        return String(secret['secret']);
+      }
+      return JSON.stringify(secret);
+    }
+    throw new Error('JWT secret is not a valid string or object');
   }
 
   /**

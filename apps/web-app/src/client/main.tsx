@@ -8,7 +8,7 @@ const root = document.getElementById('root');
 // Get the base path from the HTML base tag or default to root
 const getBasename = () => {
   const baseElement = document.querySelector('base');
-  if (baseElement && baseElement.href) {
+  if (baseElement?.href) {
     const url = new URL(baseElement.href);
     return url.pathname;
   }

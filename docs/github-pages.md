@@ -22,18 +22,23 @@ Your application is automatically deployed to GitHub Pages at:
 Update the base path in the following files to match your repository name:
 
 **`apps/web-app/vite.config.pages.ts`**:
+
 ```typescript
 base: '/your-repository-name/', // Update this
 ```
 
 **`apps/web-app/index.pages.html`**:
+
 ```html
 <base href="/your-repository-name/" />
 ```
 
 **`.github/workflows/deploy-pages.yml`**:
+
 ```yaml
+
 # Update the repository name references
+
 ```
 
 ### 3. Configure API Endpoint (Optional)
@@ -53,13 +58,13 @@ env:
 
 ### First-Time Setup
 
-**Method 1: Manual Setup (Recommended)**
+#### Method 1: Manual Setup (Recommended)
 
 1. Go to your repository **Settings** → **Pages**
 2. Set **Source** to "GitHub Actions"
 3. Save the settings
 
-**Method 2: Automated Setup**
+#### Method 2: Automated Setup
 
 1. Go to **Actions** tab in your repository
 2. Find **Enable GitHub Pages** workflow
@@ -89,10 +94,13 @@ The application automatically deploys when:
 A special build target `build-pages` is configured for GitHub Pages:
 
 ```bash
+
 # Build for GitHub Pages
+
 pnpm exec nx build-pages web-app
 
 # Development build
+
 pnpm exec nx build web-app
 ```
 
@@ -108,7 +116,7 @@ pnpm exec nx build web-app
 
 ## 📁 File Structure
 
-```
+```text
 apps/web-app/
 ├── index.html              # SSR index file
 ├── index.pages.html        # GitHub Pages index file
@@ -165,6 +173,7 @@ The GitHub Pages build includes several optimizations:
 ## 📊 Monitoring
 
 Check deployment status:
+
 - **Actions Tab**: View workflow runs and logs
 - **Environment Tab**: See deployment history
 - **Pages Settings**: Monitor domain and HTTPS status
@@ -174,7 +183,8 @@ Check deployment status:
 ### Custom Domain
 
 1. Add a `CNAME` file to the `public` directory:
-   ```
+
+   ```text
    your-domain.com
    ```
 

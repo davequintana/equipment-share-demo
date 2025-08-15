@@ -1,16 +1,21 @@
 import { test, expect } from '@playwright/test';
 
 // Helper function for authentication to reduce duplication and improve parallel efficiency
-async function authenticateUser(page, email = 'admin@example.com', password = 'password') {
+async function authenticateUser(
+  page,
+  email = 'admin@example.com',
+  password = 'password',
+) {
   await page.getByRole('button', { name: 'Login' }).click();
   await page.fill('input[type="email"]', email);
   await page.fill('input[type="password"]', password);
 
   const [response] = await Promise.all([
-    page.waitForResponse(response =>
-      response.url().includes('/api/auth/login'), { timeout: 45000 }
+    page.waitForResponse(
+      (response) => response.url().includes('/api/auth/login'),
+      { timeout: 45000 },
     ),
-    page.click('button[type="submit"]')
+    page.click('button[type="submit"]'),
   ]);
 
   return response;
@@ -19,20 +24,26 @@ async function authenticateUser(page, email = 'admin@example.com', password = 'p
 test.describe('Enterprise App E2E Tests', () => {
   test.beforeEach(async ({ page }) => {
     // Wait for servers to be ready before running tests
-    await page.goto('http://localhost:4201');
+    await page.goto('http://localhost:4200');
 
     // Wait for the main content to load, indicating the app is ready
     await expect(page.locator('h1')).toBeVisible({ timeout: 45000 });
 
     // Also check that the API server is responding
-    const apiHealthCheck = await page.request.get('http://localhost:3334/health');
+    const apiHealthCheck = await page.request.get(
+      'http://localhost:3334/health',
+    );
     expect(apiHealthCheck.status()).toBe(200);
   });
 
   test('should display welcome page', async ({ page }) => {
-    await expect(page.locator('h1')).toContainText('Welcome to Enterprise NX Monorepo');
+    await expect(page.locator('h1')).toContainText(
+      'Welcome to Enterprise NX Monorepo',
+    );
     await expect(page.getByRole('button', { name: 'Login' })).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Create Account' })).toBeVisible();
+    await expect(
+      page.getByRole('button', { name: 'Create Account' }),
+    ).toBeVisible();
   });
 
   test('should navigate to login and authenticate', async ({ page }) => {
@@ -61,11 +72,21 @@ test.describe('Enterprise App E2E Tests', () => {
 
     // Check features are displayed
     await expect(page.getByRole('heading', { name: 'React 19' })).toBeVisible();
-    await expect(page.getByRole('heading', { name: 'NX Monorepo', exact: true })).toBeVisible();
-    await expect(page.getByRole('heading', { name: 'Vanilla Extract' })).toBeVisible();
-    await expect(page.getByRole('heading', { name: 'Fastify API' })).toBeVisible();
-    await expect(page.getByRole('heading', { name: 'PostgreSQL' })).toBeVisible();
-    await expect(page.getByRole('heading', { name: 'Apache Kafka' })).toBeVisible();
+    await expect(
+      page.getByRole('heading', { name: 'NX Monorepo', exact: true }),
+    ).toBeVisible();
+    await expect(
+      page.getByRole('heading', { name: 'Vanilla Extract' }),
+    ).toBeVisible();
+    await expect(
+      page.getByRole('heading', { name: 'Fastify API' }),
+    ).toBeVisible();
+    await expect(
+      page.getByRole('heading', { name: 'PostgreSQL' }),
+    ).toBeVisible();
+    await expect(
+      page.getByRole('heading', { name: 'Apache Kafka' }),
+    ).toBeVisible();
   });
 
   test('should logout successfully', async ({ page }) => {
@@ -113,12 +134,15 @@ test.describe('Enterprise App E2E Tests', () => {
 
   test('API authentication flow', async ({ request }) => {
     // Test Fastify API login
-    const loginResponse = await request.post('http://localhost:3334/api/auth/login', {
-      data: {
-        email: 'admin@example.com',
-        password: 'password'
-      }
-    });
+    const loginResponse = await request.post(
+      'http://localhost:3334/api/auth/login',
+      {
+        data: {
+          email: 'admin@example.com',
+          password: 'password',
+        },
+      },
+    );
 
     expect(loginResponse.ok()).toBeTruthy();
     const loginData = await loginResponse.json();
@@ -126,11 +150,14 @@ test.describe('Enterprise App E2E Tests', () => {
     expect(loginData.user.email).toBe('admin@example.com');
 
     // Test protected route with token
-    const profileResponse = await request.get('http://localhost:3334/api/users/profile', {
-      headers: {
-        'Authorization': `Bearer ${loginData.token}`
-      }
-    });
+    const profileResponse = await request.get(
+      'http://localhost:3334/api/users/profile',
+      {
+        headers: {
+          Authorization: `Bearer ${loginData.token}`,
+        },
+      },
+    );
 
     expect(profileResponse.ok()).toBeTruthy();
     const profileData = await profileResponse.json();

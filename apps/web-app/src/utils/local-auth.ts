@@ -52,7 +52,7 @@ export const localAuth = {
 
   // Store auth in localStorage
   setAuth(user: User): string {
-    const token = `local-token-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    const token = `local-token-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`;
     const auth: StoredAuth = {
       user,
       token,

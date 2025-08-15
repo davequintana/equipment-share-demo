@@ -1,0 +1,15 @@
+# ESLint configuration for YAML files
+root: true
+extends:
+  - "@eslint/js"
+env:
+  node: true
+  es2022: true
+rules:
+  # Disable false positive rules for Kubernetes YAML
+  no-duplicate-keys: off
+ignorePatterns:
+  - "*.yaml"
+  - "*.yml"
+  - "k8s/**/*"
+  - "infrastructure/**/*"

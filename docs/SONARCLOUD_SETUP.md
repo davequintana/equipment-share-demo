@@ -5,11 +5,13 @@ This project uses SonarCloud for continuous code quality and security analysis.
 ## 🔧 Configuration
 
 ### Project Setup
+
 - **Project Key**: `davequintana_equipment-share-demo`
 - **Organization**: `davequintana`
 - **Configuration File**: `sonar-project.properties`
 
 ### Analysis Scope
+
 - **Source Code**: `apps/`, `libs/`
 - **Tests**: `**/*.test.ts`, `**/*.spec.ts`, `**/*.test.tsx`, `**/*.spec.tsx`
 - **Coverage Reports**: LCOV format from all test runs
@@ -18,12 +20,15 @@ This project uses SonarCloud for continuous code quality and security analysis.
 ## 🚀 GitHub Integration
 
 ### Automatic Analysis
+
 SonarCloud analysis runs automatically on:
+
 - ✅ Pull requests to `main` and `develop` branches
 - ✅ Pushes to `main` and `develop` branches
 - ✅ After test completion (uses coverage data)
 
 ### Required Secrets
+
 Add the following secrets to your GitHub repository:
 
 1. **`SONAR_TOKEN`**
@@ -35,6 +40,7 @@ Add the following secrets to your GitHub repository:
 ## 📊 Coverage Integration
 
 The CI workflow automatically:
+
 1. Runs tests with coverage enabled
 2. Consolidates coverage reports from all projects
 3. Provides LCOV reports to SonarCloud
@@ -43,6 +49,7 @@ The CI workflow automatically:
 ## 🎯 Quality Standards
 
 ### Code Quality Metrics
+
 - **Maintainability Rating**: A grade
 - **Reliability Rating**: A grade  
 - **Security Rating**: A grade
@@ -50,6 +57,7 @@ The CI workflow automatically:
 - **Duplicated Lines**: <3%
 
 ### Quality Gate Conditions
+
 - New code coverage: ≥80%
 - New code duplicated lines: ≤3%
 - Maintainability rating: A
@@ -61,17 +69,22 @@ The CI workflow automatically:
 To run SonarCloud analysis locally:
 
 ```bash
+
 # Install SonarCloud CLI (requires Java)
+
 npm install -g sonarqube-scanner
 
 # Run tests with coverage
+
 pnpm run test:coverage
 
 # Run SonarCloud analysis
+
 pnpm run sonar
 ```
 
 ### Environment Variables for Local Analysis
+
 ```bash
 export SONAR_TOKEN=your_sonar_token_here
 export SONAR_HOST_URL=https://sonarcloud.io
@@ -82,11 +95,13 @@ export SONAR_HOST_URL=https://sonarcloud.io
 The analysis includes:
 
 ### Source Files
+
 - TypeScript/JavaScript files in `apps/` and `libs/`
 - React components and hooks
 - Server-side APIs and utilities
 
 ### Excluded from Analysis
+
 - Node modules
 - Build outputs (`dist/`, `coverage/`)
 - Test files (analyzed separately)
@@ -95,6 +110,7 @@ The analysis includes:
 - End-to-end tests
 
 ### Test Files
+
 - Unit tests (`*.test.ts`, `*.spec.ts`)
 - Component tests (`*.test.tsx`, `*.spec.tsx`)
 - Test coverage reports
@@ -104,6 +120,7 @@ The analysis includes:
 ### Common Issues
 
 1. **Analysis Fails**
+
    ```bash
    # Check if SONAR_TOKEN is set correctly
    echo $SONAR_TOKEN
@@ -113,6 +130,7 @@ The analysis includes:
    ```
 
 2. **Coverage Not Detected**
+
    ```bash
    # Ensure coverage reports exist
    find . -name "lcov.info" -path "*/coverage/*"
@@ -136,4 +154,4 @@ The analysis includes:
 ## 🔗 Dashboard Access
 
 View the project analysis at:
-**https://sonarcloud.io/project/overview?id=davequintana_equipment-share-demo**
+**<https://sonarcloud.io/project/overview?id=davequintana_equipment-share-demo>**

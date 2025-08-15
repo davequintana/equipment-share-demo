@@ -46,7 +46,7 @@ Resources:
     Properties:
       VpcId: !Ref VPC
       AvailabilityZone: !Select [0, !GetAZs '']
-      CidrBlock: !Sub '10.0.1.0/24'
+      CidrBlock: '10.0.1.0/24'
       MapPublicIpOnLaunch: true
       Tags:
         - Key: Name
@@ -57,7 +57,7 @@ Resources:
     Properties:
       VpcId: !Ref VPC
       AvailabilityZone: !Select [1, !GetAZs '']
-      CidrBlock: !Sub '10.0.2.0/24'
+      CidrBlock: '10.0.2.0/24'
       MapPublicIpOnLaunch: true
       Tags:
         - Key: Name
@@ -69,7 +69,7 @@ Resources:
     Properties:
       VpcId: !Ref VPC
       AvailabilityZone: !Select [0, !GetAZs '']
-      CidrBlock: !Sub '10.0.11.0/24'
+      CidrBlock: '10.0.11.0/24'
       Tags:
         - Key: Name
           Value: !Sub '${AWS::StackName}-private-subnet-1'
@@ -79,7 +79,7 @@ Resources:
     Properties:
       VpcId: !Ref VPC
       AvailabilityZone: !Select [1, !GetAZs '']
-      CidrBlock: !Sub '10.0.12.0/24'
+      CidrBlock: '10.0.12.0/24'
       Tags:
         - Key: Name
           Value: !Sub '${AWS::StackName}-private-subnet-2'
@@ -142,7 +142,7 @@ Resources:
           ToPort: 80
           SourceSecurityGroupId: !Ref ALBSecurityGroup
         - IpProtocol: tcp
-          FromPort: 3333
+          FromPort: 3334
           ToPort: 3334
           SourceSecurityGroupId: !Ref ALBSecurityGroup
 
@@ -201,7 +201,7 @@ Resources:
       DBInstanceIdentifier: !Sub '${AWS::StackName}-postgres'
       DBInstanceClass: !If [IsProd, 'db.r6g.xlarge', 'db.t3.large']
       Engine: 'postgres'
-      EngineVersion: '16.2'
+      EngineVersion: '16.9'
       AllocatedStorage: !If [IsProd, 1000, 100]
       MaxAllocatedStorage: !If [IsProd, 10000, 1000]
       StorageType: !If [IsProd, 'gp3', 'gp3']
@@ -351,7 +351,7 @@ Resources:
   RedisCluster:
     Type: AWS::ElastiCache::CacheCluster
     Properties:
-      CacheClusterId: !Sub '${AWS::StackName}-redis'
+      ClusterName: !Sub '${AWS::StackName}-redis'
       Engine: 'redis'
       CacheNodeType: 'cache.t3.micro'
       NumCacheNodes: 1
