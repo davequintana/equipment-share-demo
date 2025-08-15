@@ -60,7 +60,7 @@ describe('ApiClient', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockIsLocalOnlyMode.mockReturnValue(false);
-    
+
     // Reset API client token state
     apiClient.setToken(null);
 
@@ -81,14 +81,14 @@ describe('ApiClient', () => {
   describe('Constructor and BaseURL Configuration', () => {
     it('should handle local-only mode correctly', () => {
       mockIsLocalOnlyMode.mockReturnValue(true);
-      
+
       // Since baseUrl is private, we test indirectly through behavior
       expect(mockIsLocalOnlyMode).toBeDefined();
     });
 
     it('should detect environment correctly', () => {
       mockIsLocalOnlyMode.mockReturnValue(false);
-      
+
       // The constructor logic is already executed when the module is imported
       // We can test that the mocks are set up correctly
       expect(mockIsLocalOnlyMode).toBeDefined();
@@ -98,9 +98,9 @@ describe('ApiClient', () => {
   describe('Token Management', () => {
     it('should set and use authentication token', () => {
       const testToken = 'test-jwt-token-123';
-      
+
       apiClient.setToken(testToken);
-      
+
       // Token is private, but we can test its usage through API calls
       expect(() => apiClient.setToken(testToken)).not.toThrow();
     });
@@ -108,7 +108,7 @@ describe('ApiClient', () => {
     it('should clear authentication token when set to null', () => {
       apiClient.setToken('test-token');
       apiClient.setToken(null);
-      
+
       expect(() => apiClient.setToken(null)).not.toThrow();
     });
 
@@ -154,7 +154,7 @@ describe('ApiClient', () => {
 
     it('should make successful API requests', async () => {
       const mockResponse = { success: true, data: { id: 1, name: 'Test' } };
-      
+
       mockFetch.mockResolvedValue({
         ok: true,
         status: 200,
@@ -177,7 +177,7 @@ describe('ApiClient', () => {
 
     it('should handle HTTP error responses', async () => {
       const errorResponse = { error: 'Unauthorized access' };
-      
+
       mockFetch.mockResolvedValue({
         ok: false,
         status: 401,
@@ -287,10 +287,10 @@ describe('ApiClient', () => {
       expect(mockFetch).toHaveBeenCalledWith(
         expect.any(String),
         expect.objectContaining({
-          body: JSON.stringify({ 
+          body: JSON.stringify({
             action: 'activity',
             page: undefined,
-            metadata: undefined 
+            metadata: undefined
           }),
         })
       );
@@ -311,10 +311,10 @@ describe('ApiClient', () => {
       expect(mockFetch).toHaveBeenCalledWith(
         expect.any(String),
         expect.objectContaining({
-          body: JSON.stringify({ 
+          body: JSON.stringify({
             action,
             page: undefined,
-            metadata: undefined 
+            metadata: undefined
           }),
         })
       );
@@ -391,7 +391,7 @@ describe('ApiClient', () => {
   describe('logout Method', () => {
     it('should logout successfully with valid token', async () => {
       apiClient.setToken('valid-token');
-      
+
       const mockResponse = { success: true, message: 'Logged out successfully' };
       mockFetch.mockResolvedValue({
         ok: true,
@@ -437,7 +437,7 @@ describe('ApiClient', () => {
 
     it('should handle API errors gracefully', async () => {
       apiClient.setToken('test-token');
-      
+
       const errorResponse = { error: 'Server error' };
       mockFetch.mockResolvedValue({
         ok: false,
@@ -458,7 +458,7 @@ describe('ApiClient', () => {
 
     it('should handle network errors gracefully', async () => {
       apiClient.setToken('test-token');
-      
+
       mockFetch.mockRejectedValue(new Error('Network timeout'));
 
       const result = await apiClient.logout();
@@ -474,7 +474,7 @@ describe('ApiClient', () => {
 
     it('should handle unknown errors gracefully', async () => {
       apiClient.setToken('test-token');
-      
+
       // Simulate non-Error object being thrown
       mockFetch.mockRejectedValue('Unknown error string');
 
@@ -487,7 +487,7 @@ describe('ApiClient', () => {
 
     it('should handle malformed API responses', async () => {
       apiClient.setToken('test-token');
-      
+
       mockFetch.mockResolvedValue({
         ok: false,
         status: 500,
@@ -551,7 +551,7 @@ describe('ApiClient', () => {
   describe('Security Tests', () => {
     it('should handle ReDoS attack patterns safely', async () => {
       apiClient.setToken('test-token');
-      
+
       const maliciousInputs = [
         'a'.repeat(10000), // Very long string
         '((a+)+)+b', // Exponential backtracking pattern
@@ -578,7 +578,7 @@ describe('ApiClient', () => {
 
     it('should not leak sensitive information in error messages', async () => {
       apiClient.setToken('sensitive-token-123');
-      
+
       mockFetch.mockRejectedValue(new Error('Database connection failed'));
 
       const result = await apiClient.logout();
@@ -590,7 +590,7 @@ describe('ApiClient', () => {
 
     it('should sanitize error responses', async () => {
       apiClient.setToken('test-token');
-      
+
       const maliciousError = {
         error: '<script>alert("xss")</script>',
         message: 'data:text/html,<script>alert(1)</script>',
@@ -642,7 +642,7 @@ describe('ApiClient', () => {
         text: vi.fn().mockResolvedValue('Success'),
       });
 
-      const promises = Array.from({ length: 5 }, (_, i) => 
+      const promises = Array.from({ length: 5 }, (_, i) =>
         apiClient.trackActivity(`user${i}`, 'concurrent_test')
       );
 
