@@ -2,7 +2,7 @@ import { render, screen, fireEvent, waitFor, act } from '@testing-library/react'
 import { vi, beforeEach, afterEach, describe, it, expect } from 'vitest';
 import '@testing-library/jest-dom';
 import { AuthProvider, useAuth } from './AuthContext';
-import { ReactNode } from 'react';
+import { ReactNode, useState } from 'react';
 
 // Mock the useIdleTimer hook
 const mockReset = vi.fn();
@@ -442,5 +442,219 @@ describe('AuthContext with Idle Timer', () => {
 
     // Must complete under 100ms even with attack patterns
     expect(endTime - startTime).toBeLessThan(100);
+  });
+
+  // Additional comprehensive test coverage
+  describe('API Error Handling', () => {
+    it('should handle login API errors gracefully', async () => {
+      const errorResponse = { error: 'Invalid credentials' };
+      (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
+        ok: false,
+        json: () => Promise.resolve(errorResponse),
+      });
+
+      const TestLoginComponent = () => {
+        const auth = useAuth();
+        const [error, setError] = useState('');
+
+        const handleLogin = async () => {
+          try {
+            await auth.login('test@example.com', 'wrong-password');
+          } catch (err) {
+            setError(err instanceof Error ? err.message : 'Login failed');
+          }
+        };
+
+        return (
+          <div>
+            <button onClick={handleLogin}>Login</button>
+            <div data-testid="error">{error}</div>
+          </div>
+        );
+      };
+
+      renderWithAuthProvider(<TestLoginComponent />);
+
+      const loginButton = screen.getByText('Login');
+      fireEvent.click(loginButton);
+
+      await waitFor(() => {
+        expect(screen.getByTestId('error')).toHaveTextContent('Invalid credentials');
+      });
+    });
+
+    it('should handle registration API errors gracefully', async () => {
+      const errorResponse = { details: ['Email already exists', 'Password too weak'] };
+      (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
+        ok: false,
+        json: () => Promise.resolve(errorResponse),
+      });
+
+      const TestRegisterComponent = () => {
+        const auth = useAuth();
+        const [error, setError] = useState('');
+
+        const handleRegister = async () => {
+          try {
+            await auth.register('test@example.com', 'weak', 'Test User');
+          } catch (err) {
+            setError(err instanceof Error ? err.message : 'Registration failed');
+          }
+        };
+
+        return (
+          <div>
+            <button onClick={handleRegister}>Register</button>
+            <div data-testid="error">{error}</div>
+          </div>
+        );
+      };
+
+      renderWithAuthProvider(<TestRegisterComponent />);
+
+      const registerButton = screen.getByText('Register');
+      fireEvent.click(registerButton);
+
+      await waitFor(() => {
+        expect(screen.getByTestId('error')).toHaveTextContent('Email already exists, Password too weak');
+      });
+    });
+
+    it('should handle fetch network errors', async () => {
+      (global.fetch as ReturnType<typeof vi.fn>).mockRejectedValue(new Error('Network error'));
+
+      const TestNetworkErrorComponent = () => {
+        const auth = useAuth();
+        const [error, setError] = useState('');
+
+        const handleLogin = async () => {
+          try {
+            await auth.login('test@example.com', 'password');
+          } catch (err) {
+            setError(err instanceof Error ? err.message : 'Network error');
+          }
+        };
+
+        return (
+          <div>
+            <button onClick={handleLogin}>Login</button>
+            <div data-testid="error">{error}</div>
+          </div>
+        );
+      };
+
+      renderWithAuthProvider(<TestNetworkErrorComponent />);
+
+      const loginButton = screen.getByText('Login');
+      fireEvent.click(loginButton);
+
+      await waitFor(() => {
+        expect(screen.getByTestId('error')).toHaveTextContent('Network error');
+      });
+    });
+  });
+
+  describe('Session State Management', () => {
+    it('should handle session timeout with proper cleanup', async () => {
+      // Mock stored user data
+      localStorageMock.getItem.mockImplementation((key) => {
+        if (key === 'token') return 'test-token';
+        if (key === 'user') return JSON.stringify({ id: '1', name: 'Test User', email: 'test@example.com' });
+        return null;
+      });
+
+      renderWithAuthProvider(<TestComponent />);
+
+      await waitFor(() => {
+        expect(screen.getByTestId('user')).toHaveTextContent('Test User');
+      });
+
+      // Trigger idle timeout
+      act(() => {
+        if (mockIdleCallback) {
+          mockIdleCallback();
+        }
+      });
+
+      expect(screen.getByTestId('user')).toHaveTextContent('No user');
+      expect(localStorageMock.removeItem).toHaveBeenCalledWith('token');
+      expect(localStorageMock.removeItem).toHaveBeenCalledWith('user');
+    });
+
+    it('should handle invalid JSON in localStorage gracefully', () => {
+      localStorageMock.getItem.mockImplementation((key) => {
+        if (key === 'token') return 'test-token';
+        if (key === 'user') return 'invalid-json{';
+        return null;
+      });
+
+      renderWithAuthProvider(<TestComponent />);
+
+      // Should show no user when JSON is invalid
+      expect(screen.getByTestId('user')).toHaveTextContent('No user');
+    });
+
+    it('should handle empty localStorage values', () => {
+      localStorageMock.getItem.mockImplementation((key) => {
+        if (key === 'token') return '';
+        if (key === 'user') return '';
+        return null;
+      });
+
+      renderWithAuthProvider(<TestComponent />);
+
+      expect(screen.getByTestId('user')).toHaveTextContent('No user');
+    });
+  });
+
+  describe('Security and Edge Cases', () => {
+    it('should validate user data structure', () => {
+      // Test with malformed user object
+      localStorageMock.getItem.mockImplementation((key) => {
+        if (key === 'token') return 'test-token';
+        if (key === 'user') return JSON.stringify({ wrongField: 'value' });
+        return null;
+      });
+
+      renderWithAuthProvider(<TestComponent />);
+
+      expect(screen.getByTestId('user')).toHaveTextContent('No user');
+    });
+
+    it('should handle extremely long token strings', () => {
+      const longToken = 'a'.repeat(10000);
+      localStorageMock.getItem.mockImplementation((key) => {
+        if (key === 'token') return longToken;
+        if (key === 'user') return JSON.stringify({ id: '1', name: 'Test User', email: 'test@example.com' });
+        return null;
+      });
+
+      const startTime = Date.now();
+      renderWithAuthProvider(<TestComponent />);
+      const endTime = Date.now();
+
+      // Should handle long tokens without performance issues
+      expect(endTime - startTime).toBeLessThan(100);
+      expect(screen.getByTestId('user')).toHaveTextContent('Test User');
+    });
+
+    it('should handle multiple rapid authentication state changes', async () => {
+      renderWithAuthProvider(<TestComponent />);
+
+      // Test fewer rapid cycles to avoid timeout
+      for (let i = 0; i < 3; i++) {
+        const loginButton = screen.getByText('Login');
+        fireEvent.click(loginButton);
+
+        await waitFor(() => {
+          expect(screen.getByTestId('user')).toHaveTextContent('Test User');
+        });
+
+        const logoutButton = screen.getByText('Logout');
+        fireEvent.click(logoutButton);
+
+        expect(screen.getByTestId('user')).toHaveTextContent('No user');
+      }
+    });
   });
 });
