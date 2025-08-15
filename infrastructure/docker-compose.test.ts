@@ -3,9 +3,6 @@ import fs from 'fs/promises';
 import path from 'path';
 import yaml from 'yaml';
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-type DockerComposeService = any;
-
 describe('Docker Compose PostgreSQL Configuration Tests', () => {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let compose: any;
@@ -17,8 +14,8 @@ describe('Docker Compose PostgreSQL Configuration Tests', () => {
   });
 
   describe('PostgreSQL Service Configuration', () => {
-    let postgresService: DockerComposeService;
-
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let postgresService: any;
     beforeAll(() => {
       postgresService = compose.services.postgres;
     });
@@ -112,7 +109,8 @@ describe('Docker Compose PostgreSQL Configuration Tests', () => {
   });
 
   describe('Redis Service Integration', () => {
-    let redisService: DockerComposeService;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let redisService: any;
 
     beforeAll(() => {
       redisService = compose.services.redis;

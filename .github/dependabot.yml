@@ -7,8 +7,6 @@ updates:
       day: "monday"
       time: "06:00"
     open-pull-requests-limit: 10
-    reviewers:
-      - "davequintana"
     assignees:
       - "davequintana"
     commit-message:

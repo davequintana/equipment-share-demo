@@ -1,0 +1,82 @@
+# Network Policy for Frontend
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: web-app-network-policy
+  namespace: enterprise-app
+spec:
+  podSelector:
+    matchLabels:
+      app: web-app
+  policyTypes:
+  - Ingress
+  - Egress
+  ingress:
+  - from: []  # Allow ingress from anywhere (public frontend)
+    ports:
+    - protocol: TCP
+      port: 4200
+  egress:
+  - to:
+    - podSelector:
+        matchLabels:
+          app: fastify-api  # Allow calls to API
+    ports:
+    - protocol: TCP
+      port: 3334
+  - to: []  # Allow external DNS, etc.
+    ports:
+    - protocol: TCP
+      port: 53
+    - protocol: UDP
+      port: 53
+---
+# Network Policy for Backend API
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: fastify-api-network-policy
+  namespace: enterprise-app
+spec:
+  podSelector:
+    matchLabels:
+      app: fastify-api
+  policyTypes:
+  - Ingress
+  - Egress
+  ingress:
+  - from:
+    - podSelector:
+        matchLabels:
+          app: web-app  # Allow frontend
+    ports:
+    - protocol: TCP
+      port: 3334
+  egress:
+  - to:
+    - podSelector:
+        matchLabels:
+          app: postgres  # Allow database access
+    ports:
+    - protocol: TCP
+      port: 5432
+  - to:
+    - podSelector:
+        matchLabels:
+          app: redis  # Allow cache access
+    ports:
+    - protocol: TCP
+      port: 6379
+  - to:
+    - podSelector:
+        matchLabels:
+          app: kafka  # Allow messaging access
+    ports:
+    - protocol: TCP
+      port: 9092
+  - to: []  # Allow external DNS, etc.
+    ports:
+    - protocol: TCP
+      port: 53
+    - protocol: UDP
+      port: 53

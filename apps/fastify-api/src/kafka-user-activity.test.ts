@@ -594,4 +594,165 @@ describe('KafkaUserActivityService', () => {
       clearTimeoutSpy.mockRestore();
     });
   });
+
+  describe('Additional Edge Cases', () => {
+    describe('startConsuming error handling', () => {
+      it('should throw error when consumer is not initialized', async () => {
+        // Ensure consumer is null
+        service['consumer'] = null;
+
+        await expect(service['startConsuming']()).rejects.toThrow('Consumer not initialized');
+      });
+    });
+
+    describe('Unknown event types', () => {
+      it('should handle unknown event types gracefully', async () => {
+        const unknownEvent = {
+          userId: 'user123',
+          email: 'test@example.com',
+          eventType: 'unknown-event-type' as 'activity' | 'logout',
+          timestamp: Date.now(),
+        };
+
+        // Should not throw when handling unknown event type
+        await expect(service['handleUserActivityEvent'](unknownEvent)).resolves.not.toThrow();
+
+        // Should not create sessions for unknown event types
+        expect(service.isUserActive('user123')).toBe(false);
+      });
+
+      it('should handle events with missing eventType property', async () => {
+        const invalidEvent = {
+          userId: 'user123',
+          email: 'test@example.com',
+          timestamp: Date.now(),
+          // eventType is missing
+        } as UserActivityEvent;
+
+        // Should not throw when eventType is missing
+        await expect(service['handleUserActivityEvent'](invalidEvent)).resolves.not.toThrow();
+      });
+    });
+
+    describe('Session ID edge cases', () => {
+      it('should handle very long session IDs', () => {
+        const userId = 'user123';
+        const email = 'test@example.com';
+        const timestamp = Date.now();
+        const veryLongSessionId = 'session-' + 'x'.repeat(1000);
+
+        service['updateUserSession'](userId, email, timestamp, veryLongSessionId);
+
+        const session = service.getUserSession(userId);
+        expect(session?.sessionId).toBe(veryLongSessionId);
+      });
+
+      it('should handle session IDs with special characters', () => {
+        const userId = 'user123';
+        const email = 'test@example.com';
+        const timestamp = Date.now();
+        const specialSessionId = 'session-!@#$%^&*()_+-=[]{}|;:,.<>?`~';
+
+        service['updateUserSession'](userId, email, timestamp, specialSessionId);
+
+        const session = service.getUserSession(userId);
+        expect(session?.sessionId).toBe(specialSessionId);
+      });
+    });
+
+    describe('Timestamp edge cases', () => {
+      it('should handle zero timestamp values', () => {
+        const userId = 'user123';
+        const email = 'test@example.com';
+        const timestamp = 0;
+
+        service['updateUserSession'](userId, email, timestamp);
+
+        const session = service.getUserSession(userId);
+        expect(session?.lastActivity).toBe(0);
+      });
+
+      it('should handle negative timestamp values', () => {
+        const userId = 'user123';
+        const email = 'test@example.com';
+        const timestamp = -1000;
+
+        service['updateUserSession'](userId, email, timestamp);
+
+        const session = service.getUserSession(userId);
+        expect(session?.lastActivity).toBe(-1000);
+      });
+
+      it('should handle very large timestamp values', () => {
+        const userId = 'user123';
+        const email = 'test@example.com';
+        const timestamp = Number.MAX_SAFE_INTEGER;
+
+        service['updateUserSession'](userId, email, timestamp);
+
+        const session = service.getUserSession(userId);
+        expect(session?.lastActivity).toBe(Number.MAX_SAFE_INTEGER);
+      });
+    });
+
+    describe('Shutdown edge cases', () => {
+      it('should handle shutdown with no active sessions', async () => {
+        // Ensure no active sessions
+        service.getActiveSessions().clear();
+
+        await expect(service.shutdown()).resolves.not.toThrow();
+      });
+
+      it('should handle shutdown when producer/consumer are null', async () => {
+        service['producer'] = null;
+        service['consumer'] = null;
+        service['isConnected'] = false;
+
+        await expect(service.shutdown()).resolves.not.toThrow();
+      });
+    });
+
+    describe('Data validation edge cases', () => {
+      it('should handle empty user IDs and emails', async () => {
+        await service.trackUserActivity('', '', 'test-action', {
+          page: '/test',
+        });
+
+        // Should not throw but creates session with empty string as key
+        expect(service.isUserActive('')).toBe(true);
+      });
+
+      it('should handle user IDs and emails with only whitespace', async () => {
+        const whitespaceUserId = '   ';
+        const whitespaceEmail = '\t\n  ';
+
+        await service.trackUserActivity(whitespaceUserId, whitespaceEmail, 'test-action');
+
+        expect(service.isUserActive(whitespaceUserId)).toBe(true);
+      });
+
+      it('should handle metadata with complex nested objects', async () => {
+        const complexMetadata = {
+          level1: {
+            level2: {
+              level3: {
+                data: 'deep nesting test',
+                array: [1, 2, 3, { nested: 'object' }],
+                boolean: true,
+                nullValue: null,
+                undefinedValue: undefined,
+              },
+            },
+          },
+        };
+
+        // Should not throw during processing
+        await expect(
+          service.trackUserActivity('user123', 'test@example.com', 'complex-test', complexMetadata)
+        ).resolves.not.toThrow();
+
+        expect(service.isUserActive('user123')).toBe(true);
+      });
+    });
+  });
 });

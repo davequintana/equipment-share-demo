@@ -152,96 +152,76 @@ async function createServer() {
     });
   }
 
+  // Helper to get production template and render function
+  function getProdTemplateAndRender() {
+    const template = `
+      <!DOCTYPE html>
+      <html lang="en">
+        <head>
+          <meta charset="utf-8" />
+          <title>SSR React App - Enterprise NX Monorepo</title>
+          <base href="/" />
+          <meta name="viewport" content="width=device-width, initial-scale=1" />
+          <link rel="icon" type="image/x-icon" href="/favicon.ico" />
+          <meta name="description" content="Server-side rendered React application with modern technologies" />
+        </head>
+        <body>
+          <div id="root"><!--ssr-outlet--></div>
+          <script type="module" src="/client.js"></script>
+        </body>
+      </html>
+    `;
+    const render = () => `
+      <div>
+        <h1>Welcome to Enterprise NX Monorepo</h1>
+        <p>A comprehensive full-stack application with modern technologies</p>
+        <div style="display: flex; gap: 1rem; justify-content: center; margin-top: 2rem;">
+          <button>Login</button>
+          <button>Create Account</button>
+        </div>
+      </div>
+    `;
+    return { template, render };
+  }
+
+  // Helper to load development template
+  async function getDevTemplate(url: string, vite: import('vite').ViteDevServer | null) {
+    const indexPath = path.resolve('.', 'index.html');
+    let templateFile: string;
+    if (fs.existsSync(indexPath)) {
+      templateFile = await fs.promises.readFile(indexPath, 'utf-8');
+    } else {
+      const fallbackPath = path.resolve(__dirname, '..', '..', 'index.html');
+      if (fs.existsSync(fallbackPath)) {
+        templateFile = await fs.promises.readFile(fallbackPath, 'utf-8');
+      } else {
+        throw new Error(`index.html not found at: ${indexPath} or ${fallbackPath}`);
+      }
+    }
+    return vite ? await vite.transformIndexHtml(url, templateFile) : templateFile;
+  }
+
+  // Helper to get dev render function
+  async function getDevRender(vite: import('vite').ViteDevServer | null) {
+    if (!vite) throw new Error('Vite server is not available for SSR module loading');
+    return (await vite.ssrLoadModule('/src/server/entry.tsx')).render;
+  }
+
   // SSR route handler for all routes (except health and assets)
   app.get('/*', async (request, reply) => {
     const url = request.url;
-
     try {
       let template: string;
       let render: (url: string) => string;
 
       if (isProduction && process.env['CI'] !== 'true') {
-        // In production, use a simple static template
-        template = `
-          <!DOCTYPE html>
-          <html lang="en">
-            <head>
-              <meta charset="utf-8" />
-              <title>SSR React App - Enterprise NX Monorepo</title>
-              <base href="/" />
-              <meta name="viewport" content="width=device-width, initial-scale=1" />
-              <link rel="icon" type="image/x-icon" href="/favicon.ico" />
-              <meta name="description" content="Server-side rendered React application with modern technologies" />
-            </head>
-            <body>
-              <div id="root"><!--ssr-outlet--></div>
-              <script type="module" src="/client.js"></script>
-            </body>
-          </html>
-        `;
-        // For now, render static content in production
-        render = () => `
-          <div>
-            <h1>Welcome to Enterprise NX Monorepo</h1>
-            <p>A comprehensive full-stack application with modern technologies</p>
-            <div style="display: flex; gap: 1rem; justify-content: center; margin-top: 2rem;">
-              <button>Login</button>
-              <button>Create Account</button>
-            </div>
-          </div>
-        `;
+        ({ template, render } = getProdTemplateAndRender());
       } else {
-        // Load template from index.html file in development
-        // We're already in the web-app directory due to process.chdir above
-        const indexPath = path.resolve('.', 'index.html');
-
-        console.log('Debug - Current working directory:', process.cwd());
-        console.log('Debug - Index.html path:', indexPath);
-        console.log('Debug - Index.html exists:', fs.existsSync(indexPath));
-
-        if (!fs.existsSync(indexPath)) {
-          // If index.html not found, try looking in the original location
-          const fallbackPath = path.resolve(
-            __dirname,
-            '..',
-            '..',
-            'index.html',
-          );
-          console.log('Debug - Trying fallback path:', fallbackPath);
-
-          if (fs.existsSync(fallbackPath)) {
-            const templateFile = await fs.promises.readFile(
-              fallbackPath,
-              'utf-8',
-            );
-            template = vite
-              ? await vite.transformIndexHtml(url, templateFile)
-              : templateFile;
-          } else {
-            throw new Error(
-              `index.html not found at: ${indexPath} or ${fallbackPath}`,
-            );
-          }
-        } else {
-          const templateFile = await fs.promises.readFile(indexPath, 'utf-8');
-          template = vite
-            ? await vite.transformIndexHtml(url, templateFile)
-            : templateFile;
-        }
-
-        // Load the server-side render function
-        if (!vite) {
-          throw new Error(
-            'Vite server is not available for SSR module loading',
-          );
-        }
-        render = (await vite.ssrLoadModule('/src/server/entry.tsx')).render;
+        template = await getDevTemplate(url, vite);
+        render = await getDevRender(vite);
       }
 
-      // Render the app HTML
-      const appHtml = await render(url);
-
-      // Replace the placeholder with the rendered app HTML
+      const appHtml = render(url);
       const html = template.replace('<!--ssr-outlet-->', appHtml);
 
       reply.type('text/html').code(200).send(html);

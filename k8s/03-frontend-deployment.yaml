@@ -1,0 +1,133 @@
+# Frontend Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: web-app
+  namespace: enterprise-app
+  labels:
+    app: web-app
+    component: frontend
+    tier: application
+    app.kubernetes.io/name: web-app
+    app.kubernetes.io/component: frontend
+    app.kubernetes.io/version: "1.0.0"
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: web-app
+  template:
+    metadata:
+      labels:
+        app: web-app
+        component: frontend
+        tier: application
+    spec:
+      automountServiceAccountToken: false
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                - key: app
+                  operator: In
+                  values:
+                  - web-app
+              topologyKey: kubernetes.io/hostname
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        runAsGroup: 10001
+        fsGroup: 10001
+      initContainers:
+      - name: wait-for-api
+        image: busybox:1.35
+        imagePullPolicy: Always
+        command: ['sh', '-c', 'until nc -z fastify-api-service 3334; do echo waiting for API; sleep 2; done;']
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          runAsNonRoot: true
+          runAsUser: 10001
+          runAsGroup: 10001
+          capabilities:
+            drop:
+            - ALL
+        resources:
+          requests:
+            memory: "16Mi"
+            cpu: "10m"
+            ephemeral-storage: "64Mi"
+          limits:
+            memory: "32Mi"
+            cpu: "50m"
+            ephemeral-storage: "128Mi"
+      containers:
+      - name: web-app
+        image: enterprise/web-app:1.0.0  # Use specific version tag
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 4200
+          name: http
+        env:
+        - name: NODE_ENV
+          value: "production"
+        - name: LOG_LEVEL
+          value: "info"
+        - name: API_URL
+          value: "http://fastify-api-service:3334"
+        livenessProbe:
+          httpGet:
+            path: /
+            port: 4200
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /health  # Different endpoint for readiness
+            port: 4200
+          initialDelaySeconds: 5
+          periodSeconds: 5
+          timeoutSeconds: 3
+          failureThreshold: 2  # Different from liveness
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          runAsNonRoot: true
+          runAsUser: 10001
+          runAsGroup: 10001
+          capabilities:
+            drop:
+            - ALL
+        resources:
+          requests:
+            memory: "64Mi"
+            cpu: "50m"
+            ephemeral-storage: "256Mi"
+          limits:
+            memory: "128Mi"
+            cpu: "100m"
+            ephemeral-storage: "512Mi"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: web-app-service
+  namespace: enterprise-app
+  labels:
+    app: web-app
+    component: frontend
+    tier: application
+spec:
+  selector:
+    app: web-app
+  ports:
+  - name: http
+    protocol: TCP
+    port: 80
+    targetPort: 4200
+  type: LoadBalancer

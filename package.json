@@ -60,6 +60,9 @@
     "coverage:merge": "./scripts/merge-coverage.sh",
     "preview:pages": "pnpm run build:pages && nx preview web-app --port 4302",
     "validate:db-config": "node scripts/validate-db-config.mjs",
+    "validate:infrastructure": "./infrastructure/validate.sh",
+    "validate:k8s": "./k8s/validate.sh",
+    "validate:all-infrastructure": "./scripts/validate-all-infrastructure.sh",
     "verify": "node scripts/verify-startup.mjs",
     "affected:build": "nx affected --target=build",
     "affected:test": "nx affected --target=test",
@@ -97,7 +100,7 @@
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3.3.1",
-    "@eslint/js": "^9.8.0",
+    "@eslint/js": "^9.32.0",
     "@nx/devkit": "21.3.11",
     "@nx/esbuild": "^21.3.11",
     "@nx/eslint": "21.3.11",

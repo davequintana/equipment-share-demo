@@ -145,7 +145,14 @@ export function setupDemoMode() {
 
     // Replace fetch with demo version
     window.fetch = async (input: RequestInfo | URL, init?: RequestInit) => {
-      const url = typeof input === 'string' ? input : input.toString();
+      let url: string;
+      if (typeof input === 'string') {
+        url = input;
+      } else if (input instanceof Request) {
+        url = input.url;
+      } else {
+        url = input.toString();
+      }
 
       // Only intercept API calls - use proper URL validation
       try {

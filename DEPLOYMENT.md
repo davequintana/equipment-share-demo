@@ -15,10 +15,13 @@ This project uses **release-based automatic deployment** triggered by version ta
 ### 1. Create and Push a Version Tag
 
 ```bash
+
 # Create a version tag (e.g., v1.0.0, v1.0.1, v2.0.0)
+
 git tag v1.0.0
 
 # Push the tag to trigger the release workflow
+
 git push origin v1.0.0
 ```
 
@@ -55,6 +58,7 @@ The release workflow will:
    ```
 
 5. **Run the deployment**:
+  
    ```bash
    ./deploy.sh
    ```
@@ -62,25 +66,47 @@ The release workflow will:
 ### Option 2: Manual Docker Commands
 
 ```bash
+
 # Pull the specific version
+
 docker pull ghcr.io/davequintana/equipment-share-demo/web-app:1.0.0
 docker pull ghcr.io/davequintana/equipment-share-demo/fastify-api:1.0.0
 
 # Use with your existing docker-compose.yml
+
 docker-compose up -d
 ```
 
 ## 🔒 Required Secrets
+
+**⚠️ SECURITY NOTICE**: As of the latest release, all production deployments require properly configured secrets. No default or fallback values are used for security-sensitive configuration.
 
 Add these secrets to your GitHub repository for production deployment:
 
 1. **Go to GitHub Repository → Settings → Secrets and Variables → Actions**
 2. **Add the following secrets**:
 
-| Secret Name         | Description                  | Example                                   |
-| ------------------- | ---------------------------- | ----------------------------------------- |
-| `POSTGRES_PASSWORD` | PostgreSQL database password | `your-secure-db-password`                 |
-| `JWT_SECRET`        | JWT signing secret           | `your-super-secret-jwt-key-256-bits-long` |
+| Secret Name         | Description                  | Security Requirements                        | Example                                   |
+| ------------------- | ---------------------------- | -------------------------------------------- | ----------------------------------------- |
+| `POSTGRES_PASSWORD` | PostgreSQL database password | Strong password (12+ chars, mixed case, numbers, symbols) | `MyStr0ngP@ssw0rd123!`                 |
+| `JWT_SECRET`        | JWT signing secret           | Cryptographically secure random string (32+ chars) | `a1b2c3d4e5f6789012345678901234567890abcdef` |
+
+### Security Validation
+
+The deployment process now includes automatic security validation:
+
+- ✅ **Secret Validation**: Deployment fails if required secrets are not set
+- ✅ **No Fallback Values**: No default/weak values used in production
+- ✅ **Runtime Checks**: Deployment script validates secrets before starting services
+- ⚠️ **Manual Server Setup**: If deploying manually, ensure environment variables are set:
+
+```bash
+
+# Required environment variables on your production server
+
+export POSTGRES_PASSWORD="your-secure-db-password"
+export JWT_SECRET="your-cryptographically-secure-jwt-secret"
+```
 
 ## 🌍 Environment Setup
 
@@ -107,20 +133,24 @@ PORT=3334
 
 After deployment, your services will be available at:
 
-- **🌐 Web Application**: http://your-server
-- **🔌 API**: http://your-server:3334
-- **📊 Health Checks**: http://your-server:3334/health
+- **🌐 Web Application**: [http://your-server](http://your-server)
+- **🔌 API**: <http://your-server:3334>
+- **📊 Health Checks**: [http://your-server:3334/health](http://your-server:3334/health)
 
 ### Check Service Status
 
 ```bash
+
 # View running services
+
 docker-compose -f docker-compose.prod.yml ps
 
 # View logs
+
 docker-compose -f docker-compose.prod.yml logs -f
 
 # Check health
+
 curl http://localhost:3334/health
 ```
 
@@ -129,12 +159,17 @@ curl http://localhost:3334/health
 To rollback to a previous version:
 
 ```bash
+
 # Pull the previous version
+
 docker pull ghcr.io/davequintana/equipment-share-demo/web-app:1.0.0
 docker pull ghcr.io/davequintana/equipment-share-demo/fastify-api:1.0.0
 
 # Update docker-compose.prod.yml with the previous version tags
+
+
 # Then restart services
+
 docker-compose -f docker-compose.prod.yml up -d
 ```
 
@@ -150,14 +185,18 @@ docker-compose -f docker-compose.prod.yml up -d
 ### Logs and Debugging
 
 ```bash
+
 # View all logs
+
 docker-compose -f docker-compose.prod.yml logs
 
 # View specific service logs
+
 docker-compose -f docker-compose.prod.yml logs web-app
 docker-compose -f docker-compose.prod.yml logs fastify-api
 
 # Check service health
+
 docker-compose -f docker-compose.prod.yml exec web-app wget -qO- http://localhost:3000
 docker-compose -f docker-compose.prod.yml exec fastify-api wget -qO- http://localhost:3334/health
 ```

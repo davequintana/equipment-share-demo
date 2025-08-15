@@ -3,32 +3,40 @@
 [![Quality Ga## 🚀 Quick Start
 
 ```bash
+
 # Install dependencies
+
 pnpm install
 
 # Start development environment
+
 pnpm run dev           # SSR React app only (localhost:4200)
 pnpm run dev:ssr       # React app + API + Redis
 pnpm run dev:kafka     # Full stack with Kafka analytics
 
 # Or start services individually
+
 pnpm run serve:web-app       # React app (localhost:4200)
 pnpm run serve:fastify-api   # Fastify API (localhost:3334)
 
 # With Docker (full stack with Kafka)
+
 pnpm start    # Complete development environment
 ```
 
 ## ⚡ Development Scripts
 
 ````bash
+
 # Quality & Testing
+
 pnpm run quality      # Lint + format check + type check
 pnpm run test         # Run all tests
 pnpm run e2e          # Playwright E2E tests
 pnpm run analyze      # Coverage + lint + SonarQube
 
 # Project Management
+
 pnpm run clean        # Clean build artifacts
 pnpm run nuke         # Full reset (dependencies + lock file)
 pnpm run health       # Check NX daemon and projects
@@ -65,6 +73,7 @@ The application is automatically deployed to GitHub Pages from the main branch.
 ## 🚀 Quick Start
 
 ### Prerequisites
+
 - Node.js 23.6.0+ (Current LTS)
 - pnpm 9.0.0+
 - Docker & Docker Compose
@@ -73,18 +82,23 @@ The application is automatically deployed to GitHub Pages from the main branch.
 ### Installation & Development
 
 ```bash
+
 # Install dependencies
+
 pnpm install
 
 # Start all services (recommended)
+
 pnpm run dev          # CSR React app + APIs
 pnpm run dev:ssr      # SSR React app + APIs
 
 # Or start services individually
+
 pnpm run serve:web-app       # React app (localhost:4200)
 pnpm run serve:fastify-api   # Fastify API (localhost:3334)
 
 # With Docker (full stack with Kafka)
+
 pnpm run dev:kafka    # Start databases + Kafka + development servers
 ````
 

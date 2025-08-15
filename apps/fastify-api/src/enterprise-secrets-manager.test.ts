@@ -1,5 +1,4 @@
-import { describe, it, expect, beforeEach, afterEach, vi, type MockedFunction } from 'vitest';
-import type { MockedClass } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi, type MockedFunction, type MockedClass } from 'vitest';
 import { EnterpriseSecretsManager } from './enterprise-secrets-manager';
 import { SecretsManagerClient, GetSecretValueCommand } from '@aws-sdk/client-secrets-manager';
 import { SSMClient } from '@aws-sdk/client-ssm';
@@ -22,6 +21,15 @@ describe('EnterpriseSecretsManager', () => {
 
   // Store original environment variables to restore later
   const originalEnv = process.env;
+
+  // Helper functions to reduce nesting complexity
+  const createConsoleSpy = (method: 'warn' | 'error') => {
+    return vi.spyOn(console, method).mockImplementation(() => undefined);
+  };
+
+  const restoreConsoleSpy = (spy: ReturnType<typeof vi.spyOn>) => {
+    spy.mockRestore();
+  };
 
   beforeEach(() => {
     // Reset environment variables
@@ -139,8 +147,8 @@ describe('EnterpriseSecretsManager', () => {
       });
 
       it('should fallback to environment variable when AWS call fails', async () => {
-        const consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
-        const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+        const consoleWarnSpy = createConsoleSpy('warn');
+        const consoleErrorSpy = createConsoleSpy('error');
 
         mockSecretsClient.send.mockRejectedValue(new Error('AWS Error'));
         process.env.FALLBACK_SECRET = 'fallback-value';
@@ -156,12 +164,12 @@ describe('EnterpriseSecretsManager', () => {
           'Using fallback environment variable FALLBACK_SECRET for secret failing-secret'
         );
 
-        consoleWarnSpy.mockRestore();
-        consoleErrorSpy.mockRestore();
+        restoreConsoleSpy(consoleWarnSpy);
+        restoreConsoleSpy(consoleErrorSpy);
       });
 
       it('should throw error when AWS call fails and no fallback is available', async () => {
-        const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+        const consoleErrorSpy = createConsoleSpy('error');
 
         const awsError = new Error('AWS Error');
         mockSecretsClient.send.mockRejectedValue(awsError);
@@ -173,7 +181,7 @@ describe('EnterpriseSecretsManager', () => {
           awsError
         );
 
-        consoleErrorSpy.mockRestore();
+        restoreConsoleSpy(consoleErrorSpy);
       });
     });
   });
@@ -233,8 +241,8 @@ describe('EnterpriseSecretsManager', () => {
       });
 
       it('should fallback to environment variable when AWS call fails', async () => {
-        const consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
-        const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+        const consoleWarnSpy = createConsoleSpy('warn');
+        const consoleErrorSpy = createConsoleSpy('error');
 
         mockSSMClient.send.mockRejectedValue(new Error('SSM Error'));
         process.env.FALLBACK_PARAM = 'param-fallback-value';
@@ -250,8 +258,8 @@ describe('EnterpriseSecretsManager', () => {
           'Using fallback environment variable FALLBACK_PARAM for parameter /failing/param'
         );
 
-        consoleWarnSpy.mockRestore();
-        consoleErrorSpy.mockRestore();
+        restoreConsoleSpy(consoleWarnSpy);
+        restoreConsoleSpy(consoleErrorSpy);
       });
     });
   });
@@ -450,7 +458,7 @@ describe('EnterpriseSecretsManager', () => {
     });
 
     it('should handle AWS errors', async () => {
-      const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+      const consoleErrorSpy = createConsoleSpy('error');
 
       const awsError = new Error('AWS Create Error');
       mockSecretsClient.send.mockRejectedValue(awsError);
@@ -462,7 +470,7 @@ describe('EnterpriseSecretsManager', () => {
         awsError
       );
 
-      consoleErrorSpy.mockRestore();
+      restoreConsoleSpy(consoleErrorSpy);
     });
   });
 
@@ -490,7 +498,7 @@ describe('EnterpriseSecretsManager', () => {
     });
 
     it('should handle AWS errors', async () => {
-      const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+      const consoleErrorSpy = createConsoleSpy('error');
 
       const awsError = new Error('AWS Update Error');
       mockSecretsClient.send.mockRejectedValue(awsError);
@@ -502,7 +510,7 @@ describe('EnterpriseSecretsManager', () => {
         awsError
       );
 
-      consoleErrorSpy.mockRestore();
+      restoreConsoleSpy(consoleErrorSpy);
     });
   });
 
@@ -540,7 +548,7 @@ describe('EnterpriseSecretsManager', () => {
     });
 
     it('should handle AWS errors', async () => {
-      const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+      const consoleErrorSpy = createConsoleSpy('error');
 
       const awsError = new Error('AWS Parameter Error');
       mockSSMClient.send.mockRejectedValue(awsError);
@@ -552,7 +560,7 @@ describe('EnterpriseSecretsManager', () => {
         awsError
       );
 
-      consoleErrorSpy.mockRestore();
+      restoreConsoleSpy(consoleErrorSpy);
     });
   });
 

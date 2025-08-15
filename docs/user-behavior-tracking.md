@@ -318,7 +318,7 @@ const interactions = events.filter((e) => e.page === targetPage && e.eventType =
 
 ## 🚨 Testing
 
-### Unit Tests
+### Running Unit Tests
 
 ```bash
 pnpm test apps/web-app/src/hooks/useBehaviorTracker.test.ts
@@ -370,10 +370,13 @@ useEffect(() => {
 View events in real-time:
 
 ```bash
+
 # Kafka UI
+
 http://localhost:8080
 
 # Console consumer
+
 docker exec -it kafka kafka-console-consumer \
   --bootstrap-server localhost:9092 \
   --topic user-activity \
@@ -382,7 +385,7 @@ docker exec -it kafka kafka-console-consumer \
 
 ## 🎛️ Advanced Configuration
 
-### Custom Event Types
+### Extending Event Types
 
 ## 🧪 Testing
 
@@ -399,10 +402,13 @@ The behavior tracking system includes comprehensive tests that verify:
 ### Unit Tests
 
 ```bash
+
 # Run behavior tracker tests
+
 pnpm nx test web-app --testNamePattern="useBehaviorTracker"
 
 # Run all tests including coverage
+
 pnpm run test:all
 ```
 
@@ -427,7 +433,7 @@ it('should handle ReDoS attack patterns safely', () => {
 
 ## 🔧 Advanced Configuration
 
-### Custom Event Types
+### Custom Event Types (Advanced)
 
 Extend the system with custom events:
 

@@ -20,16 +20,21 @@ Comprehensive testing strategy covering unit tests, integration tests, end-to-en
 Run React component and utility tests:
 
 ```bash
+
 # Run all frontend tests
+
 npx nx test web-app
 
 # Run in watch mode
+
 npx nx test web-app --watch
 
 # Run with coverage
+
 npx nx test web-app --coverage
 
 # Run specific test file
+
 npx nx test web-app --testNamePattern="LoginComponent"
 ```
 
@@ -38,13 +43,17 @@ npx nx test web-app --testNamePattern="LoginComponent"
 Test API endpoints and business logic:
 
 ```bash
+
 # Run Fastify API tests
+
 npx nx test fastify-api
 
 # Run Fastify API tests
+
 npx nx test fastify-api
 
 # Run all backend tests
+
 npx nx run-many -t test --projects=fastify-api,fastify-api
 ```
 
@@ -198,13 +207,17 @@ describe('UserService Integration', () => {
 ### API Integration Tests
 
 ```bash
+
 # Start test environment
+
 docker-compose -f docker-compose.test.yml up -d
 
 # Run integration tests
+
 npm run test:integration
 
 # Cleanup test environment
+
 docker-compose -f docker-compose.test.yml down
 ```
 
@@ -304,22 +317,29 @@ test.describe('Authentication Flow', () => {
 ### Running E2E Tests
 
 ```bash
+
 # Install Playwright browsers
+
 npx playwright install
 
 # Run E2E tests
+
 npx nx e2e e2e
 
 # Run with UI mode
+
 npx nx e2e e2e --ui
 
 # Run specific test
+
 npx nx e2e e2e --grep "Authentication Flow"
 
 # Run in headed mode
+
 npx nx e2e e2e --headed
 
 # Generate test report
+
 npx playwright show-report
 ```
 
@@ -424,13 +444,17 @@ export const InteractiveTest: Story = {
 ### Running Storybook
 
 ```bash
+
 # Start Storybook development server
+
 npx nx run web-app:storybook
 
 # Build Storybook for production
+
 npx nx run web-app:build-storybook
 
 # Run Storybook tests
+
 npx nx run web-app:test-storybook
 ```
 
@@ -439,7 +463,9 @@ npx nx run web-app:test-storybook
 ### Load Testing with Artillery
 
 ```yaml
+
 # performance/load-test.yml
+
 config:
   target: 'http://localhost:3334'
   phases:
@@ -475,7 +501,9 @@ scenarios:
 ```
 
 ```bash
+
 # Run load tests
+
 npm install -g artillery
 artillery run performance/load-test.yml
 ```
@@ -551,7 +579,9 @@ export const testEvents = {
 ### GitHub Actions Workflow
 
 ```yaml
+
 # .github/workflows/test.yml
+
 name: Tests
 
 on:
@@ -607,13 +637,17 @@ jobs:
 ### Coverage Reports
 
 ```bash
+
 # Generate coverage for all projects
+
 npx nx run-many -t test --coverage
 
 # Generate coverage for specific project
+
 npx nx test web-app --coverage
 
 # View coverage report
+
 open coverage/lcov-report/index.html
 ```
 

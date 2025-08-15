@@ -10,7 +10,7 @@ Comprehensive monitoring and observability setup for production environments wit
 
 All services expose health check endpoints for monitoring and load balancer health checks.
 
-#### Fastify API Health Check
+#### Fastify API Health Check (Basic)
 
 ```http
 GET /health
@@ -135,7 +135,9 @@ export class HealthCheckService {
 ### Kubernetes Health Checks
 
 ```yaml
+
 # Deployment with health checks
+
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -296,7 +298,9 @@ export const requestLogger = (req: Request, res: Response, next: NextFunction) =
 #### ELK Stack (Elasticsearch, Logstash, Kibana)
 
 ```yaml
+
 # docker-compose.logging.yml
+
 version: '3.8'
 
 services:
@@ -439,7 +443,9 @@ export const metricsMiddleware = (req: Request, res: Response, next: NextFunctio
 #### Kubernetes Monitoring with Prometheus
 
 ```yaml
+
 # k8s/monitoring/prometheus.yaml
+
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -521,7 +527,9 @@ data:
 ### Prometheus Alerting Rules
 
 ```yaml
+
 # k8s/monitoring/alert-rules.yaml
+
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -571,7 +579,9 @@ data:
 ### Alertmanager Configuration
 
 ```yaml
+
 # alertmanager.yml
+
 global:
   smtp_smarthost: 'localhost:587'
   smtp_from: 'alerts@yourdomain.com'

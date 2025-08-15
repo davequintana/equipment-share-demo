@@ -9,38 +9,47 @@ The application uses environment variables for configuration across different en
 #### Development (.env)
 
 ```bash
+
 # Application
+
 NODE_ENV=development
 PORT=3334
 
 # Database
+
 DATABASE_URL=postgresql://enterprise:password@localhost:5432/enterprise_db
 DATABASE_LOGGING=true
 DATABASE_POOL_SIZE=10
 
 # Redis
+
 REDIS_URL=redis://localhost:6379
 REDIS_TTL=3600
 
 # Authentication
+
 JWT_SECRET=your-development-jwt-secret-key-change-in-production
 JWT_EXPIRES_IN=24h
 
 # API URLs
+
 REACT_APP_FASTIFY_API_URL=http://localhost:3334
 REACT_APP_FASTIFY_API_URL=http://localhost:3334
 
 # Kafka
+
 KAFKA_BROKERS=localhost:9092
 KAFKA_CLIENT_ID=enterprise-app-dev
 
 # Security
+
 CORS_ORIGINS=http://localhost:4200
 RATE_LIMIT_WINDOW_MS=900000
 RATE_LIMIT_MAX_ATTEMPTS=5
 BCRYPT_SALT_ROUNDS=10
 
 # Logging
+
 LOG_LEVEL=debug
 ENABLE_REQUEST_LOGGING=true
 ```
@@ -48,48 +57,59 @@ ENABLE_REQUEST_LOGGING=true
 #### Production (.env.production)
 
 ```bash
+
 # Application
+
 NODE_ENV=production
 PORT=3334
 
 # Database (use AWS RDS)
+
 DATABASE_URL=postgresql://enterprise:secure-password@your-rds-endpoint.amazonaws.com:5432/enterprise_db
 DATABASE_SSL=true
 DATABASE_POOL_SIZE=20
 DATABASE_POOL_IDLE_TIMEOUT=30000
 
 # Redis (use AWS ElastiCache)
+
 REDIS_URL=redis://your-elasticache-endpoint.cache.amazonaws.com:6379
 REDIS_TTL=7200
 
 # Authentication
+
 JWT_SECRET=your-super-secure-256-bit-production-secret-key
 JWT_EXPIRES_IN=24h
 
 # API URLs
+
 REACT_APP_FASTIFY_API_URL=https://api.yourdomain.com
 REACT_APP_FASTIFY_API_URL=https://api-v2.yourdomain.com
 
 # Kafka (use AWS MSK)
+
 KAFKA_BROKERS=your-msk-cluster.amazonaws.com:9092
 KAFKA_CLIENT_ID=enterprise-app-prod
 
 # Security
+
 CORS_ORIGINS=https://yourdomain.com,https://app.yourdomain.com
 RATE_LIMIT_WINDOW_MS=900000
 RATE_LIMIT_MAX_ATTEMPTS=3
 BCRYPT_SALT_ROUNDS=12
 
 # AWS
+
 AWS_REGION=us-east-1
 S3_BUCKET=your-app-assets-bucket
 
 # Logging
+
 LOG_LEVEL=info
 ENABLE_REQUEST_LOGGING=false
 ENABLE_METRICS=true
 
 # SSL/TLS
+
 FORCE_HTTPS=true
 HSTS_MAX_AGE=31536000
 ```
@@ -97,24 +117,30 @@ HSTS_MAX_AGE=31536000
 #### Testing (.env.test)
 
 ```bash
+
 # Application
+
 NODE_ENV=test
 PORT=3334
 
 # Database (use test database)
+
 DATABASE_URL=postgresql://test:test@localhost:5433/test_db
 DATABASE_LOGGING=false
 DATABASE_POOL_SIZE=5
 
 # Redis
+
 REDIS_URL=redis://localhost:6380
 REDIS_TTL=300
 
 # Authentication
+
 JWT_SECRET=test-jwt-secret-key
 JWT_EXPIRES_IN=1h
 
 # Disable external services in tests
+
 KAFKA_ENABLED=false
 METRICS_ENABLED=false
 ```
@@ -455,7 +481,9 @@ export default defineConfig({
 ### Development Docker Compose
 
 ```yaml
+
 # docker-compose.yml
+
 version: '3.8'
 
 services:
@@ -505,7 +533,9 @@ volumes:
 ### Production Docker Compose
 
 ```yaml
+
 # docker-compose.prod.yml
+
 version: '3.8'
 
 services:
@@ -557,7 +587,9 @@ services:
 ### ConfigMap
 
 ```yaml
+
 # k8s/configmap.yaml
+
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -576,7 +608,9 @@ data:
 ### Secrets
 
 ```yaml
+
 # k8s/secrets.yaml
+
 apiVersion: v1
 kind: Secret
 metadata:

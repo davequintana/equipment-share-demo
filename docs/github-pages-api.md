@@ -39,6 +39,7 @@ To connect your GitHub Pages app to a real backend API:
    - Value: `https://your-api-domain.com`
 
 2. **Update Workflow**:
+
    ```yaml
    env:
      VITE_API_URL: ${{ secrets.PRODUCTION_API_URL }}
@@ -54,7 +55,7 @@ Your API must support:
 
 #### Required Endpoints
 
-```
+```text
 POST /api/auth/login
 POST /api/auth/register
 GET  /api/users/profile

@@ -1,0 +1,205 @@
+# Fastify API Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: fastify-api
+  namespace: enterprise-app
+  labels:
+    app: fastify-api
+    component: backend
+    tier: application
+    app.kubernetes.io/name: fastify-api
+    app.kubernetes.io/component: backend
+    app.kubernetes.io/version: "1.0.0"
+spec:
+  # replicas managed by HPA - see fastify-api-hpa below
+  selector:
+    matchLabels:
+      app: fastify-api
+  template:
+    metadata:
+      labels:
+        app: fastify-api
+        component: backend
+        tier: application
+    spec:
+      automountServiceAccountToken: false
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                - key: app
+                  operator: In
+                  values:
+                  - fastify-api
+              topologyKey: kubernetes.io/hostname
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10000
+        runAsGroup: 10000
+        fsGroup: 10000
+      initContainers:
+      - name: wait-for-postgres
+        image: postgres:15-alpine
+        imagePullPolicy: Always
+        command: ['sh', '-c', 'until pg_isready -h postgres -p 5432 -U enterprise; do echo waiting for postgres; sleep 2; done;']
+        env:
+        - name: PGPASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: app-secrets
+              key: POSTGRES_PASSWORD
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          runAsNonRoot: true
+          runAsUser: 10000
+          runAsGroup: 10000
+          capabilities:
+            drop:
+            - ALL
+        resources:
+          requests:
+            memory: "32Mi"
+            cpu: "10m"
+            ephemeral-storage: "64Mi"
+          limits:
+            memory: "64Mi"
+            cpu: "50m"
+            ephemeral-storage: "128Mi"
+      - name: wait-for-redis
+        image: redis:7-alpine
+        imagePullPolicy: Always
+        command: ['sh', '-c', 'until redis-cli -h redis -p 6379 ping; do echo waiting for redis; sleep 2; done;']
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          runAsNonRoot: true
+          runAsUser: 10000
+          runAsGroup: 10000
+          capabilities:
+            drop:
+            - ALL
+        resources:
+          requests:
+            memory: "16Mi"
+            cpu: "10m"
+            ephemeral-storage: "64Mi"
+          limits:
+            memory: "32Mi"
+            cpu: "50m"
+            ephemeral-storage: "128Mi"
+      - name: wait-for-kafka
+        image: busybox:1.35
+        imagePullPolicy: Always
+        command: ['sh', '-c', 'until nc -z kafka 9092; do echo waiting for kafka; sleep 2; done;']
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          runAsNonRoot: true
+          runAsUser: 10000
+          runAsGroup: 10000
+          capabilities:
+            drop:
+            - ALL
+        resources:
+          requests:
+            memory: "16Mi"
+            cpu: "10m"
+            ephemeral-storage: "64Mi"
+          limits:
+            memory: "32Mi"
+            cpu: "50m"
+            ephemeral-storage: "128Mi"
+      containers:
+      - name: fastify-api
+        image: enterprise/fastify-api:1.0.0  # Use specific version tag
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 3334
+          name: http
+        env:
+        - name: NODE_ENV
+          value: "production"
+        - name: DATABASE_URL
+          value: "postgresql://enterprise@postgres:5432/enterprise_db"
+        - name: REDIS_URL
+          value: "redis://redis:6379"
+        - name: KAFKA_BROKERS
+          value: "kafka:9092"
+        - name: LOG_LEVEL
+          value: "info"
+        - name: SESSION_TIMEOUT
+          value: "1800"
+        - name: CORS_ORIGIN
+          value: "*"
+        - name: PORT
+          value: "3334"
+        - name: HOST
+          value: "0.0.0.0"
+        - name: JWT_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: app-secrets
+              key: JWT_SECRET
+        - name: POSTGRES_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: app-secrets
+              key: POSTGRES_PASSWORD
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 3334
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /ready  # Different endpoint for readiness
+            port: 3334
+          initialDelaySeconds: 10
+          periodSeconds: 5
+          timeoutSeconds: 3
+          failureThreshold: 2  # Different threshold
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: false  # Node.js apps may need temporary file access
+          runAsNonRoot: true
+          runAsUser: 10000
+          runAsGroup: 10000
+          capabilities:
+            drop:
+            - ALL
+        resources:
+          requests:
+            memory: "128Mi"
+            cpu: "100m"
+            ephemeral-storage: "512Mi"
+          limits:
+            memory: "256Mi"
+            cpu: "200m"
+            ephemeral-storage: "1Gi"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: fastify-api-service
+  namespace: enterprise-app
+  labels:
+    app: fastify-api
+    component: backend
+    tier: application
+spec:
+  selector:
+    app: fastify-api
+  ports:
+  - name: http
+    protocol: TCP
+    port: 3334
+    targetPort: 3334
+  type: ClusterIP

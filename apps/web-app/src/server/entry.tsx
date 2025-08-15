@@ -3,7 +3,7 @@ import { renderToString } from 'react-dom/server';
 import { StaticRouter } from 'react-router-dom/server.js';
 import { App } from '../app/app';
 
-function SSRApp({ url }: { url: string }) {
+function SSRApp({ url }: { readonly url: string }) {
   return (
     <React.StrictMode>
       <StaticRouter location={url}>

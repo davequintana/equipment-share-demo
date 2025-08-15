@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { FastifyRequest, FastifyReply } from 'fastify';
+import { FastifyReply } from 'fastify';
 import { JwtPayload } from '../types';
 import {
   validateEmail,
@@ -10,10 +10,11 @@ import {
   authenticateUser
 } from './auth';
 
-// Extended FastifyRequest interface for JWT
-interface FastifyRequestWithJWT extends FastifyRequest {
+// Standalone interface for mock FastifyRequest with JWT
+interface FastifyRequestWithJWT {
   jwtVerify(): Promise<void>;
   user?: JwtPayload | null;
+  // Add any other properties needed for the tests
 }
 
 // Mock Fastify request and reply objects
@@ -31,6 +32,8 @@ const createMockReply = (): FastifyReply => {
   return reply as unknown as FastifyReply;
 };
 
+// Remove this duplicate import block
+
 describe('Auth Middleware', () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -44,7 +47,7 @@ describe('Auth Middleware', () => {
       });
       const mockReply = createMockReply();
 
-      const result = await authenticateUser(mockRequest, mockReply);
+      const result = authenticateUser(mockRequest, mockReply);
 
       expect(result).toBe(true);
       expect(mockRequest.jwtVerify).toHaveBeenCalledOnce();
@@ -59,7 +62,7 @@ describe('Auth Middleware', () => {
       });
       const mockReply = createMockReply();
 
-      await authenticateUser(mockRequest, mockReply);
+      authenticateUser(mockRequest, mockReply);
 
       expect(mockReply.code).toHaveBeenCalledWith(401);
       expect(mockReply.send).toHaveBeenCalledWith({
@@ -75,7 +78,7 @@ describe('Auth Middleware', () => {
       });
       const mockReply = createMockReply();
 
-      await authenticateUser(mockRequest, mockReply);
+      authenticateUser(mockRequest, mockReply);
 
       expect(mockReply.code).toHaveBeenCalledWith(401);
       expect(mockReply.send).toHaveBeenCalledWith({
@@ -91,7 +94,7 @@ describe('Auth Middleware', () => {
       });
       const mockReply = createMockReply();
 
-      await authenticateUser(mockRequest, mockReply);
+      authenticateUser(mockRequest, mockReply);
 
       expect(mockReply.code).toHaveBeenCalledWith(401);
       expect(mockReply.send).toHaveBeenCalledWith({
@@ -106,7 +109,7 @@ describe('Auth Middleware', () => {
       });
       const mockReply = createMockReply();
 
-      await authenticateUser(mockRequest, mockReply);
+      authenticateUser(mockRequest, mockReply);
 
       expect(mockReply.code).toHaveBeenCalledWith(401);
       expect(mockReply.send).toHaveBeenCalledWith({
@@ -121,7 +124,7 @@ describe('Auth Middleware', () => {
       });
       const mockReply = createMockReply();
 
-      await authenticateUser(mockRequest, mockReply);
+      authenticateUser(mockRequest, mockReply);
 
       expect(mockReply.code).toHaveBeenCalledWith(401);
       expect(mockReply.send).toHaveBeenCalledWith({
@@ -136,7 +139,7 @@ describe('Auth Middleware', () => {
       });
       const mockReply = createMockReply();
 
-      await authenticateUser(mockRequest, mockReply);
+      authenticateUser(mockRequest, mockReply);
 
       expect(mockReply.code).toHaveBeenCalledWith(401);
       expect(mockReply.send).toHaveBeenCalledWith({
@@ -151,7 +154,7 @@ describe('Auth Middleware', () => {
       });
       const mockReply = createMockReply();
 
-      await authenticateUser(mockRequest, mockReply);
+      authenticateUser(mockRequest, mockReply);
 
       expect(mockReply.code).toHaveBeenCalledWith(401);
       expect(mockReply.send).toHaveBeenCalledWith({
@@ -553,6 +556,10 @@ describe('Auth Middleware', () => {
         });
       });
 
+      function expectValidHyphenApostropheName(name: string) {
+        expect(validateName(name), `${name} should be valid`).toBe(true);
+      }
+
       it('should handle names with hyphens and apostrophes', () => {
         const names = [
           'Mary-Jane',
@@ -561,9 +568,7 @@ describe('Auth Middleware', () => {
           "D'Angelo",
         ];
 
-        names.forEach(name => {
-          expect(validateName(name), `${name} should be valid`).toBe(true);
-        });
+        names.forEach(expectValidHyphenApostropheName);
       });
 
       it('should reject names with only whitespace variations', () => {
@@ -594,7 +599,7 @@ describe('Auth Middleware', () => {
         });
         const mockReply = createMockReply();
 
-        const result = await authenticateUser(mockRequest, mockReply);
+        const result = authenticateUser(mockRequest, mockReply);
 
         expect(result).toBe(true);
         expect(mockReply.code).not.toHaveBeenCalled();
@@ -607,7 +612,7 @@ describe('Auth Middleware', () => {
         });
         const mockReply = createMockReply();
 
-        await authenticateUser(mockRequest, mockReply);
+        authenticateUser(mockRequest, mockReply);
 
         expect(mockReply.code).toHaveBeenCalledWith(401);
         expect(mockReply.send).toHaveBeenCalledWith({

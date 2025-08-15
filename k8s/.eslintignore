@@ -1,0 +1,9 @@
+# ESLint ignore file for Kubernetes manifests
+# These are false positives - ConfigMaps and Secrets are meant to be referenced multiple times
+
+# Ignore all YAML files in k8s directory
+*.yaml
+*.yml
+
+# Ignore specific duplication warnings that are valid Kubernetes patterns
+app-deployment.yaml

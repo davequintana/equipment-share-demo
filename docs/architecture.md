@@ -7,6 +7,7 @@ This enterprise NX monorepo follows modern microservices architecture patterns w
 ## Tech Stack
 
 ### Frontend
+
 - **React 19** - Latest React with concurrent features and Suspense
 - **TypeScript 5.8** - Type-safe development with strict mode
 - **Vanilla Extract** - CSS-in-TypeScript styling with type safety
@@ -15,6 +16,7 @@ This enterprise NX monorepo follows modern microservices architecture patterns w
 - **Storybook** - Component development and documentation
 
 ### Backend APIs
+
 - **Fastify 5** - High-performance REST API with built-in validation
 - **Fastify 5** - High-performance API with built-in validation
 - **JWT Authentication** - Secure token-based authentication
@@ -22,17 +24,20 @@ This enterprise NX monorepo follows modern microservices architecture patterns w
 - **bcryptjs** - Password hashing and security
 
 ### Database & Caching
+
 - **PostgreSQL** - Primary relational database
 - **Redis** - Caching and session storage
 - **Apache Kafka** - Event streaming and messaging
 
 ### Infrastructure
+
 - **Docker** - Containerization for all services
 - **Kubernetes** - Container orchestration
 - **AWS CloudFormation** - Infrastructure as Code
 - **NX** - Monorepo tooling with dependency graph analysis
 
 ### Testing & Quality
+
 - **Playwright** - End-to-end browser testing
 - **Vitest** - Fast unit testing framework
 - **ESLint** - Code linting and formatting
@@ -40,7 +45,7 @@ This enterprise NX monorepo follows modern microservices architecture patterns w
 
 ## Project Structure
 
-```
+```text
 app-starter/
 ├── apps/
 │   ├── web-app/                    # React 19 Frontend
@@ -107,6 +112,7 @@ app-starter/
 ## Design Patterns
 
 ### Frontend Architecture
+
 - **Component-driven development** with Storybook
 - **Hooks-based state management** with React 19 features
 - **Type-safe styling** with Vanilla Extract
@@ -114,6 +120,7 @@ app-starter/
 - **Error boundaries** for graceful error handling
 
 ### Backend Architecture
+
 - **RESTful API design** with consistent endpoints
 - **Middleware pattern** for cross-cutting concerns
 - **Repository pattern** for data access abstraction
@@ -121,7 +128,8 @@ app-starter/
 - **JWT authentication** with secure token handling
 
 ### Data Flow
-```
+
+```text
 Frontend (React) → API Layer (Fastify) → Business Logic → Database (PostgreSQL)
                                 ↓
                            Cache Layer (Redis)
@@ -132,6 +140,7 @@ Frontend (React) → API Layer (Fastify) → Business Logic → Database (Postgr
 ## Security Architecture
 
 ### Authentication & Authorization
+
 - **JWT tokens** with 24-hour expiration
 - **bcrypt password hashing** with salt rounds
 - **Rate limiting** (5 attempts per 15 minutes)
@@ -139,6 +148,7 @@ Frontend (React) → API Layer (Fastify) → Business Logic → Database (Postgr
 - **CORS configuration** for secure cross-origin requests
 
 ### API Security
+
 - **Request validation** using JSON schemas
 - **Authentication middleware** for protected routes
 - **Error handling** without information leakage
@@ -147,12 +157,14 @@ Frontend (React) → API Layer (Fastify) → Business Logic → Database (Postgr
 ## Scalability Considerations
 
 ### Horizontal Scaling
+
 - **Stateless API design** for easy replication
 - **Container orchestration** with Kubernetes
 - **Load balancing** through ingress controllers
 - **Database connection pooling** for efficiency
 
 ### Performance Optimization
+
 - **Redis caching** for frequently accessed data
 - **Code splitting** in frontend builds
 - **Lazy loading** for React components
@@ -161,12 +173,14 @@ Frontend (React) → API Layer (Fastify) → Business Logic → Database (Postgr
 ## Monitoring & Observability
 
 ### Health Checks
+
 - Application health endpoints (`/health`)
 - Database connectivity monitoring
 - Redis connection status
 - Kafka broker connectivity
 
 ### Logging Strategy
+
 - **Structured logging** with consistent format
 - **Request/response logging** for API calls
 - **Error tracking** with stack traces
@@ -175,18 +189,21 @@ Frontend (React) → API Layer (Fastify) → Business Logic → Database (Postgr
 ## Development Workflow
 
 ### Local Development
+
 1. **NX dependency graph** analysis
 2. **Hot module replacement** for fast development
 3. **Type checking** in watch mode
 4. **Automatic linting** on save
 
 ### Build Process
+
 1. **TypeScript compilation** with strict checking
 2. **Bundle optimization** with tree shaking
 3. **Asset optimization** for production
 4. **Docker image** building for deployment
 
 ### Testing Strategy
+
 1. **Unit tests** for individual components/functions
 2. **Integration tests** for API endpoints
 3. **E2E tests** for user workflows

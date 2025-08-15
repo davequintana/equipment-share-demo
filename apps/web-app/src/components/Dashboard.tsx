@@ -91,8 +91,8 @@ export const Dashboard: React.FC = () => {
         </div>
 
         <div id="features" className={styles.featuresGrid}>
-          {features.map((feature, index) => (
-            <div key={index} className={styles.featureCard}>
+          {features.map((feature) => (
+            <div key={feature.title} className={styles.featureCard}>
               <div className={styles.featureIcon}>{feature.icon}</div>
               <h3 className={styles.featureTitle}>{feature.title}</h3>
               <p className={styles.featureDescription}>{feature.description}</p>

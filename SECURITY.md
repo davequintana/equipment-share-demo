@@ -1,4 +1,5 @@
 # Security Policy
+
 - **🔎 CodeQL Static Analysis**:## Supported Versions
 
 We actively support security updates for the following versions:
@@ -119,21 +120,26 @@ This project implements enterprise-grade security measures:
 Critical environment variables requiring secure management:
 
 ```bash
+
 # Database credentials
+
 POSTGRES_PASSWORD=<secure-password>
 POSTGRES_USER=enterprise
 
 # Cache credentials  
+
 REDIS_PASSWORD=<secure-password>
 
 # Application secrets
+
 JWT_SECRET=<cryptographically-secure-secret>
 
 # Infrastructure secrets
+
 KAFKA_BROKERS=kafka:29092
 ```
 
-**⚠️ Never commit secrets to version control**
+### ⚠️ Never commit secrets to version control
 
 ## 🛡️ Security Artifacts & Reports
 
